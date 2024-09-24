@@ -8,7 +8,15 @@ re-deployed to a Maivin or Raivin platform.
 
 The HTML pages are found under `src` and the javascript is under `src/js` which
 will be minified as part of the build process which packages up all the various
-assets into the dist folder.
+assets into the `dist` folder.
+
+To build you will need [Node.js installed](https://nodejs.org/en/download/package-manager), then run the following commands to
+generate the `dist` folder.
+
+```
+npm install
+npm run build
+```
 
 # Deployment
 
