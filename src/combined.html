@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <p id="timeout" style="color: red;"></p>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Au-Zone demo</title>
+    <link href="./css/styles.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+        }
+
+        main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        #container {
+            margin: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: center;
+            overflow: hidden;
+            background-color: black;
+        }
+
+        #test {
+            width: 100%;
+            height: 100%;
+            /* height:width ratio = 9/16 = .5625  */
+            max-height: 100%;
+            max-width: 100%;
+            /* 16/9 = 1.778 */
+            margin: auto;
+            position: relative;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        #player_div {
+            width: 100%;
+            height: 100%;
+            max-height: 70%;
+            max-width: 100%;
+            flex: 1 20 80%;
+            display: flex;
+            align-items: end;
+            background-color: #a0a0a0;
+        }
+
+        #player {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            position: relative;
+            bottom: 0px;
+        }
+
+       #grid_div {
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            max-width: 100%;
+            min-height: 0;
+            position: relative;
+            top: 0px;
+            /* object-fit: scale-down; */
+            flex: 1 1 auto
+        }
+
+
+        #grid {
+            height: auto;
+            vertical-align: middle;
+            object-fit: contain;
+            flex: 1 1 auto
+        }
+
+
+        #boxes {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        #toggleButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="/auzoneLogo.svg" alt="">Raivin</a>
+        </div>
+        <div class="navbar-center">
+            <span class="text-xl">Combined</span>
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                <!-- <li><a href="/">Link</a></li> -->
+                <li>
+                    <details>
+                        <summary>Visualizations</summary>
+                        <ul class="bg-base-100 rounded-t-none p-2">
+                            <li><a href="/gps">GPS</a></li>
+                            <li><a href="/imu">IMU</a></li>
+                            <li><a href="/mcap">MCAP</a></li>
+                            <li><a href="/grid">Occupancy Grid</a></li>
+                            <li><a href="/segmentation">Segmentation</a></li>
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </div>
+    </header>
+    <main id="container">
+        <div id="test">
+            <div id="player_div">
+                <canvas id="player"></canvas>
+            </div>
+            <div id="grid_div">
+                <canvas id="grid"></canvas>
+            </div>
+        </div>
+        <!-- <canvas id="boxes" width="1920" height="1080" class="boxes"></canvas> -->
+        <!-- <button id="toggleButton" class="btn">Hide Boxes</button> -->
+    </main>
+
+    <script type="module" src="./js/combined.js"></script>
+</body>
+
+</html>

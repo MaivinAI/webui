@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Data Visualization</title>
+    <link href="./css/styles.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+        }
+
+        main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        #map {
+            height: 100vh;
+            flex: 1;
+            z-index: 1;
+        }
+
+        #gps-data {
+            position: absolute;
+            z-index: 100;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .refresh-button {
+            margin-top: 0px;
+            padding: 5px 10px;
+            font-size: 14px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .refresh-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+
+<body>
+    <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="/auzoneLogo.svg"
+                    alt="">Raivin</a>
+        </div>
+        <div class="navbar-center">
+            <span class="text-xl">GPS</span>
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                <!-- <li><a href="/">Link</a></li> -->
+                <li>
+                    <details>
+                        <summary>Visualizations</summary>
+                        <ul class="bg-base-100 rounded-t-none p-2">
+                            <li><a href="/combined">Combined</a></li>
+                            <li><a href="/imu">IMU</a></li>
+                            <li><a href="/mcap">MCAP</a></li>
+                            <li><a href="/grid">Occupancy Grid</a></li>
+                            <li><a href="/segmentation">Segmentation</a></li>
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </div>
+    </header>
+    <main>
+        <div id="gps-data">
+            <div class="stats shadow">
+                <div id="timeout" class="stat hidden">
+                    <div class="stat-title text-error">Timeout</div>
+                    <div id="timeout-val" class="stat-desc text-error">Verify if GPS service is running</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Latitude</div>
+                    <div id="latitude" class="stat-value text-xl">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Longitude</div>
+                    <div id="longitude" class="stat-value text-xl">0</div>
+                </div>
+                <button class="refresh-button" onclick="location.reload()">Refresh</button>
+            </div>
+        </div>
+        <div id="map"></div>
+    </main>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script type="module">
+        import { CdrReader } from './js/Cdr.js';
+
+        let map, marker;
+        let timeoutId;
+
+        function initMap() {
+            map = L.map('map');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+
+            marker = L.marker([51.505, -0.09]).addTo(map);
+            let lastGPS = JSON.parse(localStorage.getItem('lastGPS'));
+            if (lastGPS) {
+                map.setView([lastGPS.latitude, lastGPS.longitude], 13);
+                updateGPS(lastGPS.latitude, lastGPS.longitude);
+            } else {
+                map.setView([51.505, -0.09], 13);
+            }
+        }
+
+        function updateGPS(latitude, longitude) {
+            let latLng = new L.LatLng(latitude, longitude);
+            marker.setLatLng(latLng);
+
+            document.getElementById('latitude').innerText = latitude.toFixed(6);
+            document.getElementById('longitude').innerText = longitude.toFixed(6);
+
+            resetTimeout();
+        }
+
+        function resetTimeout() {
+            clearTimeout(timeoutId);
+            document.getElementById('timeout-val').innerText = '';
+            document.getElementById('timeout').classList.add('hidden')
+            timeoutId = setTimeout(() => {
+                document.getElementById('timeout-val').innerText = 'Verify if GPS service is running';
+                document.getElementById('timeout').classList.remove('hidden')
+            }, 15000);
+        }
+
+        initMap();
+
+        let socket = new WebSocket('/rt/gps/');
+
+        socket.onmessage = async function (event) {
+            const arrayBuffer = await event.data.arrayBuffer();
+
+            const dataView = new DataView(arrayBuffer);
+            const reader = new CdrReader(dataView); // Specify big-endian here
+
+            try {
+                const header_stamp_sec = reader.uint32(); // Read uint32 header.stamp.sec
+                const header_stamp_nsec = reader.uint32(); // Read uint32 header.stamp.nsec
+                const header_frame_id = reader.string(); // Read uint32 header.frame_id
+
+                const latitude = reader.float64(); // Read latitude
+                const longitude = reader.float64(); // Read longitude
+                const altitude = reader.float64(); // Read altitude
+
+                if (!isNaN(latitude) && !isNaN(longitude)) {
+                    updateGPS(latitude, longitude);
+                    localStorage.setItem('lastGPS', JSON.stringify({ latitude, longitude }));
+                } else {
+                    console.error('Invalid latitude, longitude, or altitude:', { latitude, longitude });
+                }
+            } catch (error) {
+                console.error("Failed to deserialize GPS data:", error);
+            }
+        };
+
+        socket.onerror = function (error) {
+            console.error(`WebSocket error: ${error}`);
+        };
+
+        socket.onclose = function (event) {
+            console.log('WebSocket connection closed');
+        };
+    </script>
+</body>
+
+</html>

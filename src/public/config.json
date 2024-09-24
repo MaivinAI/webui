@@ -1,0 +1,34 @@
+{
+    "__comments0": "The bin widths must cleanly divide the bin limits",
+    "ANGLE_BIN_WIDTH": 10,
+    "ANGLE_BIN_LIMITS": [
+        -70,
+        70
+    ],
+    "RANGE_BIN_WIDTH": 0.5,
+    "RANGE_BIN_LIMITS": [
+        0,
+        20
+    ],
+
+    "WINDOW_LENGTH": 18,
+    "BIN_THRESHOLD": 3,
+
+    "__comments1": "If set to true, the application will use boxes instead, otherwise it uses masks.",
+    "USE_BOX": false,
+
+    "OCCLUSION_FILTER_LIMIT_DEGREES": 20,
+
+    "__comments2": "Possible options are `disabled`, `power`, `rcs`, speed`, or `class`",
+    "GRID_DRAW_PCD": "rcs",
+    "COMBINED_GRID_DRAW_PCD": "disabled",
+    "COMBINED_CAMERA_DRAW_PCD": "disabled",
+    "COMBINED_CAMERA_PCD_LABEL": false,
+
+    "MASK_TOPIC": "/rt/detect/mask/",
+    "DETECT_TOPIC": "/rt/detect/boxes2d/",
+    "PCD_TOPIC": "/rt/radar/targets/",
+    "H264_TOPIC": "/rt/camera/h264/"
+
+
+}

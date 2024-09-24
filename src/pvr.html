@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maivin Recorder</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .form-container {
+            flex: 1;
+            max-width: 600px;
+            margin-right: 20px;
+        }
+
+        .form-container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        fieldset {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        label {
+            display: inline-block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        legend {
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="number"],
+        select {
+            margin-bottom: 12px;
+            padding: 8px;
+            width: calc(100% - 16px);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .toggle-container {
+            position: absolute;
+            top: 390px;
+            right: 180px;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-container label {
+            margin-right: 10px;
+            color: #555;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .2s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        .slider.round {
+            border-radius: 20px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        .button-group {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .button-group button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        #start-button {
+            background-color: #4CAF50;
+            color: white;
+            margin-right: 10px;
+        }
+
+        #stop-button {
+            background-color: #FF6347;
+            color: white;
+        }
+
+        .preview-container {
+            width: 45%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 400px;
+        }
+
+        #video-preview {
+            width: 100%;
+            height: 360px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .recording-indicator {
+            display: none;
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .form-container {
+                margin-right: 0;
+                margin-bottom: 20px;
+                max-width: 100%;
+            }
+
+            .preview-container {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h1>Maivin Recorder</h1>
+            <div id="recording-indicator" class="recording-indicator">Recording in Progress</div>
+            <form id="recorder-form">
+                <fieldset>
+                    <legend>Topics</legend>
+                    <input type="checkbox" name="topics" value="rt/imu"> <label>IMU</label><br>
+                    <input type="checkbox" name="topics" value="rt/camera/dma"> <label>DMA</label><br>
+                    <input type="checkbox" name="topics" value="rt/camera/jpeg"> <label>JPEG</label><br>
+                    <input type="checkbox" name="topics" value="rt/camera/h264"> <label>H264</label><br>
+                    <input type="checkbox" name="topics" value="rt/detect/boxes2d"> <label>2D-BOXES</label><br>
+                    <input type="checkbox" name="topics" value="rt/detect/visualization">
+                    <label>2D-BOXES-VISUAL</label><br>
+                    <input type="checkbox" name="topics" value="rt/detect/info"> <label>DETECT-INFO</label><br>
+                    <input type="checkbox" name="topics" value="rt/gps"> <label>GPS</label><br>
+                    <input type="checkbox" name="topics" value="rt/camera/info"> <label>CAMERA-INFO</label><br>
+                    <input type="checkbox" name="topics" value="rt/radar/cube"> <label>RADAR-CUBE</label><br>
+                    <input type="checkbox" name="topics" value="rt/radar/targets"> <label>RADAR-POINTCLOUD</label><br>
+                    <br>
+
+                    <input type="checkbox" id="all-topics" name="all_topics">
+                    <label for="all-topics">All Topics</label>
+                </fieldset>
+                <br>
+
+                <fieldset>
+                    <legend>Settings</legend>
+                    <label for="duration">Duration (seconds):</label>
+                    <input type="number" id="duration" name="duration"><br><br>
+
+                    <label for="timeout">Timeout (seconds):</label>
+                    <input type="number" id="timeout" name="timeout" value="30"><br><br>
+
+                    <label for="compression">Compression:</label>
+                    <select id="compression" name="compression">
+                        <option value="none">None</option>
+                        <option value="lz4">LZ4</option>
+                        <option value="zstd">Zstd</option>
+                    </select>
+                </fieldset>
+                <br>
+
+                <div class="toggle-container">
+                    <label for="preview-toggle">Toggle Video Preview</label>
+                    <label class="switch">
+                        <input type="checkbox" id="preview-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <br>
+
+                <div class="button-group">
+                    <button type="button" id="start-button">Start</button>
+                    <button type="button" id="stop-button">Stop</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="preview-container">
+            <iframe id="video-preview" frameborder="0"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const videoPreview = document.getElementById('video-preview');
+        const previewToggle = document.getElementById('preview-toggle');
+        const allTopicsCheckbox = document.getElementById('all-topics');
+        const topicCheckboxes = document.querySelectorAll('input[name="topics"]');
+        const recordingIndicator = document.getElementById('recording-indicator');
+
+        function updateTopicCheckboxes() {
+            if (allTopicsCheckbox.checked) {
+                topicCheckboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            } else {
+                topicCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            }
+        }
+
+        allTopicsCheckbox.addEventListener('change', () => {
+            updateTopicCheckboxes();
+        });
+
+        topicCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                if (!checkbox.checked) {
+                    allTopicsCheckbox.checked = false;
+                }
+            });
+        });
+
+        previewToggle.addEventListener('change', () => {
+            if (previewToggle.checked) {
+                videoPreview.style.display = 'block';
+                videoPreview.src = 'h264.html';
+            } else {
+                videoPreview.style.display = 'none';
+                videoPreview.removeAttribute('src');
+            }
+        });
+
+        function startRecording() {
+            recordingIndicator.style.display = 'block';
+        }
+
+        function stopRecording() {
+            recordingIndicator.style.display = 'none';
+        }
+
+        document.getElementById('start-button').addEventListener('click', () => {
+            const form = document.getElementById('recorder-form');
+            const formData = new FormData(form);
+
+            const topics = [];
+            formData.getAll('topics').forEach(topic => {
+                topics.push(topic);
+            });
+
+            const params = {
+                topics: topics.join(' '),
+                all_topics: formData.get('all_topics') === 'on',
+                duration: formData.get('duration') ? parseInt(formData.get('duration')) : null,
+                timeout: parseInt(formData.get('timeout')),
+                compression: formData.get('compression')
+            };
+
+            console.log('Sending parameters:', params);
+
+            fetch('/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(params)
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Recorder started');
+                    startRecording();
+                } else {
+                    console.error('Failed to start recorder');
+                    response.text().then(text => console.error(text));
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        document.getElementById('stop-button').addEventListener('click', () => {
+            fetch('/stop', { method: 'POST' })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Recorder stopped');
+                        stopRecording();
+                    } else {
+                        console.error('Failed to stop recorder');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+</body>
+
+</html>

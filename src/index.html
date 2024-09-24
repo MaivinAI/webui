@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Selector</title>
+    <link href="./css/styles.css" rel="stylesheet">
+    <style>
+        main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background: url('circuit-board.svg'), url('stacked-waves.svg') no-repeat center center / cover;
+        }
+
+        .content {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            max-height: 100%;
+            overflow: auto;
+        }
+
+        h1 {
+            margin-bottom: 40px;
+            font-size: 36px;
+            color: hsl(0 0% 33% / 1);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.125);
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(var(--color-primary-rgb), 0.325);
+        }
+
+        .card h2 {
+            font-size: 24px;
+            margin: 0;
+            color: var(--color-primary-text);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+        }
+
+        .card p {
+            font-size: 16px;
+            margin: 10px 0 0;
+            color: var(--color-light-gray-text);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="/auzoneLogo.svg" alt="" width="200" height="100">Raivin</a>
+        </div>
+        <div class="navbar-center">
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                <li>
+                    <details>
+                        <summary>Visualizations</summary>
+                        <ul class="bg-base-100 rounded-t-none p-2">
+                            <li><a href="/gps">GPS</a></li>
+                            <li><a href="/imu">IMU</a></li>
+                            <li><a href="/mcap">MCAP</a></li>
+                            <li><a href="/h264">Segmentation</a></li>
+                            <li><a href="/grid">Occupancy Grid</a></li>
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </div>
+    </header> -->
+    <main>
+        <div class="content">
+            <h1>Select Visualization</h1>
+            <br/>
+            <div class="card-container">
+                <a href="/gps" class="card">
+                    <h2>GPS</h2>
+                    <p>Explore Location</p>
+                </a>
+                <a href="/imu" class="card">
+                    <h2>IMU</h2>
+                    <p>IMU Visualization</p>
+                </a>
+                <a href="/mcap" class="card">
+                    <h2>MCAP</h2>
+                    <p>MCAP Recorder</p>
+                </a>
+                <a href="/combined" class="card">
+                    <h2>Segmentation View</h2>
+                    <p>Segmentation<br/>+<br/>Occupancy Grid</p>
+                </a>
+                <a href="/grid" class="card">
+                    <h2>Occupancy Grid</h2>
+                    <p>Occupancy Grid<br/>+<br/>Radar Point Cloud</p>
+                </a>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raivin UI</title>
+    <link href="./css/styles.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+        }
+        main {
+            display: flex;
+            height: 100%;
+        }
+        #info {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            text-align: left;
+            z-index: 100;
+            display:block;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        #legend {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 150px;
+            height: fit-content;
+            position: relative;
+            background-color: #888888AA;
+        }
+    </style>
+
+</head>
+
+<body>
+    <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="/auzoneLogo.svg" alt="">Raivin</a>
+        </div>
+        <div class="navbar-center">
+            <span class="text-xl">Raivin</span>
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                <!-- <li><a href="/">Link</a></li> -->
+                <li>
+                    <details>
+                        <summary>Visualizations</summary>
+                        <ul class="bg-base-100 rounded-t-none p-2">
+                            <li><a href="/combined">Combined</a></li>
+                            <li><a href="/gps">GPS</a></li>
+                            <li><a href="/imu">IMU</a></li>
+                            <li><a href="/jpeg">JPEG</a></li>
+                            <li><a href="/mcap">MCAP</a></li>
+                            <li><a href="/raivin" class="active">Raivin UI Visualization</a></li>
+                            <li><a href="/grid">Radar Grid</a></li>
+                            <li><a href="/segmentation">Segmentation</a></li>
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </div>
+    </header>
+    <main>
+
+    </main>
+    <script type="module" src="./js/raivin.js"></script>
+    <!-- <div id="info">3D Composite</div> -->
+</body>
+
+</html>

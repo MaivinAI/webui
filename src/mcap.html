@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List MCAP Files</title>
+    <link href="./css/styles.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        h2 {
+            color: #343a40;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .details-button,
+        .delete-button,
+        .upload-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-right: 5px;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+        }
+
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        .details-button:hover {
+            background-color: #218838;
+            transform: scale(1.05);
+        }
+
+
+
+        .upload-button {
+            background-color: #0028f2;
+        }
+
+        .upload-button:hover {
+            background-color: #0028d2;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .details-grid div {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .details-grid div strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #343a40;
+        }
+
+        #directoryPath {
+            margin-top: 10px;
+            font-size: 1.2rem;
+            color: #343a40;
+        }
+
+        .button-group {
+            margin-bottom: 20px;
+        }
+
+        #start-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        #stop-button {
+            background-color: #FF6347;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .preview-container {
+            width: 45%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        #video-preview {
+            width: 100%;
+            height: 360px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .recording-indicator {
+            display: none;
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="/auzoneLogo.svg"
+                    alt="">Raivin</a>
+        </div>
+        <div class="navbar-center">
+            <span class="text-xl">MCAP</span>
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                <!-- <li><a href="/">Link</a></li> -->
+                <li>
+                    <details>
+                        <summary>Visualizations</summary>
+                        <ul class="bg-base-100 rounded-t-none p-2">
+                            <li><a href="/combined">Combined</a></li>
+                            <li><a href="/gps">GPS</a></li>
+                            <li><a href="/imu">IMU</a></li>
+                            <li><a href="/grid">Occupancy Grid</a></li>
+                            <li><a href="/segmentation">Segmentation</a></li>
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </div>
+    </header>
+    <main>
+        <h2>List MCAP Files</h2>
+        <div id="directoryPath"></div>
+
+        <div class="button-group">
+            <button id="start-button">Start Recording</button>
+            <button id="stop-button">Stop Recording</button>
+        </div>
+
+        <table id="fileTable">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Size (MB)</th>
+                    <th>Created</th>
+                    <th>Average Video Length (s)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="recording-indicator"></div>
+    </main>
+
+    <!-- The Modal -->
+    <dialog id="myModal" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
+            <h3 class="text-lg font-bold">Details</h3>
+            <div id="modalDetails" class="details-grid"></div>
+        </div>
+    </dialog>
+
+    <script>
+        let socket = null;
+        let pollingInterval = 5000;
+
+        function connectWebSocket() {
+            socket = new WebSocket('/mcap/');
+
+            socket.onopen = () => {
+                console.log('WebSocket connection established');
+                listMcapFiles();
+            };
+
+            socket.onmessage = (event) => {
+                const fileTableBody = document.querySelector('#fileTable tbody');
+                const responseText = event.data;
+
+                fileTableBody.innerHTML = '';
+
+                checkRecordingStatus()
+
+                try {
+                    const data = JSON.parse(responseText);
+                    console.log(data);
+
+                    if (data.error) {
+                        document.getElementById('directoryPath').textContent = `Directory: ${data.dir_name}`;
+                        console.error('Error:', data.error);
+                        const errorRow = document.createElement('tr');
+                        const errorCell = document.createElement('td');
+                        errorCell.colSpan = 5;
+                        errorCell.textContent = data.error;
+                        errorRow.appendChild(errorCell);
+                        fileTableBody.appendChild(errorRow);
+                        return;
+                    }
+
+                    if (data.message) {
+                        document.getElementById('directoryPath').textContent = `Directory: ${data.dir_name}`;
+                        const noFilesRow = document.createElement('tr');
+                        const noFilesCell = document.createElement('td');
+                        noFilesCell.colSpan = 5;
+                        noFilesCell.textContent = data.message;
+                        noFilesRow.appendChild(noFilesCell);
+                        fileTableBody.appendChild(noFilesRow);
+                    } else {
+                        document.getElementById('directoryPath').textContent = `topic: ${data.topics}`;
+                        document.getElementById('directoryPath').textContent = `Directory: ${data.dir_name}`;
+
+                        const files = data.files || [];
+                        files.forEach((file) => {
+                            const row = document.createElement('tr');
+                            const fileNameCell = document.createElement('td');
+                            const fileSizeCell = document.createElement('td');
+                            const fileCreatedCell = document.createElement('td');
+                            const avgLengthCell = document.createElement('td');
+                            const actionsCell = document.createElement('td');
+
+                            fileNameCell.textContent = file.name;
+                            fileSizeCell.textContent = file.size;
+                            fileCreatedCell.textContent = file.created;
+                            avgLengthCell.textContent = file.average_video_length.toFixed(2);
+
+                            const detailsButton = document.createElement('button');
+                            detailsButton.textContent = 'Show Details';
+                            detailsButton.className = 'details-button';
+                            detailsButton.onclick = () => showModal(file.topics);
+
+                            const deleteButton = document.createElement('button');
+                            deleteButton.textContent = 'Delete';
+                            deleteButton.className = 'delete-button';
+                            deleteButton.onclick = () => deleteFile(file.name, data.dir_name);
+
+                            const uploadButton = document.createElement('button');
+                            uploadButton.textContent = 'Upload';
+                            uploadButton.className = 'upload-button';
+                            uploadButton.onclick = () => getUploadCredentials(file.name, data.dir_name);
+
+                            actionsCell.appendChild(detailsButton);
+                            actionsCell.appendChild(deleteButton);
+                            actionsCell.appendChild(uploadButton);
+
+                            row.appendChild(fileNameCell);
+                            row.appendChild(fileSizeCell);
+                            row.appendChild(fileCreatedCell);
+                            row.appendChild(avgLengthCell);
+                            row.appendChild(actionsCell);
+                            fileTableBody.appendChild(row);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error parsing JSON:', error);
+                    console.error('Response text:', responseText);
+                    const errorRow = document.createElement('tr');
+                    const errorCell = document.createElement('td');
+                    errorCell.colSpan = 5;
+                    errorCell.textContent = 'Error parsing server response';
+                    errorRow.appendChild(errorCell);
+                    fileTableBody.appendChild(errorRow);
+                }
+            }; socket.onclose = () => {
+                console.log('WebSocket connection closed');
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function listMcapFiles() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ action: 'list_files' }));
+            }
+        }
+
+        function showModal(topics) {
+            const modal = document.getElementById('myModal');
+            const modalDetails = document.getElementById('modalDetails');
+
+            modalDetails.innerHTML = '';
+
+            Object.entries(topics).forEach(([topic, details]) => {
+                const detailDiv = document.createElement('div');
+                detailDiv.innerHTML = `<strong>${topic}</strong><br>FPS: ${details.average_fps.toFixed(2)}<br>Frames: ${details.message_count}`;
+                modalDetails.appendChild(detailDiv);
+            });
+
+            myModal.showModal();
+        }
+
+        function deleteFile(fileName, directory) {
+            const confirmDelete = confirm(`Are you sure you want to delete: ${fileName}?`);
+            const params = {
+                directory: directory,
+                file: fileName
+            }
+
+            console.log(params)
+            if (confirmDelete) {
+                fetch('/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(params)
+                }).then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(`HTTP error ${response.status}: ${text}`);
+                        });
+                    }
+                    return response.text();
+                }).then(text => {
+                    console.log('File deleted:', text);
+                    startPolling()
+                    listMcapFiles();
+                }).catch(error => {
+                    console.error('Error deleting file:', error);
+                    alert(`Error deleting file: ${error.message}`);
+                });
+            }
+        }
+
+        function getUploadCredentials(fileName, directoryName) {
+            fetch('/get-upload-credentials', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.url && data.jwt, data.topic) {
+                        console.log('Credentials fetched successfully:', data);
+                        alert(`Credentials fetched successfully: Starting Upload`);
+                        uploadFile(directoryName, fileName, data.url, data.jwt, data.topic);
+                    } else {
+                        const url = prompt("Enter the URL to upload the file:");
+                        const jwt = prompt("Enter the JWT token:");
+                        const topic = prompt("Enter the primary topic:");
+                        if (!url || !jwt || !topic) {
+                            alert('Upload cancelled: URL and JWT token are required.');
+                            return;
+                        }
+                        uploadFile(directoryName, fileName, url, jwt, topic);
+                    }
+                })
+                .catch(error => {
+                    const url = prompt("Enter the URL to upload the file:");
+                    const jwt = prompt("Enter the JWT token:");
+                    const topic = prompt("Enter the primary topic:");
+                    if (!url || !jwt || !topic) {
+                        alert('Upload cancelled: URL and JWT token are required.');
+                        return;
+                    }
+                    uploadFile(directoryName, fileName, url, jwt);
+                    alert(`Credentials fetched successfully: Starting Upload`);
+                });
+        }
+
+
+        function uploadFile(directoryName, fileName, url, jwt, topic) {
+            const params = {
+                directory: directoryName,
+                file: fileName,
+                url: url,
+                jwt: jwt,
+                topic: topic,
+            };
+
+            fetch('/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(params)
+            })
+                .then(response => {
+                    return response.json().then(data => {
+                        alert(data.message || 'No message provided from the server.');
+                    });
+                })
+                .catch(error => {
+                    console.error('Upload error:', error);
+                    alert('An error occurred during the upload process.');
+                });
+        }
+
+
+        document.getElementById('start-button').addEventListener('click', startRecording);
+        document.getElementById('stop-button').addEventListener('click', stopRecording);
+
+        function checkRecordingStatus() {
+            fetch('/recorder-status')
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(`HTTP error ${response.status}: ${text}`);
+                        });
+                    }
+                    return response.text();
+                })
+                .then(statusText => {
+                    if (statusText.trim() === "Recorder is running") {
+                        console.log('Recording is currently in progress.');
+                        const recordingIndicator = document.querySelector('.recording-indicator');
+                        if (recordingIndicator) {
+                            recordingIndicator.textContent = 'Recording...';
+                            recordingIndicator.style.display = 'block';
+                        } else {
+                            console.error('Recording indicator element not found.');
+                        }
+                    } else {
+                        console.log('Recorder is not running.');
+                        const recordingIndicator = document.querySelector('.recording-indicator');
+                        if (recordingIndicator) {
+                            recordingIndicator.textContent = 'Not recording';
+                            recordingIndicator.style.display = 'block';
+                        } else {
+                            console.error('Recording indicator element not found.');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking recording status:', error);
+                });
+        }
+
+
+        function startRecording() {
+            fetch('/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            }).then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP error ${response.status}: ${text}`);
+                    });
+                }
+                return response.text();
+            }).then(text => {
+                console.log('Recording started:', text);
+                startPolling()
+                const recordingIndicator = document.querySelector('.recording-indicator');
+                if (recordingIndicator) {
+                    recordingIndicator.textContent = 'Recording...';
+                    recordingIndicator.style.display = 'block';
+                } else {
+                    console.error('Recording indicator element not found.');
+                }
+            }).catch(error => {
+                console.error('Error starting recording:', error);
+                alert(`Error starting recording: ${error.message}`);
+            });
+        }
+
+        function stopRecording() {
+            fetch('/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            }).then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP error ${response.status}: ${text}`);
+                    });
+                }
+                return response.text();
+            }).then(text => {
+                console.log('Recording stopped:', text);
+                startPolling()
+                const recordingIndicator = document.querySelector('.recording-indicator');
+                if (recordingIndicator) {
+                    recordingIndicator.textContent = '';
+                    recordingIndicator.style.display = 'none';
+                } else {
+                    console.error('Recording indicator element not found.');
+                }
+            }).catch(error => {
+                console.error('Error stopping recording:', error);
+                alert(`Error stopping recording: ${error.message}`);
+            });
+        }
+
+        function startPolling() {
+            setInterval(() => {
+                listMcapFiles();
+                checkRecordingStatus();
+            }, pollingInterval);
+        }
+
+        connectWebSocket();
+    </script>
+</body>
+
+</html>

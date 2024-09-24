@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JPEG Viewer</title>
+    <link href="./css/styles.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+        }
+
+        main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="/auzoneLogo.svg" alt="">Raivin</a>
+        </div>
+        <div class="navbar-center">
+            <span class="text-xl">JPEG</span>
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                <!-- <li><a href="/">Link</a></li> -->
+                <li>
+                    <details>
+                        <summary>Visualizations</summary>
+                        <ul class="bg-base-100 rounded-t-none p-2">
+                            <li><a href="/gps">GPS</a></li>
+                            <li><a href="/imu">IMU</a></li>
+                            <li><a href="/jpeg" class="active">JPEG</a></li>
+                            <li><a href="/combined">Combined</a></li>
+                            <li><a href="/mcap">MCAP</a></li>
+                            <li><a href="/raivin">Raivin UI Visualization</a></li>
+                            <li><a href="/grid">Radar Grid</a></li>
+                            <li><a href="/segmentation">Segmentation</a></li>
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </div>
+    </header>
+    <!-- <h1>JPEG Viewer</h1> -->
+    <main>
+        <p id="timeout" style="color: red;"></p>
+        <div id="image-container">
+            <img id="jpeg-image" src="" alt="JPEG Image">
+        </div>
+    </main>
+
+    <!-- Import CdrReader for deserialization -->
+    <script type="module">
+        import { CdrReader } from './js/Cdr.js';
+
+        const imageElement = document.getElementById('jpeg-image');
+        let timeoutId;
+
+        function resetTimeout() {
+            clearTimeout(timeoutId);
+            document.getElementById('timeout').innerText = '';
+            timeoutId = setTimeout(() => {
+                document.getElementById('timeout').innerText = 'Timeout: Verify if camera service is running';
+            }, 15000);
+        }
+
+        let socket = new WebSocket('/rt/camera/jpeg');
+
+        socket.binaryType = 'arraybuffer'; // Receive data as ArrayBuffer
+
+        socket.onopen = function (event) {
+            console.log('WebSocket connection opened');
+            resetTimeout();
+        };
+
+        socket.onmessage = function (event) {
+            const arrayBuffer = event.data;
+            const dataView = new DataView(arrayBuffer);
+            const reader = new CdrReader(dataView);
+
+            try {
+                const header_stamp_sec = reader.uint32(); // Read header.stamp.sec
+                const header_stamp_nsec = reader.uint32(); // Read header.stamp.nsec
+                const header_frame_id = reader.string(); // Read header.frame_id
+                const format = reader.string(); // Read header.format
+
+                const data_length = reader.uint32(); // Read data length
+                const image_data = arrayBuffer.slice(reader.offset, reader.offset + data_length); // Read image data
+                const blob = new Blob([image_data], { type: 'image/jpeg' });
+                const imageUrl = URL.createObjectURL(blob);
+                imageElement.src = imageUrl;
+
+                resetTimeout();
+            } catch (error) {
+                console.error("Failed to deserialize image data:", error);
+            }
+        };
+
+        socket.onerror = function (error) {
+            console.error(`WebSocket error: ${error}`);
+            document.getElementById('timeout').innerText = 'Error: WebSocket connection failed';
+        };
+
+        socket.onclose = function (event) {
+            console.log('WebSocket connection closed');
+            document.getElementById('timeout').innerText = 'WebSocket connection closed';
+        };
+
+        // Initialize timeout when the script loads
+        resetTimeout();
+    </script>
+</body>
+
+</html>

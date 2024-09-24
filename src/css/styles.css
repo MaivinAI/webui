@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  /* overflow: hidden !important; */
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  margin: 0px;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body, body * {
+  font-family: "Open Sans" !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+main {
+  position: relative;
+  background: #f0f2f5;
+  min-height: 0;
+  z-index: 1;
+}
+
+header {
+  background-color: var(--color-primary) !important;
+  z-index: 2;
+}
+
+header .navbar-start a,
+header .navbar-center span,
+header .navbar-end summary {
+  color: var(--color-white) !important;
+}
+
+.header__logo {
+  height: 50px;
+  width: 68px;
+}
+
+:root {
+  --color-primary: #250E81;
+  --color-primary-rgb: 37, 14, 129;
+  --color-primary-text:#6B46C1;
+  --color-white: #f6f7f8;
+  --color-gray-text: hsl(201,23%,34%);
+  --color-light-gray-text: hsl(203,15%,47%);
+}
+
+:root:has(:is(.modal-open, .modal:target, .modal-toggle:checked + .modal, .modal[open])) {
+  scrollbar-gutter: auto;
+}
