@@ -74,7 +74,7 @@ export default function classify_points(points, mask_tex) {
         // pos.applyMatrix3(coord_cvt)
         // console.log(pos)
 
-        let i = Math.round(pos.y)
+        let i = mask_height - Math.round(pos.y)
         let j = mask_width - Math.round(pos.x)
 
         point_cpy.x_2d = j
