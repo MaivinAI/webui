@@ -1,18 +1,38 @@
-Recommended reading: https://threejs.org/docs/#manual/en/introduction/Installation
+# Maivin Web User Interface
 
-Development should occur in the `raivin-ui` folder.
+This project hosts the Maivin Web User Interface code.  This is the front-end
+HTML and Javascript which runs in the browser.  The code can be customized and
+re-deployed to a Maivin or Raivin platform.
+
+# Deployment
+
+The HTML pages are found under `src` and the javascript is under `src/js`. These are static 
+HTML files and which can be copied to the target Maivin platform. The default webui is found 
+on the Maivin under `/usr/share/webui` which is read-only and cannot be modified, as it is managed
+by the Torizon for Maivin OS image.  The customized HTML folder should instead
+be copied to either the default home as `/home/torizon/webui` or into
+`/usr/local/share/webui` which is writeable (requires sudo).
+
+Once deployed the webui configuration needs to be updated to point to the new
+location.  Edit the configuration file `/etc/default/webui` and modify the
+`DOCROOT` variable to point to the new location.
+
+Once you've modified the `/etc/default/webui` configuration you must restart the
+webui server with the following command.  Then simply open and refresh the
+browser window with the Maivin WebUI to enact the changes.
 
 ```
-npm install --save three
-npm i @foxglove/cdr
-npm install @oneidentity/zstd-js
+sudo systemctl restart webui
 ```
 
-Run `npx vite` to develop locally. You may need to change the dev_hostname or dev_port
+NOTE: The `webui` folder is renamed from HTML folder but can be any name, just make
+sure the full path of the folder which holds the `index.html` file is used for
+DOCROOT.
 
-Maivin UI websocket server must be running on a device for streaming.
+# License
 
-To deploy:
-run "npm run build"
-once build is complete scp the dist folder on to the board 
-then to run the maivin-ui "sudo ./maivin-ui -d dist/"
+This project is licensed under the AGPL-3.0 or under the terms of the DeepView AI Middleware Commercial License.
+
+# Support
+
+Commercial Support is provided by Au-Zone Technologies through the [DeepView Support](https://support.deepviewml.com) site.
