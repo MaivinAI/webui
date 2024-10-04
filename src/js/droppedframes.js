@@ -1,4 +1,4 @@
-import { CdrReader } from '@foxglove/cdr';
+import { CdrReader } from './Cdr.js';
 
 function resetTimeout() {
     clearTimeout(timeoutId);
@@ -15,9 +15,9 @@ export default async function droppedframes(socketUrl, parent) {
     ctx.frames_dropped = 0
     const timeout = 5e3
     const p = document.createElement("p")
- 
 
- 
+
+
     p.style = "color: red;"
     p.style.cssText = "position: absolute; top: 0px; z-index: 10000; color:red; background-color: rgba(200,200,200,0.5);"
     p.innerText = '';
@@ -25,7 +25,7 @@ export default async function droppedframes(socketUrl, parent) {
 
     function update() {
         if (ctx.frames_dropped > FRAME_DROP_LIMIT) {
-            p.innerText = `Dropped more than ${FRAME_DROP_LIMIT} messages in the last ${timeout/1000}s`
+            p.innerText = `Dropped more than ${FRAME_DROP_LIMIT} messages in the last ${timeout / 1000}s`
         } else {
             p.innerText = ''
         }
@@ -65,7 +65,7 @@ export default async function droppedframes(socketUrl, parent) {
         };
 
     }, timeout)
-    
+
 
     socket.onerror = function (error) {
         console.error(`WebSocket ${socketUrl} error: ${error}`);

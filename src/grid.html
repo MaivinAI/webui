@@ -6,24 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Raivin UI</title>
     <link href="./css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.7.3/dist/full.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.6/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             margin: 0;
             display: flex;
         }
+
         main {
             display: flex;
             height: 100%;
         }
+
         #info {
             position: absolute;
             left: 10px;
             top: 10px;
             text-align: left;
             z-index: 100;
-            display:block;
+            display: block;
             font-family: Verdana, Geneva, Tahoma, sans-serif;
         }
+
         #legend {
             display: flex;
             flex-direction: column;
@@ -41,7 +47,8 @@
 <body>
     <header class="navbar bg-base-100">
         <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="/auzoneLogo.svg" alt="">Raivin</a>
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="assets/auzoneLogo.svg"
+                    alt="">Raivin</a>
         </div>
         <div class="navbar-center">
             <span class="text-xl">Raivin</span>
@@ -58,6 +65,7 @@
                             <li><a href="/imu">IMU</a></li>
                             <li><a href="/mcap">MCAP</a></li>
                             <li><a href="/segmentation">Segmentation</a></li>
+                            <li><a href="/settings">Setting</a></li>
                         </ul>
                     </details>
                 </li>

@@ -1,10 +1,10 @@
-import * as THREE from 'three'
+import * as THREE from './three.js'
 import ProjectedMaterial from './ProjectedMaterial'
 import ProjectedMask from './ProjectedMask'
 import segstream, { get_shape } from './mask'
 import h264Stream from './stream'
 import { ImuStream, quaternionToEuler } from './imu'
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { OrbitControls } from './OrbitControls.js'
 import Stats from 'three/addons/libs/stats.module.js'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 const PI = 3.1415;
@@ -15,7 +15,7 @@ let material_mask;
 const jsonloader = new THREE.FileLoader();
 jsonloader.load(
     // resource URL
-    'config.json',
+    'assets/config.json',
     function (data) {
         const config = JSON.parse(data)
         console.log(config)
@@ -267,13 +267,13 @@ function animate() {
         cylinder.instanceMatrix.needsUpdate = true
         cylinder.computeBoundingSphere()
     })
-    
+
     camera_proj.needsUpdate = true
     // cube.rotation.x += 0.01;
     // cube.rotation.y += 0.01;
     // camera.position.y += 0.01
     // gridHelper.rotation.x += 0.01;
-    
+
     if (texture_camera) {
         texture_camera.needsUpdate = true;
     }

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maivin Detection Configuration</title>
+    <link href="../css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.7.3/dist/full.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.6/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+
+        header {
+            background-color: #007bff;
+            color: #060606;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background-color: #ffffff;
+            overflow-y: auto;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            overflow-y: auto;
+            max-height: 90vh;
+            margin-top: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .comment {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="../assets/auzoneLogo.svg"
+                    alt="">Raivin</a>
+        </div>
+        <div class="navbar-center">
+            <span class="text-xl">MCAP</span>
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                <li>
+                    <details>
+                        <summary>Visualizations</summary>
+                        <ul class="bg-base-100 rounded-t-none p-2">
+                            <li><a href="/combined">Combined</a></li>
+                            <li><a href="/gps">GPS</a></li>
+                            <li><a href="/imu">IMU</a></li>
+                            <li><a href="/mcap">MCAP</a></li>
+                            <li><a href="/segmentation">Segmentation</a></li>
+                            <li><a href="/settings">Setting</a></li>
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <h2>Detect System Configuration</h2>
+
+            <div class="comment">
+                Configure the settings for the detection system.
+            </div>
+
+            <div class="form-group">
+                <label for="model">Model Path:</label>
+                <input type="text" id="model" name="model" placeholder="/usr/share/detect/peopledetect.rtm">
+            </div>
+
+            <div class="form-group">
+                <label for="visualization">Enable Visualization:</label>
+                <select id="visualization" name="visualization">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="labels">Labels:</label>
+                <select id="labels" name="labels">
+                    <option value="index">Index</option>
+                    <option value="score">Score</option>
+                    <option value="label">Label</option>
+                    <option value="label-score">Label-Score</option>
+                    <option value="track">Track</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="threshold">Score Threshold:</label>
+                <input type="text" id="threshold" name="threshold" placeholder="0.7">
+            </div>
+
+            <div class="form-group">
+                <label for="iou">Detection IOU:</label>
+                <input type="text" id="iou" name="iou" placeholder="0.45">
+            </div>
+
+            <div class="form-group">
+                <label for="maxBoxes">Max Boxes:</label>
+                <input type="text" id="maxBoxes" name="maxBoxes" placeholder="50">
+            </div>
+
+            <div class="form-group">
+                <label for="labelOffset">Label Offset:</label>
+                <input type="text" id="labelOffset" name="labelOffset" placeholder="0">
+            </div>
+
+            <div class="form-group">
+                <label for="engine">Computation Engine:</label>
+                <select id="engine" name="engine">
+                    <option value="NPU">NPU</option>
+                    <option value="CPU">CPU</option>
+                    <option value="GPU">GPU</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="track">Enable Tracking:</label>
+                <input type="checkbox" id="track" name="track">
+                <label for="track">Enabled</label>
+            </div>
+
+            <div class="form-group">
+                <label for="trackExtraLifespan">Track Extra Lifespan (seconds):</label>
+                <input type="text" id="trackExtraLifespan" name="trackExtraLifespan" placeholder="2.0">
+            </div>
+
+            <div class="form-group">
+                <label for="trackHighConf">Track High Confidence Threshold:</label>
+                <input type="text" id="trackHighConf" name="trackHighConf" placeholder="0.1">
+            </div>
+
+            <div class="form-group">
+                <label for="trackIOU">Track IOU Threshold:</label>
+                <input type="text" id="trackIOU" name="trackIOU" placeholder="0.25">
+            </div>
+
+            <div class="form-group">
+                <label for="trackUpdate">Track Update Factor:</label>
+                <input type="text" id="trackUpdate" name="trackUpdate" placeholder="0.25">
+            </div>
+
+            <div class="form-group">
+                <label for="cacheGraphBinary">Enable Graph Caching:</label>
+                <select id="cacheGraphBinary" name="cacheGraphBinary">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="cacheGraphDir">Graph Cache Directory:</label>
+                <input type="text" id="cacheGraphDir" name="cacheGraphDir" placeholder="/var/cache">
+            </div>
+
+            <button id="saveConfig">Save Configuration</button>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch(`/config/detect/details`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('model').value = data.MODEL || '';
+                    document.getElementById('visualization').value = data.VISUALIZATION || 'true';
+                    document.getElementById('labels').value = data.LABELS || 'label';
+                    document.getElementById('threshold').value = data.THRESHOLD || '0.7';
+                    document.getElementById('iou').value = data.IOU || '0.45';
+                    document.getElementById('maxBoxes').value = data.MAX_BOXES || '50';
+                    document.getElementById('labelOffset').value = data.LABEL_OFFSET || '0';
+                    document.getElementById('engine').value = data.ENGINE || 'NPU';
+                    document.getElementById('track').checked = data.TRACK === 'true';
+                    document.getElementById('trackExtraLifespan').value = data.TRACK_EXTRA_LIFESPAN || '2.0';
+                    document.getElementById('trackHighConf').value = data.TRACK_HIGH_CONF || '0.1';
+                    document.getElementById('trackIOU').value = data.TRACK_IOU || '0.25';
+                    document.getElementById('trackUpdate').value = data.TRACK_UPDATE || '0.25';
+                    document.getElementById('cacheGraphBinary').value = data.CACHE_GRAPH_BINARY || '0';
+                    document.getElementById('cacheGraphDir').value = data.CACHE_GRAPH_DIR || '/var/cache';
+                });
+
+            document.getElementById('saveConfig').addEventListener('click', function () {
+                console.log(document.getElementById('track').checked)
+                const configData = {
+                    fileName: "detect",
+                    MODEL: document.getElementById('model').value,
+                    VISUALIZATION: document.getElementById('visualization').value,
+                    LABELS: document.getElementById('labels').value,
+                    THRESHOLD: document.getElementById('threshold').value,
+                    IOU: document.getElementById('iou').value,
+                    MAX_BOXES: document.getElementById('maxBoxes').value,
+                    LABEL_OFFSET: document.getElementById('labelOffset').value,
+                    ENGINE: document.getElementById('engine').value,
+                    TRACK: document.getElementById('track').checked ? 'true' : 'false',
+                    TRACK_EXTRA_LIFESPAN: document.getElementById('trackExtraLifespan').value,
+                    TRACK_HIGH_CONF: document.getElementById('trackHighConf').value,
+                    TRACK_IOU: document.getElementById('trackIOU').value,
+                    TRACK_UPDATE: document.getElementById('trackUpdate').value,
+                    CACHE_GRAPH_BINARY: document.getElementById('cacheGraphBinary').value,
+                    CACHE_GRAPH_DIR: document.getElementById('cacheGraphDir').value
+                };
+
+                fetch('/config/detect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(configData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Configuration saved successfully!');
+                        } else {
+                            alert('Error saving configuration.');
+                        }
+                    });
+            });
+        });
+    </script>
+</body>
+
+</html>

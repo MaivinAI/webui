@@ -1,4 +1,4 @@
-import * as THREE from 'three'
+import * as THREE from './three.js'
 
 // Based on https://tympanus.net/codrops/2020/01/07/playing-with-texture-projection-in-three-js/
 export default class ProjectedMaterial extends THREE.ShaderMaterial {
@@ -83,7 +83,7 @@ export default class ProjectedMaterial extends THREE.ShaderMaterial {
         this.isProjectedMaterial = true
     }
 
-    
+
     update(camera) {
         if (!camera || !camera.isCamera) {
             throw new Error('Invalid camera passed to the ProjectedMaterial')

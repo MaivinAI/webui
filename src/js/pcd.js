@@ -1,4 +1,4 @@
-import { CdrReader } from '@foxglove/cdr';
+import { CdrReader } from './Cdr.js';
 export function quaternionToEuler(x, y, z, w) {
     const roll = Math.atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y)) * (180 / Math.PI);
     const pitch = Math.asin(2.0 * (w * y - z * x)) * (180 / Math.PI);
@@ -67,7 +67,7 @@ function pcd_to_points(radar_data) {
                             val = view.getFloat64(point_start + f.offset, !radar_data.is_bigendian)
                             break
                         }
-                    default: 
+                    default:
                         {
                             console.warn("NotImplemented: PCD has integer data.")
                         }

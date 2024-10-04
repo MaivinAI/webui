@@ -1,11 +1,11 @@
-import * as THREE from 'three'
-import  segstream, { get_shape } from './mask'
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import Stats from './Stats'
-import pcdStream from './pcd'
-import classify_points, {classify_points_box} from './classify'
-import boxesstream from './boxes'
-import { dynamicSort } from './sort'
+import * as THREE from './three.js'
+import segstream, { get_shape } from './mask.js'
+import { OrbitControls } from './OrbitControls.js'
+import Stats from './Stats.js'
+import pcdStream from './pcd.js'
+import classify_points, { classify_points_box } from './classify.js'
+import boxesstream from './boxes.js'
+import { dynamicSort } from './sort.js'
 const PI = Math.PI
 
 const scene = new THREE.Scene();
@@ -118,12 +118,12 @@ let socketUrlPcd = '/rt/radar/targets/';
 
 loader.load(
     // resource URL
-    'config.json',
+    'assets/config.json',
     function (data) {
         const config = JSON.parse(data)
         console.log(config)
         if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
-        if (config.ANGLE_BIN_LIMITS) { 
+        if (config.ANGLE_BIN_LIMITS) {
             ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS[0]
             ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS[1]
         }
@@ -143,7 +143,7 @@ loader.load(
         }
         if (config.USE_BOX) {
             USE_BOX = config.USE_BOX
-        } 
+        }
 
         if (config.MASK_TOPIC) {
             socketUrlMask = config.MASK_TOPIC
@@ -475,7 +475,7 @@ function animate() {
                     if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
                 }
-                if (sum0 + sum1 +sum2 >= BIN_THRESHOLD) {
+                if (sum0 + sum1 + sum2 >= BIN_THRESHOLD) {
                     const [class_, _] = getClassInList(val0.concat(val1, val2))
                     const cell = newRingGeo(i, j - RANGE_BIN_WIDTH * 2, class_)
                     occupied.push(cell)

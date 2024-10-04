@@ -1,5 +1,5 @@
-import * as THREE from 'three'
-import { dynamicSortMultiple } from './sort'
+import * as THREE from './three.js'
+import { dynamicSortMultiple } from './sort.js'
 
 
 function mode(a) {
@@ -22,7 +22,7 @@ let OCCLUSION_LIMIT_DEGREES = 10
 const loader = new THREE.FileLoader();
 loader.load(
     // resource URL
-    'config.json',
+    'assets/config.json',
     function (data) {
         const config = JSON.parse(data)
         console.log(config)
@@ -74,7 +74,7 @@ export default function classify_points(points, mask_tex) {
         // pos.applyMatrix3(coord_cvt)
         // console.log(pos)
 
-        let i = Math.round(pos.y)
+        let i = mask_height - Math.round(pos.y)
         let j = mask_width - Math.round(pos.x)
 
         point_cpy.x_2d = j
@@ -149,7 +149,7 @@ export default function classify_points(points, mask_tex) {
     return points_cpy
 }
 
-const labels = {"background": 0}
+const labels = { "background": 0 }
 let label_count = 1
 export function classify_points_box(points, boxes) {
     // console.log(points, mask_tex);
@@ -187,14 +187,14 @@ export function classify_points_box(points, boxes) {
         point_cpy.class = 0
         let classes = []
         let x_vel = []
-        for (let l = 0; l < boxes.length; l ++) {
+        for (let l = 0; l < boxes.length; l++) {
             if (i < 0 || i >= 1) {
                 break
             }
             if (j < 0 || j >= 1) {
                 break
             }
-            if (j < boxes[l].center_x - boxes[l].width/2) {
+            if (j < boxes[l].center_x - boxes[l].width / 2) {
                 continue
             }
             if (j > boxes[l].center_x + boxes[l].width / 2) {
@@ -212,7 +212,7 @@ export function classify_points_box(points, boxes) {
             }
             classes.push(labels[boxes.label])
             if (boxes[l].width > 0) { x_vel.push(boxes[l].speed / boxes[l].width) } else { x_vel.push(boxes[l].speed) }
-            
+
         }
         if (classes.length >= 1) {
             point_cpy.class = mode(classes)

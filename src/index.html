@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualization Selector</title>
     <link href="./css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.7.3/dist/full.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.6/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         main {
             display: flex;
@@ -43,7 +46,7 @@
 
         .card {
             background: #ffffff;
-            border: 1px solid rgba(0,0,0,0.125);
+            border: 1px solid rgba(0, 0, 0, 0.125);
             border-radius: 15px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
@@ -76,9 +79,10 @@
 </head>
 
 <body>
-    <!-- <header class="navbar bg-base-100">
+    <header class="navbar bg-base-100">
         <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="/auzoneLogo.svg" alt="" width="200" height="100">Raivin</a>
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="assets/auzoneLogo.svg" alt=""
+                    width="200" height="100">Raivin</a>
         </div>
         <div class="navbar-center">
         </div>
@@ -93,16 +97,17 @@
                             <li><a href="/mcap">MCAP</a></li>
                             <li><a href="/h264">Segmentation</a></li>
                             <li><a href="/grid">Occupancy Grid</a></li>
+                            <li><a href="/settings">Setting</a></li>
                         </ul>
                     </details>
                 </li>
             </ul>
         </div>
-    </header> -->
+    </header>
     <main>
         <div class="content">
             <h1>Select Visualization</h1>
-            <br/>
+            <br />
             <div class="card-container">
                 <a href="/gps" class="card">
                     <h2>GPS</h2>
@@ -118,11 +123,16 @@
                 </a>
                 <a href="/combined" class="card">
                     <h2>Segmentation View</h2>
-                    <p>Segmentation<br/>+<br/>Occupancy Grid</p>
+                    <p>Segmentation<br />+<br />Occupancy Grid</p>
                 </a>
                 <a href="/grid" class="card">
                     <h2>Occupancy Grid</h2>
-                    <p>Occupancy Grid<br/>+<br/>Radar Point Cloud</p>
+                    <p>Occupancy Grid<br />+<br />Radar Point Cloud</p>
+                </a>
+                </a>
+                <a href="/settings" class="card">
+                    <h2>Settings</h2>
+                    <p>Update Service Settings</p>
                 </a>
             </div>
         </div>

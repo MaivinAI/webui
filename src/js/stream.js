@@ -1,6 +1,6 @@
 
-import * as THREE from 'three';
-import { CdrReader } from '@foxglove/cdr';
+import * as THREE from './three.js';
+import { CdrReader } from './Cdr.js';
 export default async function h264stream(socketUrl, width, height, fps, onMessage) {
 
     const canvas = document.createElement("canvas");

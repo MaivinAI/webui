@@ -1,8 +1,8 @@
-import * as THREE from 'three'
+import * as THREE from './three.js'
 
 // Based on https://tympanus.net/codrops/2020/01/07/playing-with-texture-projection-in-three-js/
 export default class ProjectedMask extends THREE.ShaderMaterial {
-    constructor({ camera, texture, colors, alphas, default_alpha=0.7, ...options } = {}) {
+    constructor({ camera, texture, colors, alphas, default_alpha = 0.7, ...options } = {}) {
         if (!texture || !texture.isTexture) {
             throw new Error('Invalid texture passed to the ProjectedMask')
         }
@@ -32,13 +32,13 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
                 new THREE.Color(0.1333, 0.5451, 0.1333),
                 new THREE.Color(0.1176, 0.4118, 0.8235),
 
-            ]   
-        } 
+            ]
+        }
         if (!alphas || alphas.length != colors.length) {
             alphas = Array(colors.length).fill(default_alpha);
             alphas[0] = 0.0;
         }
-        
+
         // zip colors and alphas together
         const color_v4 = colors.map(function (e, i) {
             return [e.r, e.g, e.b, alphas[i]];

@@ -1,18 +1,18 @@
-import * as THREE from 'three'
-import ProjectedMaterial from './ProjectedMaterial'
-import ProjectedMask from './ProjectedMask'
-import segstream, { get_shape } from './mask'
-import h264Stream from './stream'
-import pcdStream from './pcd'
-import SpriteText from 'three-spritetext';
-import classify_points, { classify_points_box } from './classify'
-import boxesstream from './boxes'
-import { Line2 } from 'three/addons/lines/Line2.js';
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import Stats from "./Stats"
-import droppedframes from './droppedframes'
-import { dynamicSort } from './sort'
+import * as THREE from './three.js'
+import ProjectedMaterial from './ProjectedMaterial.js'
+import ProjectedMask from './ProjectedMask.js'
+import segstream, { get_shape } from './mask.js'
+import h264Stream from './stream.js'
+import pcdStream from './pcd.js'
+import SpriteText from './three-spritetext.js';
+import classify_points, { classify_points_box } from './classify.js'
+import boxesstream from './boxes.js'
+import { Line2 } from './Line2.js';
+import { LineMaterial } from './LineMaterial.js';
+import { LineGeometry } from './LineGeometry.js';
+import Stats from "./Stats.js"
+import droppedframes from './droppedframes.js'
+import { dynamicSort } from './sort.js'
 const PI = Math.PI
 
 
@@ -137,7 +137,7 @@ droppedframes(socketUrlErrors, playerCanvas)
 const loader = new THREE.FileLoader();
 loader.load(
     // resource URL
-    'config.json',
+    'assets/config.json',
     function (data) {
         const config = JSON.parse(data)
         console.log(config)
@@ -191,7 +191,8 @@ loader.load(
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
         const cameraUpdate = fpsUpdate(cameraPanel)
-        h264Stream(socketUrlH264, 1920, 1080, 30, (timing) => { cameraUpdate(), resetTimeout()
+        h264Stream(socketUrlH264, 1920, 1080, 30, (timing) => {
+            cameraUpdate(), resetTimeout()
             // cameraMSPanel.update(timing.decode_time, 33) 
         }).then((tex) => {
             texture_camera = tex;
@@ -214,8 +215,8 @@ loader.load(
         gridHelper.position.z = 0.002;
         grid_scene.add(gridHelper);
 
-        for (let i = RANGE_BIN_LIMITS[0]; i < RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH*2) {
-            const myText = new SpriteText(i.toFixed(2)+"m", 0.20, "0x888888")
+        for (let i = RANGE_BIN_LIMITS[0]; i < RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
+            const myText = new SpriteText(i.toFixed(2) + "m", 0.20, "0x888888")
             // myText.material.sizeAttenuation = false
             myText.position.x = 0
             myText.position.z = i
@@ -236,7 +237,8 @@ loader.load(
             // const maskMSPanel = stats.addPanel(new Stats.Panel('mask decode ms', '#A2A', '#420'));
             get_shape(socketUrlMask, (height, width, length, mask) => {
                 const classes = Math.round(mask.length / height / width)
-                segstream(socketUrlMask, height, width, classes, (timing) => { modelFPSUpdate(); 
+                segstream(socketUrlMask, height, width, classes, (timing) => {
+                    modelFPSUpdate();
                     // maskMSPanel.update(timing.decode_time, 33) 
                 }).then((texture_mask) => {
                     material_mask = new ProjectedMask({
@@ -364,7 +366,7 @@ function getCountInBin(angle, range, angleBinOffset, rangeBinOffset) {
 
 function getClassInList(l) {
     const classes = {}
-    l.forEach( (point) => {
+    l.forEach((point) => {
         if (isFinite(classes[point.class])) {
             classes[point.class] += 1
         } else {
@@ -477,7 +479,7 @@ function newRingGeo(angle, range, class_) {
     // mesh.rotation.z = PI / 2
     return mesh
 }
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { OrbitControls } from './OrbitControls.js'
 
 
 const HFOV = 82
@@ -543,7 +545,7 @@ function color_points_field(points, field, scene, height = false, label = false)
             myText.position.y += 0.12
             scene.add(myText)
             rendered_points.push(myText)
-        }    
+        }
     })
 }
 
@@ -576,7 +578,7 @@ function color_points_class(points, scene, height = false, label = false) {
             myText.position.y += 0.12
             scene.add(myText)
             rendered_points.push(myText)
-        }    
+        }
     })
 }
 
@@ -653,7 +655,7 @@ function animate_grid() {
                     continue
                 }
                 if (sum0 + sum1 + sum2 >= BIN_THRESHOLD) {
-                    const[class_, _] = getClassInList(val0.concat(val1, val2))
+                    const [class_, _] = getClassInList(val0.concat(val1, val2))
                     const cell = newRingGeo(i, j - RANGE_BIN_WIDTH * 2, class_)
                     occupied.push(cell)
                     grid_scene.add(cell)

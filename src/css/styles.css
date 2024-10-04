@@ -6,9 +6,13 @@ html {
   /* overflow: hidden !important; */
   box-sizing: border-box;
 }
-*, *:before, *:after {
+
+*,
+*:before,
+*:after {
   box-sizing: inherit;
 }
+
 body {
   display: flex;
   flex-direction: column;
@@ -17,7 +21,8 @@ body {
   overflow: hidden;
 }
 
-body, body * {
+body,
+body * {
   font-family: "Open Sans" !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -49,10 +54,10 @@ header .navbar-end summary {
 :root {
   --color-primary: #250E81;
   --color-primary-rgb: 37, 14, 129;
-  --color-primary-text:#6B46C1;
+  --color-primary-text: #6B46C1;
   --color-white: #f6f7f8;
-  --color-gray-text: hsl(201,23%,34%);
-  --color-light-gray-text: hsl(203,15%,47%);
+  --color-gray-text: hsl(201, 23%, 34%);
+  --color-light-gray-text: hsl(203, 15%, 47%);
 }
 
 :root:has(:is(.modal-open, .modal:target, .modal-toggle:checked + .modal, .modal[open])) {

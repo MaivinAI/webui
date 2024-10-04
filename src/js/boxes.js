@@ -1,4 +1,4 @@
-import { CdrReader } from '@foxglove/cdr';
+import { CdrReader } from './Cdr.js';
 
 let timeoutId;
 
@@ -56,7 +56,7 @@ function parseDetectTrack(reader) {
 }
 
 function parseDetectBoxes2D(reader) {
-    let detectBox2D ={};
+    let detectBox2D = {};
     detectBox2D.center_x = reader.float32()
     detectBox2D.center_y = reader.float32()
     detectBox2D.width = reader.float32()

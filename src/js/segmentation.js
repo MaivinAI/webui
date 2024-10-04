@@ -1,18 +1,18 @@
-import * as THREE from 'three'
-import ProjectedMaterial from './ProjectedMaterial'
-import ProjectedMask from './ProjectedMask'
-import segstream, { get_shape } from './mask'
-import h264Stream from './stream'
-import pcdStream from './pcd'
-import SpriteText from 'three-spritetext';
-import classify_points, { classify_points_box } from './classify'
-import boxesstream from './boxes'
-import { Line2 } from 'three/addons/lines/Line2.js';
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import Stats from "./Stats"
-import droppedframes from './droppedframes'
-import { dynamicSort } from './sort'
+import * as THREE from './three.js'
+import ProjectedMaterial from './ProjectedMaterial.js'
+import ProjectedMask from './ProjectedMask.js'
+import segstream, { get_shape } from './mask.js'
+import h264Stream from './stream.js'
+import pcdStream from './pcd.js'
+import SpriteText from './three-spritetext.js';
+import classify_points, { classify_points_box } from './classify.js'
+import boxesstream from './boxes.js'
+import { Line2 } from './Line2.js';
+import { LineMaterial } from './LineMaterial.js';
+import { LineGeometry } from './LineGeometry.js';
+import Stats from "./Stats.js"
+import droppedframes from './droppedframes.js'
+import { dynamicSort } from './sort.js'
 const PI = Math.PI
 
 
@@ -101,7 +101,7 @@ droppedframes(socketUrlErrors, playerCanvas)
 const loader = new THREE.FileLoader();
 loader.load(
     // resource URL
-    'config.json',
+    'assets/config.json',
     function (data) {
         const config = JSON.parse(data)
         console.log(config)
@@ -120,7 +120,8 @@ loader.load(
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
         const cameraUpdate = fpsUpdate(cameraPanel)
-        h264Stream(socketUrlH264, 1920, 1080, 30, (timing) => { cameraUpdate(), resetTimeout()
+        h264Stream(socketUrlH264, 1920, 1080, 30, (timing) => {
+            cameraUpdate(), resetTimeout()
             // cameraMSPanel.update(timing.decode_time, 33) 
         }).then((tex) => {
             texture_camera = tex;
@@ -142,7 +143,8 @@ loader.load(
 
         get_shape(socketUrlMask, (height, width, length, mask) => {
             const classes = Math.round(mask.length / height / width)
-            segstream(socketUrlMask, height, width, classes, (timing) => { modelFPSUpdate(); 
+            segstream(socketUrlMask, height, width, classes, (timing) => {
+                modelFPSUpdate();
                 // maskMSPanel.update(timing.decode_time, 33) 
             }).then((texture_mask) => {
                 material_mask = new ProjectedMask({
@@ -159,7 +161,7 @@ loader.load(
                 scene.add(mesh_mask);
             })
         })
-        
+
     },
     function (err) {
         console.error('An error happened', err);

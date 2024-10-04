@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maivin Camera Configuration</title>
+    <link href="../css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.7.3/dist/full.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.6/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+
+        header {
+            background-color: #007bff;
+            color: #060606;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        header .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        header .nav-menu {
+            display: flex;
+            gap: 20px;
+        }
+
+        header .nav-menu a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            position: relative;
+        }
+
+        header .nav-menu a.active::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 3px;
+            background-color: #ffffff;
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #ffffff;
+            overflow-y: auto;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            overflow-y: auto;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .comment {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="../assets/auzoneLogo.svg"
+                    alt="">Raivin</a>
+        </div>
+        <div class="navbar-center">
+            <span class="text-xl">MCAP</span>
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                <li>
+                    <details>
+                        <summary>Visualizations</summary>
+                        <ul class="bg-base-100 rounded-t-none p-2">
+                            <li><a href="/combined">Combined</a></li>
+                            <li><a href="/gps">GPS</a></li>
+                            <li><a href="/imu">IMU</a></li>
+                            <li><a href="/mcap">MCAP</a></li>
+                            <li><a href="/segmentation">Segmentation</a></li>
+                            <li><a href="/settings">Setting</a></li>
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <h2>Maivin Camera Configuration</h2>
+
+            <div class="comment">
+                Configure the settings for the camera device, resolution, and streaming options.
+            </div>
+
+            <div class="form-group">
+                <label for="camera">Camera Device:</label>
+                <input type="text" id="camera" name="camera" placeholder="/dev/video3">
+            </div>
+
+            <div class="form-group">
+                <label for="cameraSize">Camera Size:</label>
+                <input type="text" id="cameraSize" name="cameraSize" placeholder="1920 1080">
+            </div>
+
+            <div class="form-group">
+                <label for="streamSize">Stream Size:</label>
+                <input type="text" id="streamSize" name="streamSize" placeholder="1920 1080">
+            </div>
+
+            <div class="form-group">
+                <label for="mirror">Mirror:</label>
+                <select id="mirror" name="mirror">
+                    <option value="none">None</option>
+                    <option value="horizontal">Horizontal</option>
+                    <option value="vertical">Vertical</option>
+                    <option value="both">Both</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="h264Bitrate">H.264 Bitrate:</label>
+                <select id="h264Bitrate" name="h264_Bitrate">
+                    <option value="auto">Auto</option>
+                    <option value="mbps5">5 Mbps</option>
+                    <option value="mbps25">25 Mbps</option>
+                    <option value="mbps50">50 Mbps</option>
+                    <option value="mbps100">100 Mbps</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="h264">H.264 Streaming:</label>
+                <input type="checkbox" id="h264" name="h264">
+                <label for="h264">Enabled</label>
+            </div>
+
+            <div class="form-group">
+                <label for="jpeg">JPEG Streaming:</label>
+                <input type="checkbox" id="jpeg" name="jpeg">
+                <label for="jpeg">Enabled</label>
+            </div>
+
+            <button id="saveConfig">Save Configuration</button>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch(`/config/camera/details`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+
+                    document.getElementById('camera').value = data.CAMERA || '';
+                    const cameraSize = Array.isArray(data.CAMERA_SIZE) ? data.CAMERA_SIZE.join(' ') : (data.CAMERA_SIZE || '');
+                    document.getElementById('cameraSize').value = cameraSize.replace(/,/g, ' ');
+                    const streamSize = Array.isArray(data.STREAM_SIZE) ? data.STREAM_SIZE.join(' ') : (data.STREAM_SIZE || '');
+                    document.getElementById('streamSize').value = streamSize.replace(/,/g, ' ');
+                    document.getElementById('mirror').value = data.MIRROR || '';
+                    document.getElementById('h264Bitrate').value = data.H264_BITRATE || '';
+                    document.getElementById('h264').checked = data.H264 === 'true';
+                    document.getElementById('jpeg').checked = data.JPEG === 'true';
+                })
+                .catch(error => console.error('Error fetching config:', error));
+        });
+
+        document.getElementById('saveConfig').addEventListener('click', function () {
+            const camera = document.getElementById('camera').value;
+            const cameraSize = document.getElementById('cameraSize').value;
+            const streamSize = document.getElementById('streamSize').value;
+            const mirror = document.getElementById('mirror').value;
+            const h264Bitrate = document.getElementById('h264Bitrate').value;
+            const h264 = document.getElementById('h264').checked ? 'true' : 'false';
+            const jpeg = document.getElementById('jpeg').checked ? 'true' : 'false';
+
+            fetch('/config/camera', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    fileName: "camera",
+                    camera: camera,
+                    camera_size: cameraSize,
+                    stream_size: streamSize,
+                    mirror: mirror,
+                    h264_bitrate: h264Bitrate,
+                    h264: h264,
+                    jpeg: jpeg
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Configuration saved successfully');
+                    } else {
+                        alert('Error saving configuration');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error saving configuration');
+                });
+
+        });
+    </script>
+</body>
+
+</html>

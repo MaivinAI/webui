@@ -1,4 +1,4 @@
-import { CdrReader } from '@foxglove/cdr';
+import { CdrReader } from './Cdr.js';
 
 let timeoutId;
 
