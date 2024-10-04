@@ -4,26 +4,12 @@ This project hosts the Maivin Web User Interface code.  This is the front-end
 HTML and Javascript which runs in the browser.  The code can be customized and
 re-deployed to a Maivin or Raivin platform.
 
-# Building
-
-The HTML pages are found under `src` and the javascript is under `src/js` which
-will be minified as part of the build process which packages up all the various
-assets into the `dist` folder.
-
-To build you will need [Node.js installed](https://nodejs.org/en/download/package-manager), then run the following commands to
-generate the `dist` folder.
-
-```
-npm install
-npm run build
-```
-
 # Deployment
 
-After building the web assets will be found under `dist` which can be copied to
-the target Maivin platform.  The default webui is found on the Maivin under
-`/usr/share/webui` which is read-only and cannot be modified, as it is managed
-by the Torizon for Maivin OS image.  The customized `dist` folder should instead
+The HTML pages are found under `src` and the javascript is under `src/js`. These are static 
+HTML files and which can be copied to the target Maivin platform. The default webui is found 
+on the Maivin under `/usr/share/webui` which is read-only and cannot be modified, as it is managed
+by the Torizon for Maivin OS image.  The customized HTML folder should instead
 be copied to either the default home as `/home/torizon/webui` or into
 `/usr/local/share/webui` which is writeable (requires sudo).
 
@@ -39,7 +25,7 @@ browser window with the Maivin WebUI to enact the changes.
 sudo systemctl restart webui
 ```
 
-NOTE: The `webui` folder is renamed from `dist` but can be any name, just make
+NOTE: The `webui` folder is renamed from HTML folder but can be any name, just make
 sure the full path of the folder which holds the `index.html` file is used for
 DOCROOT.
 
