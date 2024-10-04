@@ -4,13 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maivin Web UI Configuration</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link href="../css/styles.css" rel="stylesheet">
+    <title>Maivin Web UI Service Configuration</title>
+    <!-- Include external stylesheets -->
     <link href="https://cdn.jsdelivr.net/npm/daisyui@3.7.3/dist/full.css" rel="stylesheet" type="text/css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.6/tailwind.min.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
+    <!-- Include Tailwind CSS script -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f4f7f9;
@@ -18,6 +23,7 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            overflow-y: auto;
         }
 
         header {
@@ -30,42 +36,14 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        header .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        header .nav-menu {
-            display: flex;
-            gap: 20px;
-        }
-
-        header .nav-menu a {
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: 500;
-            position: relative;
-        }
-
-        header .nav-menu a.active::after {
-            content: '';
-            display: block;
-            width: 100%;
-            height: 3px;
-            background-color: #ffffff;
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-        }
-
         main {
             flex: 1;
             padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             background-color: #ffffff;
+            overflow-y: auto;
         }
 
         .container {
@@ -75,6 +53,9 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             background-color: #ffffff;
+            overflow-y: auto;
+            max-height: 90vh;
+            margin-top: 20px;
         }
 
         h2 {
@@ -82,6 +63,13 @@
             margin-bottom: 20px;
             color: #333;
             font-size: 24px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
         }
 
         .comment {
@@ -95,19 +83,18 @@
             margin-bottom: 20px;
         }
 
-        .form-group label {
-            font-weight: 500;
-            color: #333;
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .form-group input {
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 12px;
             border-radius: 4px;
             border: 1px solid #ddd;
             font-size: 16px;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
         }
 
         button {
@@ -136,24 +123,24 @@
 <body>
     <header class="navbar bg-base-100">
         <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="../assets/auzoneLogo.svg"
-                    alt="">Raivin</a>
+            <a href="/" class="btn btn-ghost text-xl">
+                <img class="header__logo me-2" src="../assets/auzoneLogo.svg" alt="">Raivin
+            </a>
         </div>
         <div class="navbar-center">
-            <span class="text-xl">Maivin Web UI</span>
+            <span class="text-xl">Web UI Configuration</span>
         </div>
         <div class="navbar-end">
             <ul class="menu menu-horizontal px-1">
                 <li>
                     <details>
-                        <summary>Visualizations</summary>
+                        <summary>Configuration</summary>
                         <ul class="bg-base-100 rounded-t-none p-2">
-                            <li><a href="/combined">Combined</a></li>
-                            <li><a href="/gps">GPS</a></li>
-                            <li><a href="/imu">IMU</a></li>
-                            <li><a href="/mcap">MCAP</a></li>
-                            <li><a href="/segmentation">Segmentation</a></li>
-                            <li><a href="/settings">Setting</a></li>
+                            <li><a href="/gpsd_config">GPSD Setting</a></li>
+                            <li><a href="/segment_config">Segment Setting</a></li>
+                            <li><a href="/recorder_config">Recorder Setting</a></li>
+                            <li><a href="/camera_config">Camera Setting</a></li>
+                            <li><a href="/webui_config" class="active">Web UI Setting</a></li>
                         </ul>
                     </details>
                 </li>
@@ -162,15 +149,116 @@
     </header>
     <main>
         <div class="container">
-            <h2>Maivin Web UI Configuration</h2>
-
+            <h2>Maivin Web UI Service Configuration</h2>
             <div class="comment">
-                Configure the document root directory for the Maivin Web UI Service.
+                Configure the settings for the Maivin Web UI Service, including bin widths, thresholds, and topics.
             </div>
 
+            <!-- Angle Bin Configuration -->
             <div class="form-group">
-                <label for="docRoot">Document Root Directory:</label>
-                <input type="text" id="docRoot" name="docRoot" placeholder="/usr/share/webui">
+                <label for="angle_bin_width">Angle Bin Width:</label>
+                <input type="number" id="angle_bin_width" name="angle_bin_width" placeholder="10">
+            </div>
+            <div class="form-group">
+                <label for="angle_bin_limits_min">Angle Bin Limits Min:</label>
+                <input type="number" id="angle_bin_limits_min" name="angle_bin_limits_min" placeholder="-70">
+            </div>
+            <div class="form-group">
+                <label for="angle_bin_limits_max">Angle Bin Limits Max:</label>
+                <input type="number" id="angle_bin_limits_max" name="angle_bin_limits_max" placeholder="70">
+            </div>
+
+            <!-- Range Bin Configuration -->
+            <div class="form-group">
+                <label for="range_bin_width">Range Bin Width:</label>
+                <input type="number" id="range_bin_width" name="range_bin_width" placeholder="0.5" step="0.1">
+            </div>
+            <div class="form-group">
+                <label for="range_bin_limits_min">Range Bin Limits Min:</label>
+                <input type="number" id="range_bin_limits_min" name="range_bin_limits_min" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label for="range_bin_limits_max">Range Bin Limits Max:</label>
+                <input type="number" id="range_bin_limits_max" name="range_bin_limits_max" placeholder="20">
+            </div>
+
+            <!-- Window Length and Bin Threshold -->
+            <div class="form-group">
+                <label for="window_length">Window Length:</label>
+                <input type="number" id="window_length" name="window_length" placeholder="18">
+            </div>
+            <div class="form-group">
+                <label for="bin_threshold">Bin Threshold:</label>
+                <input type="number" id="bin_threshold" name="bin_threshold" placeholder="3">
+            </div>
+
+            <!-- Use Box Checkbox -->
+            <div class="form-group">
+                <label for="use_box">Use Box:</label>
+                <input type="checkbox" id="use_box" name="use_box">
+            </div>
+
+            <!-- Occlusion Filter Limit -->
+            <div class="form-group">
+                <label for="occlusion_filter_limit_degrees">Occlusion Filter Limit Degrees:</label>
+                <input type="number" id="occlusion_filter_limit_degrees" name="occlusion_filter_limit_degrees"
+                    placeholder="20">
+            </div>
+
+            <!-- Grid Draw PCD Options -->
+            <div class="form-group">
+                <label for="grid_draw_pcd">Grid Draw PCD:</label>
+                <select id="grid_draw_pcd" name="grid_draw_pcd">
+                    <option value="disabled">Disabled</option>
+                    <option value="power">Power</option>
+                    <option value="rcs">RCS</option>
+                    <option value="speed">Speed</option>
+                    <option value="class">Class</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="combined_grid_draw_pcd">Combined Grid Draw PCD:</label>
+                <select id="combined_grid_draw_pcd" name="combined_grid_draw_pcd">
+                    <option value="disabled">Disabled</option>
+                    <option value="power">Power</option>
+                    <option value="rcs">RCS</option>
+                    <option value="speed">Speed</option>
+                    <option value="class">Class</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="combined_camera_draw_pcd">Combined Camera Draw PCD:</label>
+                <select id="combined_camera_draw_pcd" name="combined_camera_draw_pcd">
+                    <option value="disabled">Disabled</option>
+                    <option value="power">Power</option>
+                    <option value="rcs">RCS</option>
+                    <option value="speed">Speed</option>
+                    <option value="class">Class</option>
+                </select>
+            </div>
+
+            <!-- Combined Camera PCD Label -->
+            <div class="form-group">
+                <label for="combined_camera_pcd_label">Combined Camera PCD Label:</label>
+                <input type="checkbox" id="combined_camera_pcd_label" name="combined_camera_pcd_label">
+            </div>
+
+            <!-- Topic Configuration -->
+            <div class="form-group">
+                <label for="mask_topic">Mask Topic:</label>
+                <input type="text" id="mask_topic" name="mask_topic" placeholder="/rt/detect/mask/">
+            </div>
+            <div class="form-group">
+                <label for="detect_topic">Detect Topic:</label>
+                <input type="text" id="detect_topic" name="detect_topic" placeholder="/rt/detect/boxes2d/">
+            </div>
+            <div class="form-group">
+                <label for="pcd_topic">PCD Topic:</label>
+                <input type="text" id="pcd_topic" name="pcd_topic" placeholder="/rt/radar/targets/">
+            </div>
+            <div class="form-group">
+                <label for="h264_topic">H264 Topic:</label>
+                <input type="text" id="h264_topic" name="h264_topic" placeholder="/rt/camera/h264/">
             </div>
 
             <button id="saveConfig">Save Configuration</button>
@@ -179,7 +267,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            fetch(`/config/webui/details`, {
+            fetch('/config/webui/details', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -187,31 +275,72 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('docRoot').value = data.DOCROOT || '/usr/share/webui';
+                    document.getElementById('angle_bin_width').value = data.ANGLE_BIN_WIDTH || 10;
+                    document.getElementById('angle_bin_limits_min').value = data.ANGLE_BIN_LIMITS_MIN || -70;
+                    document.getElementById('angle_bin_limits_max').value = data.ANGLE_BIN_LIMITS_MAX || 70;
+                    document.getElementById('range_bin_width').value = data.RANGE_BIN_WIDTH || 0.5;
+                    document.getElementById('range_bin_limits_min').value = data.RANGE_BIN_LIMITS_MIN || 0;
+                    document.getElementById('range_bin_limits_max').value = data.RANGE_BIN_LIMITS_MAX || 20;
+                    document.getElementById('window_length').value = data.WINDOW_LENGTH || 18;
+                    document.getElementById('bin_threshold').value = data.BIN_THRESHOLD || 3;
+                    document.getElementById('use_box').checked = data.USE_BOX === 'true' || data.USE_BOX === true;
+                    document.getElementById('occlusion_filter_limit_degrees').value = data.OCCLUSION_FILTER_LIMIT_DEGREES || 20;
+                    document.getElementById('grid_draw_pcd').value = data.GRID_DRAW_PCD.replace(/"/g, '') || 'rcs';
+                    document.getElementById('combined_grid_draw_pcd').value = data.COMBINED_GRID_DRAW_PCD.replace(/"/g, '') || 'disabled';
+                    document.getElementById('combined_camera_draw_pcd').value = data.COMBINED_CAMERA_DRAW_PCD.replace(/"/g, '') || 'disabled';
+                    document.getElementById('combined_camera_pcd_label').checked = data.COMBINED_CAMERA_PCD_LABEL === 'true' || data.COMBINED_CAMERA_PCD_LABEL === true;
+                    document.getElementById('mask_topic').value = data.MASK_TOPIC || '/rt/detect/mask/';
+                    document.getElementById('detect_topic').value = data.DETECT_TOPIC || '/rt/detect/boxes2d/';
+                    document.getElementById('pcd_topic').value = data.PCD_TOPIC || '/rt/radar/targets/';
+                    document.getElementById('h264_topic').value = data.H264_TOPIC || '/rt/camera/h264/';
                 })
                 .catch(error => console.error('Error fetching config:', error));
         });
 
         document.getElementById('saveConfig').addEventListener('click', function () {
-            const docRoot = document.getElementById('docRoot').value;
+            const configData = {
+                fileName: "webui",
+                ANGLE_BIN_WIDTH: document.getElementById('angle_bin_width').value,
+                ANGLE_BIN_LIMITS_MIN: document.getElementById('angle_bin_limits_min').value,
+                ANGLE_BIN_LIMITS_MAX: document.getElementById('angle_bin_limits_max').value,
+                RANGE_BIN_WIDTH: document.getElementById('range_bin_width').value,
+                RANGE_BIN_LIMITS_MIN: document.getElementById('range_bin_limits_min').value,
+                RANGE_BIN_LIMITS_MAX: document.getElementById('range_bin_limits_max').value,
+                WINDOW_LENGTH: document.getElementById('window_length').value,
+                BIN_THRESHOLD: document.getElementById('bin_threshold').value,
+                USE_BOX: document.getElementById('use_box').checked.toString(),
+                OCCLUSION_FILTER_LIMIT_DEGREES: document.getElementById('occlusion_filter_limit_degrees').value,
+                GRID_DRAW_PCD: document.getElementById('grid_draw_pcd').value,
+                COMBINED_GRID_DRAW_PCD: document.getElementById('combined_grid_draw_pcd').value,
+                COMBINED_CAMERA_DRAW_PCD: document.getElementById('combined_camera_draw_pcd').value,
+                COMBINED_CAMERA_PCD_LABEL: document.getElementById('combined_camera_pcd_label').checked.toString(),
+                MASK_TOPIC: document.getElementById('mask_topic').value,
+                DETECT_TOPIC: document.getElementById('detect_topic').value,
+                PCD_TOPIC: document.getElementById('pcd_topic').value,
+                H264_TOPIC: document.getElementById('h264_topic').value
+            };
 
             fetch('/config/webui', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    fileName: "webui",
-                    docRoot: docRoot
-                })
+                body: JSON.stringify(configData)
             })
-                .then(response => response.json())
-                .then(data => {
-                    alert('Configuration saved successfully!');
+                .then(response => {
+                    if (response.ok) {
+                        alert('Configuration saved successfully');
+                    } else {
+                        alert('Error saving configuration');
+                    }
                 })
                 .catch(error => console.error('Error saving config:', error));
         });
     </script>
 </body>
+
+</html>
+
+</html>
 
 </html>

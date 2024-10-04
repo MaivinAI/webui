@@ -22,12 +22,12 @@ let OCCLUSION_LIMIT_DEGREES = 10
 const loader = new THREE.FileLoader();
 loader.load(
     // resource URL
-    'assets/config.json',
+    '/config/webui/details',
     function (data) {
-        const config = JSON.parse(data)
-        console.log(config)
+        const config = parseNumbersInObject(JSON.parse(data));
+        console.log(config);
         if (config.OCCLUSION_LIMIT_DEGREES) {
-            OCCLUSION_LIMIT_DEGREES = config.OCCLUSION_LIMIT_DEGREES
+            OCCLUSION_LIMIT_DEGREES = config.OCCLUSION_LIMIT_DEGREES;
         }
     },
     function (xhr) {
@@ -248,4 +248,21 @@ export function classify_points_box(points, boxes) {
         }
     }
     return points_cpy
+}
+
+function parseNumbersInObject(obj) {
+    for (let key in obj) {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            obj[key] = parseNumbersInObject(obj[key]);
+        } else if (typeof obj[key] === 'string') {
+            if (!isNaN(obj[key]) && obj[key].trim() !== '') {
+                if (obj[key].includes('.')) {
+                    obj[key] = parseFloat(obj[key]);
+                } else {
+                    obj[key] = parseInt(obj[key], 10);
+                }
+            }
+        }
+    }
+    return obj;
 }

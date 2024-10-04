@@ -15,10 +15,11 @@ let material_mask;
 const jsonloader = new THREE.FileLoader();
 jsonloader.load(
     // resource URL
-    'assets/config.json',
+    '/config/webui/details',
     function (data) {
-        const config = JSON.parse(data)
-        console.log(config)
+        const config = parseIntsInObject(JSON.parse(data));
+        console.log(config);
+        // Use the config object here
     },
     function (xhr) {
         // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -289,4 +290,15 @@ function onWindowResize() {
 
     renderer.setSize(window.innerWidth, window.innerHeight);
 
+}
+
+function parseIntsInObject(obj) {
+    for (let key in obj) {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            obj[key] = parseIntsInObject(obj[key]);
+        } else if (typeof obj[key] === 'string' && /^-?\d+$/.test(obj[key])) {
+            obj[key] = parseInt(obj[key], 10);
+        }
+    }
+    return obj;
 }

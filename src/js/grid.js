@@ -116,21 +116,42 @@ let socketUrlMask = '/rt/detect/mask/'
 let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlPcd = '/rt/radar/targets/';
 
+function parseNumbersInObject(obj) {
+    for (let key in obj) {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            obj[key] = parseNumbersInObject(obj[key]);
+        } else if (typeof obj[key] === 'string') {
+            if (!isNaN(obj[key]) && obj[key].trim() !== '') {
+                if (obj[key].includes('.')) {
+                    obj[key] = parseFloat(obj[key]);
+                } else {
+                    obj[key] = parseInt(obj[key], 10);
+                }
+            }
+        }
+    }
+    return obj;
+}
+
 loader.load(
     // resource URL
-    'assets/config.json',
+    '/config/webui/details',
     function (data) {
-        const config = JSON.parse(data)
-        console.log(config)
-        if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
+        const config = parseNumbersInObject(JSON.parse(data));
+        console.log("Parsed config:", config);
+
+        // Now you can use config.ANGLE_BIN_WIDTH, config.RANGE_BIN_WIDTH, etc.
+        // They will be numbers, not strings
+
+        if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH; }
         if (config.ANGLE_BIN_LIMITS) {
-            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS[0]
-            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS[1]
+            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS[0];
+            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS[1];
         }
-        if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH }
+        if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH; }
         if (config.RANGE_BIN_LIMITS) {
-            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS[0]
-            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS[1]
+            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS[0];
+            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS[1];
         }
         if (config.WINDOW_LENGTH) {
             WINDOW_LENGTH = config.WINDOW_LENGTH
@@ -156,13 +177,16 @@ loader.load(
         if (config.PCD_TOPIC) {
             socketUrlPcd = config.PCD_TOPIC
         }
+        console.log("dbdf")
 
 
         alloc_bins()
+        console.log("i am out of bin")
         const gridHelper = new THREE.PolarGridHelper(RANGE_BIN_LIMITS[1], 360 / ANGLE_BIN_WIDTH, Math.floor(RANGE_BIN_LIMITS[1] / RANGE_BIN_WIDTH), 64, 0x000, 0x000);
         gridHelper.rotation.y = ANGLE_BIN_LIMITS[0] / 180 * PI;
         gridHelper.position.z = 0.002;
         scene.add(gridHelper);
+
 
         const modelFPSUpdate = fpsUpdate(modelPanel)
         if (USE_BOX) {
@@ -188,6 +212,7 @@ loader.load(
             radar_points = pcd;
         })
 
+
     },
     function (xhr) {
         // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -203,15 +228,22 @@ THREE.Cache.enabled = true;
 const bins = []
 var window_index = 0
 function alloc_bins() {
+    console.log("i am here")
     bins.length = 0
     const RANGE_BIN_COUNT = RANGE_BIN_LIMITS[1] / RANGE_BIN_WIDTH - RANGE_BIN_LIMITS[0] / RANGE_BIN_WIDTH + 1
+    console.log("RANGE_BIN_WIDTH:", RANGE_BIN_WIDTH, "Type:", typeof RANGE_BIN_WIDTH);
+    console.log("ANGLE_BIN_WIDTH:", ANGLE_BIN_WIDTH, "Type:", typeof ANGLE_BIN_WIDTH);
     for (let i = ANGLE_BIN_LIMITS[0]; i <= ANGLE_BIN_LIMITS[1]; i += ANGLE_BIN_WIDTH) {
+        console.log("in loop 1")
         let n = Array(RANGE_BIN_COUNT)
         for (let j = 0; j < RANGE_BIN_COUNT; j++) {
+            console.log("in loop 2")
             n[j] = Array(WINDOW_LENGTH).fill([])
         }
         bins.push(n)
+        console.log("in loop 3")
     }
+    console.log("after loop")
     return bins
 }
 

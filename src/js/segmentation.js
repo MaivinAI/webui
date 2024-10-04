@@ -98,24 +98,34 @@ let socketUrlErrors = '/ws/dropped'
 
 droppedframes(socketUrlErrors, playerCanvas)
 
+function parseInts(obj) {
+    for (let key in obj) {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            obj[key] = parseInts(obj[key]);
+        } else if (typeof obj[key] === 'string' && !isNaN(obj[key])) {
+            obj[key] = parseInt(obj[key], 10);
+        }
+    }
+    return obj;
+}
+
 const loader = new THREE.FileLoader();
 loader.load(
-    // resource URL
-    'assets/config.json',
+    '/config/webui/details',
     function (data) {
-        const config = JSON.parse(data)
-        console.log(config)
+        const config = parseInts(JSON.parse(data));
+        console.log(config);
 
         if (config.MASK_TOPIC) {
-            socketUrlMask = config.MASK_TOPIC
+            socketUrlMask = config.MASK_TOPIC;
         }
 
         if (config.DETECT_TOPIC) {
-            socketUrlDetect = config.DETECT_TOPIC
+            socketUrlDetect = config.DETECT_TOPIC;
         }
 
         if (config.H264_TOPIC) {
-            socketUrlH264 = config.H264_TOPIC
+            socketUrlH264 = config.H264_TOPIC;
         }
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
@@ -162,6 +172,9 @@ loader.load(
             })
         })
 
+    },
+    function (xhr) {
+        // Progress callback if needed
     },
     function (err) {
         console.error('An error happened', err);
