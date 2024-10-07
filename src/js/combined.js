@@ -134,40 +134,22 @@ let socketUrlMask = '/rt/detect/mask/'
 let socketUrlErrors = '/ws/dropped'
 droppedframes(socketUrlErrors, playerCanvas)
 
-function parseIntsInObject(obj) {
-    for (let key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-            obj[key] = parseIntsInObject(obj[key]);
-        } else if (typeof obj[key] === 'string') {
-            // Check if the string represents an integer
-            if (/^-?\d+$/.test(obj[key])) {
-                obj[key] = parseInt(obj[key], 10);
-            }
-        }
-    }
-    return obj;
-}
-
 const loader = new THREE.FileLoader();
 loader.load(
     // resource URL
-    '/config/webui/details',
+    '/assets/config.json',
     function (data) {
-        const config = parseIntsInObject(JSON.parse(data));
-        console.log("Parsed config:", config);
-
-        // Now you can use config.ANGLE_BIN_WIDTH, config.RANGE_BIN_WIDTH, etc.
-        // They will be integers if they were integer strings in the original data
-
-        if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH; }
+        const config = JSON.parse(data)
+        console.log(config)
+        if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
         if (config.ANGLE_BIN_LIMITS) {
-            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS[0];
-            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS[1];
+            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS[0]
+            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS[1]
         }
-        if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH; }
+        if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH }
         if (config.RANGE_BIN_LIMITS) {
-            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS[0];
-            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS[1];
+            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS[0]
+            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS[1]
         }
         if (config.WINDOW_LENGTH) {
             WINDOW_LENGTH = config.WINDOW_LENGTH
@@ -206,9 +188,6 @@ loader.load(
         if (config.COMBINED_CAMERA_PCD_LABEL) {
             CAMERA_PCD_LABEL = config.COMBINED_CAMERA_PCD_LABEL
         }
-
-        console.log("RANGE_BIN_WIDTH:", RANGE_BIN_WIDTH, "Type:", typeof RANGE_BIN_WIDTH);
-        console.log("ANGLE_BIN_WIDTH:", ANGLE_BIN_WIDTH, "Type:", typeof ANGLE_BIN_WIDTH);
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
         const cameraUpdate = fpsUpdate(cameraPanel)

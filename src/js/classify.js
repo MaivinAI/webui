@@ -49,7 +49,7 @@ export default function classify_points(points, mask_tex) {
     let mask_width = mask_tex.source.data.width;
     let mask_classes = mask.length / mask_height / mask_width;
 
-    const cam_mtx = new THREE.Matrix3(
+    const cam_mtx = new THREE.Matrix3().set(
         1260 / 1920 * mask_width, 0, 960 / 1920 * mask_width,
         0, 1260 / 1080 * mask_height, 540 / 1080 * mask_height,
         0, 0, 1
@@ -154,7 +154,7 @@ let label_count = 1
 export function classify_points_box(points, boxes) {
     // console.log(points, mask_tex);
 
-    const cam_mtx = new THREE.Matrix3(
+    const cam_mtx = new THREE.Matrix3().set(
         1260 / 1920, 0, 960 / 1920,
         0, 1260 / 1080, 540 / 1080,
         0, 0, 1

@@ -163,7 +163,7 @@ loader.load(
             DRAW_PCD = config.GRID_DRAW_PCD
         }
         if (config.USE_BOX) {
-            USE_BOX = config.USE_BOX
+            USE_BOX = config.USE_BOX.toLowerCase() === 'true';
         }
 
         if (config.MASK_TOPIC) {
@@ -199,6 +199,7 @@ loader.load(
                     detect_boxes = boxmsg
                 })
         } else {
+            console.log("i am in esfsdflse")
             const maskMSPanel = stats.addPanel(new Stats.Panel('mask decode ms', '#A2A', '#420'));
             get_shape(socketUrlMask, (height, width, length, mask) => {
                 const classes = Math.round(mask.length / height / width)

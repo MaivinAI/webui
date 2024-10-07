@@ -1,6 +1,7 @@
-import pako from './pako.js';
+import * as fzstd from './fzstd.js';
 import * as THREE from './three.js';
 import { CdrReader } from './Cdr.js';
+
 
 export async function get_shape(socketUrl, fn) {
     const socket = new WebSocket(socketUrl);
@@ -8,11 +9,11 @@ export async function get_shape(socketUrl, fn) {
     socket.onopen = function (event) {
         console.log('WebSocket connection opened to ' + socketUrl);
     };
-    let firstMsg = true;
+    let firstMsg = true
     socket.onmessage = (event) => {
         if (!firstMsg) {
-            socket.close();
-            return;
+            socket.close()
+            return
         }
         const arrayBuffer = event.data;
         const dataView = new DataView(arrayBuffer);
@@ -23,22 +24,23 @@ export async function get_shape(socketUrl, fn) {
             const width = reader.uint32();
             const length = reader.uint32();
             const encoding = reader.string();
-            if (encoding == "zlib") {
-                const compressedData = reader.uint8Array();
-                mask = pako.inflate(compressedData);
+            if (encoding == "zstd") {
+                const d = reader.uint8Array()
+                // console.log(Array.apply([], d).join(","));
+                mask = fzstd.decompress(d);
             } else {
                 mask = reader.uint8Array();
             }
 
-            console.log("Using %dx%dx%d = %d", height, width, Math.round(mask.length / height / width), mask.length);
-            fn(height, width, length, mask);
-            firstMsg = false;
+            console.log("Using %dx%dx%d = %d", height, width, Math.round(mask.length / height / width), mask.length)
+            fn(height, width, length, mask)
+            firstMsg = false
         } catch (error) {
             console.error("Failed to deserialize image data:", error);
             return;
         }
-        socket.close();
-    };
+        socket.close()
+    }
 
     socket.onerror = function (error) {
         console.error(`WebSocket ${socketUrl} error: ${error}`);
@@ -50,6 +52,7 @@ export async function get_shape(socketUrl, fn) {
 }
 
 export default async function segstream(socketUrl, height, width, classes, onMessage) {
+
     const socket = new WebSocket(socketUrl);
     socket.binaryType = "arraybuffer";
     let framesProcessed = 0;
@@ -63,22 +66,23 @@ export default async function segstream(socketUrl, height, width, classes, onMes
     texture_mask.minFilter = THREE.NearestFilter;
     texture_mask.format = THREE.RGBAFormat;
 
-    const timing = {};
-    let start = performance.now();
+    const timing = {}
+    let start = performance.now()
     socket.onmessage = (event) => {
-        start = performance.now();
+        start = performance.now()
         const arrayBuffer = event.data;
         const dataView = new DataView(arrayBuffer);
         const reader = new CdrReader(dataView);
         let mask;
         try {
-            const height = reader.uint32();
-            const width = reader.uint32();
-            const length = reader.uint32();
-            const encoding = reader.string();
-            if (encoding == "zlib") {
-                const compressedData = reader.uint8Array();
-                mask = pako.inflate(compressedData);
+            const height = reader.uint32(); // Read height
+            const width = reader.uint32(); // Read width
+            const length = reader.uint32(); // Read length
+            const encoding = reader.string(); // Read encoding
+            // TODO: Error handling if the height/width don't match the expected height/width?
+            if (encoding == "zstd") {
+                const d = reader.uint8Array()
+                mask = fzstd.decompress(d);
             } else {
                 mask = reader.uint8Array();
             }
@@ -86,6 +90,7 @@ export default async function segstream(socketUrl, height, width, classes, onMes
             console.error("Failed to deserialize image data:", error);
             return;
         }
+        // let start = performance.now();
         let n_layer_stride = height * width * 4;
         let n_row_stride = width * 4;
         let n_col_stride = 4;
@@ -102,14 +107,16 @@ export default async function segstream(socketUrl, height, width, classes, onMes
                 }
             }
         }
+        // let elapsed = performance.now() - start;
+        // console.log("Array reshaping took ", elapsed, " ms");
 
         texture_mask.needsUpdate = true;
         if (onMessage) {
-            timing.decode_time = performance.now() - start;
-            onMessage(timing);
+            timing.decode_time = performance.now() - start
+            onMessage(timing)
         }
-    };
 
+    };
     socket.onerror = function (error) {
         console.error(`WebSocket ${socketUrl} error: ${error}`);
     };
@@ -120,4 +127,3 @@ export default async function segstream(socketUrl, height, width, classes, onMes
 
     return texture_mask;
 }
-
