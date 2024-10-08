@@ -137,7 +137,7 @@ droppedframes(socketUrlErrors, playerCanvas)
 const loader = new THREE.FileLoader();
 loader.load(
     // resource URL
-    '/assets/config.json',
+    '/config/webui/details',
     function (data) {
         const config = JSON.parse(data)
         console.log(config)
