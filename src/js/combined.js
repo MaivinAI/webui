@@ -134,12 +134,29 @@ let socketUrlMask = '/rt/detect/mask/'
 let socketUrlErrors = '/ws/dropped'
 droppedframes(socketUrlErrors, playerCanvas)
 
+function parseNumbersInObject(obj) {
+    for (let key in obj) {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            obj[key] = parseNumbersInObject(obj[key]);
+        } else if (typeof obj[key] === 'string') {
+            if (!isNaN(obj[key]) && obj[key].trim() !== '') {
+                if (obj[key].includes('.')) {
+                    obj[key] = parseFloat(obj[key]);
+                } else {
+                    obj[key] = parseInt(obj[key], 10);
+                }
+            }
+        }
+    }
+    return obj;
+}
+
 const loader = new THREE.FileLoader();
 loader.load(
     // resource URL
     '/config/webui/details',
     function (data) {
-        const config = JSON.parse(data)
+        const config = parseNumbersInObject(JSON.parse(data));
         console.log(config)
         if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
         if (config.ANGLE_BIN_LIMITS) {
@@ -159,7 +176,7 @@ loader.load(
         }
 
         if (config.USE_BOX) {
-            USE_BOX = config.USE_BOX
+            USE_BOX = config.USE_BOX.toLowerCase() === 'true';
         }
 
         if (config.MASK_TOPIC) {

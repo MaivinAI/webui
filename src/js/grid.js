@@ -199,7 +199,6 @@ loader.load(
                     detect_boxes = boxmsg
                 })
         } else {
-            console.log("i am in esfsdflse")
             const maskMSPanel = stats.addPanel(new Stats.Panel('mask decode ms', '#A2A', '#420'));
             get_shape(socketUrlMask, (height, width, length, mask) => {
                 const classes = Math.round(mask.length / height / width)
