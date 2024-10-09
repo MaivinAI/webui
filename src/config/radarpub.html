@@ -170,7 +170,9 @@
                     <option value="high">High</option>
                 </select>
             </div>
-
+            <div class="comment">
+                Note: Ultra-short range (in Frequency Sweep) only works with Low Center frequency.
+            </div>
             <div class="form-group">
                 <label for="frequency_sweep">Frequency Sweep:</label>
                 <select id="frequency_sweep" name="frequency_sweep">
@@ -230,6 +232,36 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const centerFrequency = document.getElementById('center_frequency');
+            const frequencySweep = document.getElementById('frequency_sweep');
+
+            function updateDropdowns() {
+                if (centerFrequency.value === 'low') {
+                    Array.from(frequencySweep.options).forEach(option => {
+                        option.disabled = false;
+                    });
+                } else {
+                    frequencySweep.querySelector('option[value="ultra-short"]').disabled = true;
+                    if (frequencySweep.value === 'ultra-short') {
+                        frequencySweep.value = 'short';
+                    }
+                }
+
+                if (frequencySweep.value === 'ultra-short') {
+                    Array.from(centerFrequency.options).forEach(option => {
+                        option.disabled = option.value !== 'low';
+                    });
+                    centerFrequency.value = 'low';
+                } else {
+                    Array.from(centerFrequency.options).forEach(option => {
+                        option.disabled = false;
+                    });
+                }
+            }
+
+            centerFrequency.addEventListener('change', updateDropdowns);
+            frequencySweep.addEventListener('change', updateDropdowns);
+
             fetch(`/config/radarpub/details`, {
                 method: 'GET',
                 headers: {
@@ -244,13 +276,16 @@
                 })
                 .then(data => {
                     document.getElementById('log_level').value = data.RUST_LOG || '';
-                    document.getElementById('center_frequency').value = data.CENTER_FREQUENCY || '';
-                    document.getElementById('frequency_sweep').value = data.FREQUENCY_SWEEP || '';
+                    centerFrequency.value = data.CENTER_FREQUENCY || '';
+                    frequencySweep.value = data.FREQUENCY_SWEEP || '';
                     document.getElementById('range_toggle').value = data.RANGE_TOGGLE || '';
                     document.getElementById('detection_sensitivity').value = data.DETECTION_SENSITIVITY || '';
                     document.getElementById('clustering').value = data.CLUSTERING || '';
                     document.getElementById('window_size').value = data.WINDOW_SIZE || '10';
                     document.getElementById('cube').value = data.CUBE || '';
+
+                    // Call updateDropdowns after setting initial values
+                    updateDropdowns();
                 })
                 .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);
