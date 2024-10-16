@@ -4,182 +4,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>List MCAP Files</title>
+    <title>MCAP Recorder</title>
     <link href="./css/styles.css" rel="stylesheet">
     <link href="./css/full.css" rel="stylesheet" type="text/css" />
 
     <script src="./js/tailwind.js"></script>
     <style>
         body {
-            margin: 0;
-            display: flex;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
         }
 
-        main {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            overflow: auto;
+            overflow-y: auto;
         }
 
-        h2 {
-            color: #343a40;
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        th,
-        td {
-            border: 1px solid #dee2e6;
-            padding: 12px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        .details-button,
-        .delete-button,
-        .upload-button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 6px 12px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            margin-right: 5px;
-        }
-
-        .delete-button {
-            background-color: #dc3545;
-        }
-
-        .delete-button:hover {
-            background-color: #c82333;
-        }
-
-        .details-button:hover {
-            background-color: #218838;
-            transform: scale(1.05);
-        }
-
-
-
-        .upload-button {
-            background-color: #0028f2;
-        }
-
-        .upload-button:hover {
-            background-color: #0028d2;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close:hover {
-            color: #000;
-        }
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .details-grid div {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 10px;
-            font-size: 14px;
-            color: #495057;
-        }
-
-        .details-grid div strong {
-            display: block;
-            margin-bottom: 5px;
-            color: #343a40;
-        }
-
-        #directoryPath {
-            margin-top: 10px;
-            font-size: 1.2rem;
-            color: #343a40;
-        }
-
-        .button-group {
-            margin-bottom: 20px;
-        }
-
-        #start-button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-right: 10px;
-        }
-
-        #stop-button {
-            background-color: #FF6347;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .preview-container {
-            width: 45%;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        #video-preview {
-            width: 100%;
-            height: 360px;
+        .card {
+            background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: none;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .recording-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
         }
 
         .recording-indicator {
-            display: none;
-            color: red;
             font-weight: bold;
-            text-align: center;
-            margin-top: 20px;
+            margin-left: 10px;
+        }
+
+        .file-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        .file-table th {
+            background-color: #e2e8f0;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            color: #4a5568;
+        }
+
+        .file-table td {
+            background-color: white;
+            padding: 12px;
+        }
+
+        .file-table tr {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #0d9bf9;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
         }
     </style>
 </head>
@@ -201,8 +152,8 @@
                         <summary>Visualizations</summary>
                         <ul class="bg-base-100 rounded-t-none p-2">
                             <li><a href="/combined">Combined</a></li>
-                            <li><a href="/gps">GPS</a></li>
                             <li><a href="/imu">IMU</a></li>
+                            <li><a href="/mcap">MCAP</a></li>
                             <li><a href="/grid">Occupancy Grid</a></li>
                             <li><a href="/segmentation">Segmentation</a></li>
                             <li><a href="/settings">Setting</a></li>
@@ -212,39 +163,47 @@
             </ul>
         </div>
     </header>
-    <main>
-        <h2>List MCAP Files</h2>
-        <div id="directoryPath"></div>
-
-        <div class="button-group">
-            <button id="start-button">Start Recording</button>
-            <button id="stop-button">Stop Recording</button>
+    <main class="container mt-8">
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4">Recording Controls</h2>
+            <div class="recording-controls">
+                <div class="flex items-center">
+                    <label class="switch mr-4">
+                        <input type="checkbox" id="recordingToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="recordingStatus" class="font-bold">Start Recording</span>
+                </div>
+                <div class="recording-indicator" id="recordingIndicator"></div>
+            </div>
         </div>
 
-        <table id="fileTable">
-            <thead>
-                <tr>
-                    <th>File Name</th>
-                    <th>Size (MB)</th>
-                    <th>Created</th>
-                    <th>Average Video Length (s)</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-
-        <div class="recording-indicator"></div>
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4">MCAP Files</h2>
+            <div id="directoryPath" class="mb-4 text-gray-600"></div>
+            <table class="file-table">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Size (MB)</th>
+                        <th>Created</th>
+                        <th>Avg. Video Length (s)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fileTableBody"></tbody>
+            </table>
+        </div>
     </main>
 
-    <!-- The Modal -->
-    <dialog id="myModal" class="modal modal-bottom sm:modal-middle">
-        <div class="modal-box">
-            <form method="dialog">
-                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    <dialog id="myModal" class="modal">
+        <div class="modal-box p-6 bg-white rounded-lg shadow-xl max-w-3xl">
+            <h3 class="text-2xl font-bold mb-6 text-gray-800">File Details</h3>
+            <div id="modalDetails" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <form method="dialog" class="mt-8 text-right">
+                <button
+                    class="btn btn-primary bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Close</button>
             </form>
-            <h3 class="text-lg font-bold">Details</h3>
-            <div id="modalDetails" class="details-grid"></div>
         </div>
     </dialog>
 
@@ -261,7 +220,7 @@
             };
 
             socket.onmessage = (event) => {
-                const fileTableBody = document.querySelector('#fileTable tbody');
+                const fileTableBody = document.querySelector('#fileTableBody');
                 const responseText = event.data;
 
                 fileTableBody.innerHTML = '';
@@ -296,42 +255,7 @@
 
                         const files = data.files || [];
                         files.forEach((file) => {
-                            const row = document.createElement('tr');
-                            const fileNameCell = document.createElement('td');
-                            const fileSizeCell = document.createElement('td');
-                            const fileCreatedCell = document.createElement('td');
-                            const avgLengthCell = document.createElement('td');
-                            const actionsCell = document.createElement('td');
-
-                            fileNameCell.textContent = file.name;
-                            fileSizeCell.textContent = file.size;
-                            fileCreatedCell.textContent = file.created;
-                            avgLengthCell.textContent = file.average_video_length.toFixed(2);
-
-                            const detailsButton = document.createElement('button');
-                            detailsButton.textContent = 'Show Details';
-                            detailsButton.className = 'details-button';
-                            detailsButton.onclick = () => showModal(file.topics);
-
-                            const deleteButton = document.createElement('button');
-                            deleteButton.textContent = 'Delete';
-                            deleteButton.className = 'delete-button';
-                            deleteButton.onclick = () => deleteFile(file.name, data.dir_name);
-
-                            const uploadButton = document.createElement('button');
-                            uploadButton.textContent = 'Upload';
-                            uploadButton.className = 'upload-button';
-                            uploadButton.onclick = () => getUploadCredentials(file.name, data.dir_name);
-
-                            actionsCell.appendChild(detailsButton);
-                            actionsCell.appendChild(deleteButton);
-                            actionsCell.appendChild(uploadButton);
-
-                            row.appendChild(fileNameCell);
-                            row.appendChild(fileSizeCell);
-                            row.appendChild(fileCreatedCell);
-                            row.appendChild(avgLengthCell);
-                            row.appendChild(actionsCell);
+                            const row = createTableRow(file, data.dir_name);
                             fileTableBody.appendChild(row);
                         });
                     }
@@ -368,12 +292,21 @@
             modalDetails.innerHTML = '';
 
             Object.entries(topics).forEach(([topic, details]) => {
-                const detailDiv = document.createElement('div');
-                detailDiv.innerHTML = `<strong>${topic}</strong><br>FPS: ${details.average_fps.toFixed(2)}<br>Frames: ${details.message_count}`;
-                modalDetails.appendChild(detailDiv);
+                const detailCard = document.createElement('div');
+                detailCard.className = 'bg-gray-100 p-4 rounded-lg shadow';
+                detailCard.innerHTML = `
+                    <h4 class="text-lg font-semibold mb-2 text-gray-800">${topic}</h4>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="text-gray-600">FPS:</div>
+                        <div class="font-medium">${details.average_fps.toFixed(2)}</div>
+                        <div class="text-gray-600">Frames:</div>
+                        <div class="font-medium">${details.message_count.toLocaleString()}</div>
+                    </div>
+                `;
+                modalDetails.appendChild(detailCard);
             });
 
-            myModal.showModal();
+            modal.showModal();
         }
 
         function deleteFile(fileName, directory) {
@@ -478,104 +411,87 @@
         }
 
 
-        document.getElementById('start-button').addEventListener('click', startRecording);
-        document.getElementById('stop-button').addEventListener('click', stopRecording);
+        document.getElementById('recordingToggle').addEventListener('change', function () {
+            if (this.checked) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
 
         function checkRecordingStatus() {
             fetch('/recorder-status')
                 .then(response => {
                     if (!response.ok) {
-                        return response.text().then(text => {
-                            throw new Error(`HTTP error ${response.status}: ${text}`);
-                        });
+                        throw new Error(`HTTP error ${response.status}`);
                     }
                     return response.text();
                 })
                 .then(statusText => {
-                    if (statusText.trim() === "Recorder is running") {
-                        console.log('Recording is currently in progress.');
-                        const recordingIndicator = document.querySelector('.recording-indicator');
-                        if (recordingIndicator) {
-                            recordingIndicator.textContent = 'Recording...';
-                            recordingIndicator.style.display = 'block';
-                        } else {
-                            console.error('Recording indicator element not found.');
-                        }
-                    } else {
-                        console.log('Recorder is not running.');
-                        const recordingIndicator = document.querySelector('.recording-indicator');
-                        if (recordingIndicator) {
-                            recordingIndicator.textContent = 'Not recording';
-                            recordingIndicator.style.display = 'block';
-                        } else {
-                            console.error('Recording indicator element not found.');
-                        }
-                    }
+                    const isRecording = statusText.trim() === "Recorder is running";
+                    updateRecordingUI(isRecording);
                 })
                 .catch(error => {
                     console.error('Error checking recording status:', error);
                 });
         }
 
+        function updateRecordingUI(isRecording) {
+            const toggle = document.getElementById('recordingToggle');
+            const statusText = document.getElementById('recordingStatus');
+            const recordingIndicator = document.getElementById('recordingIndicator');
+
+            toggle.checked = isRecording;
+            statusText.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
+
+            if (recordingIndicator) {
+                recordingIndicator.textContent = isRecording ? 'Recording in progress' : '';
+                recordingIndicator.style.color = isRecording ? '#e74c3c' : 'inherit';
+            }
+        }
 
         function startRecording() {
             fetch('/start', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
-            }).then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(`HTTP error ${response.status}: ${text}`);
-                    });
-                }
-                return response.text();
-            }).then(text => {
-                console.log('Recording started:', text);
-                startPolling()
-                const recordingIndicator = document.querySelector('.recording-indicator');
-                if (recordingIndicator) {
-                    recordingIndicator.textContent = 'Recording...';
-                    recordingIndicator.style.display = 'block';
-                } else {
-                    console.error('Recording indicator element not found.');
-                }
-            }).catch(error => {
-                console.error('Error starting recording:', error);
-                alert(`Error starting recording: ${error.message}`);
-            });
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                    return response.text();
+                })
+                .then(text => {
+                    console.log('Recording started:', text);
+                    updateRecordingUI(true);
+                    startPolling();
+                })
+                .catch(error => {
+                    console.error('Error starting recording:', error);
+                    alert(`Error starting recording: ${error.message}`);
+                    updateRecordingUI(false);
+                });
         }
 
         function stopRecording() {
             fetch('/stop', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
-            }).then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(`HTTP error ${response.status}: ${text}`);
-                    });
-                }
-                return response.text();
-            }).then(text => {
-                console.log('Recording stopped:', text);
-                startPolling()
-                const recordingIndicator = document.querySelector('.recording-indicator');
-                if (recordingIndicator) {
-                    recordingIndicator.textContent = '';
-                    recordingIndicator.style.display = 'none';
-                } else {
-                    console.error('Recording indicator element not found.');
-                }
-            }).catch(error => {
-                console.error('Error stopping recording:', error);
-                alert(`Error stopping recording: ${error.message}`);
-            });
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                    return response.text();
+                })
+                .then(text => {
+                    console.log('Recording stopped:', text);
+                    updateRecordingUI(false);
+                    startPolling();
+                })
+                .catch(error => {
+                    console.error('Error stopping recording:', error);
+                    alert(`Error stopping recording: ${error.message}`);
+                    updateRecordingUI(true);
+                });
         }
 
         function startPolling() {
@@ -583,6 +499,22 @@
                 listMcapFiles();
                 checkRecordingStatus();
             }, pollingInterval);
+        }
+
+        function createTableRow(file, directoryName) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-4 py-2">${file.name}</td>
+                <td class="px-4 py-2">${file.size}</td>
+                <td class="px-4 py-2">${file.created}</td>
+                <td class="px-4 py-2">${file.average_video_length.toFixed(2)}</td>
+                <td class="px-4 py-2">
+                    <button class="btn btn-primary mr-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full" onclick='showModal(${JSON.stringify(file.topics)})'>Details</button>
+                    <button class="btn btn-danger mr-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full" onclick="deleteFile('${file.name}', '${directoryName}')">Delete</button>
+                    <button class="btn btn-success bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full" onclick="getUploadCredentials('${file.name}', '${directoryName}')">Upload</button>
+                </td>
+            `;
+            return row;
         }
 
         connectWebSocket();

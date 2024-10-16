@@ -117,6 +117,76 @@
         button:active {
             transform: scale(0.98);
         }
+
+        .toggle-switch-container {
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0 10px;
+        }
+
+        .toggle-switch-label {
+            display: block;
+            width: 60px;
+            height: 34px;
+            background-color: #ccc;
+            border-radius: 34px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-switch-label .toggle-switch-inner {
+            display: block;
+            width: 200%;
+            margin-left: -100%;
+            transition: margin 0.3s;
+        }
+
+        .toggle-switch-label .toggle-switch-switch {
+            display: block;
+            width: 26px;
+            height: 26px;
+            background-color: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            transition: 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-switch:checked+.toggle-switch-label {
+            background-color: #2196F3;
+        }
+
+        .toggle-switch:checked+.toggle-switch-label .toggle-switch-switch {
+            transform: translateX(26px);
+        }
+
+        .device-type-text {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .device-type-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .device-type-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .device-type-value {
+            font-weight: bold;
+            min-width: 60px;
+            text-align: left;
+        }
     </style>
 </head>
 
@@ -147,6 +217,21 @@
             </ul>
         </div>
     </header>
+
+    <div class="device-type-container">
+        <div class="device-type-wrapper">
+            <span class="device-type-text">Device Type:</span>
+            <div class="toggle-switch-container">
+                <input type="checkbox" id="device_type" class="toggle-switch" hidden>
+                <label for="device_type" class="toggle-switch-label">
+                    <span class="toggle-switch-inner"></span>
+                    <span class="toggle-switch-switch"></span>
+                </label>
+            </div>
+            <span id="device_type_text" class="device-type-value">MAIVIN</span>
+        </div>
+    </div>
+
     <main>
         <div class="container">
             <h2>Maivin Web UI Service Configuration</h2>
@@ -293,6 +378,15 @@
                     document.getElementById('detect_topic').value = data.DETECT_TOPIC || '/rt/detect/boxes2d/';
                     document.getElementById('pcd_topic').value = data.PCD_TOPIC || '/rt/radar/targets/';
                     document.getElementById('h264_topic').value = data.H264_TOPIC || '/rt/camera/h264/';
+
+                    const deviceToggle = document.getElementById('device_type');
+                    const deviceTypeText = document.getElementById('device_type_text');
+                    deviceToggle.checked = data.DEVICE === 'RAIVIN';
+                    deviceTypeText.textContent = data.DEVICE || 'MAIVIN';
+
+                    deviceToggle.addEventListener('change', function () {
+                        deviceTypeText.textContent = this.checked ? 'RAIVIN' : 'MAIVIN';
+                    });
                 })
                 .catch(error => console.error('Error fetching config:', error));
         });
@@ -317,7 +411,8 @@
                 MASK_TOPIC: document.getElementById('mask_topic').value,
                 DETECT_TOPIC: document.getElementById('detect_topic').value,
                 PCD_TOPIC: document.getElementById('pcd_topic').value,
-                H264_TOPIC: document.getElementById('h264_topic').value
+                H264_TOPIC: document.getElementById('h264_topic').value,
+                DEVICE: document.getElementById('device_type').checked ? 'RAIVIN' : 'MAIVIN',
             };
 
             fetch('/config/webui', {
@@ -338,9 +433,5 @@
         });
     </script>
 </body>
-
-</html>
-
-</html>
 
 </html>
