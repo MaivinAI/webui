@@ -149,7 +149,6 @@
         <div class="navbar-start">
             <a href="/" class="btn btn-ghost text-xl">
                 <img class="header__logo me-2" src="assets/auzoneLogo.svg" alt="" width="200" height="100">
-                <span id="deviceName">Device</span>
             </a>
         </div>
         <div class="navbar-center"></div>
@@ -200,8 +199,6 @@
                 const data = await response.json();
                 const deviceValue = data.DEVICE;
 
-                const deviceNameElement = document.getElementById('deviceName');
-                deviceNameElement.textContent = deviceValue || 'Device';
 
                 populateCardContainer(deviceValue);
             } catch (error) {
