@@ -197,11 +197,11 @@
             <h2 class="text-2xl font-bold mb-4">Recording Controls</h2>
             <div class="recording-controls">
                 <div class="flex items-center">
+                    <span id="recordingStatus" class="font-bold mr-2">Recording</span> <!-- Updated text position -->
                     <label class="switch mr-4">
                         <input type="checkbox" id="recordingToggle">
                         <span class="slider"></span>
                     </label>
-                    <span id="recordingStatus" class="font-bold">Start Recording</span>
                 </div>
                 <div class="recording-indicator" id="recordingIndicator"></div>
             </div>
@@ -406,7 +406,7 @@
                         alert('Upload cancelled: URL and JWT token are required.');
                         return;
                     }
-                    uploadFile(directoryName, fileName, url, jwt);
+                    uploadFile(directoryName, fileName, url, jwt, topic);
                     alert(`Credentials fetched successfully: Starting Upload`);
                 });
         }
@@ -467,11 +467,11 @@
 
         function updateRecordingUI(isRecording) {
             const toggle = document.getElementById('recordingToggle');
-            const statusText = document.getElementById('recordingStatus');
             const recordingIndicator = document.getElementById('recordingIndicator');
 
             toggle.checked = isRecording;
-            statusText.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
+            // Removed the status text update for Start/Stop
+            // statusText.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
 
             if (recordingIndicator) {
                 recordingIndicator.textContent = isRecording ? 'Recording in progress' : '';
