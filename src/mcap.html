@@ -541,6 +541,7 @@
                     <button class="btn btn-primary mr-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full" onclick='showModal(${JSON.stringify(file.topics)})'>Details</button>
                     <button class="btn btn-danger mr-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full" onclick="deleteFile('${file.name}', '${directoryName}')">Delete</button>
                     <button class="btn btn-success bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full" onclick="getUploadCredentials('${file.name}', '${directoryName}')">Upload</button>
+                    <a class="btn btn-info bg-blue-300 hover:bg-blue-400 text-white font-bold py-2 px-4 rounded-full"href="/download${directoryName}/${file.name}">Download</a>
                 </td>
             `;
             return row;
