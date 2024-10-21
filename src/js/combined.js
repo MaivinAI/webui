@@ -84,6 +84,14 @@ const height = 1080;
 const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: playerCanvas });
 renderer.setSize(width, height)
 renderer.domElement.style.cssText = ""
+
+
+
+const boxCanvas = document.getElementById("boxes")
+boxCanvas.width = width;
+boxCanvas.height = height;
+
+
 // const camera_proj = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, -1, 1000);
 const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000);
 camera.rotation.z = PI
@@ -122,7 +130,6 @@ let RANGE_BIN_WIDTH = 0.5
 let RANGE_BIN_LIMITS = [0, 20]
 let WINDOW_LENGTH = 5
 let BIN_THRESHOLD = 3
-let USE_BOX = false
 let GRID_DRAW_PCD = "disabled"
 let CAMERA_DRAW_PCD = "disabled"
 let CAMERA_PCD_LABEL = false
@@ -173,10 +180,6 @@ loader.load(
         }
         if (config.BIN_THRESHOLD) {
             BIN_THRESHOLD = config.BIN_THRESHOLD
-        }
-
-        if (config.USE_BOX) {
-            USE_BOX = config.USE_BOX.toLowerCase() === 'true';
         }
 
         if (config.MASK_TOPIC) {
@@ -241,39 +244,30 @@ loader.load(
         }
 
         const modelFPSUpdate = fpsUpdate(modelPanel)
-        if (USE_BOX) {
-            // const modelMSPanel = stats.addPanel(new Stats.Panel('model inference ms', '#A2A', '#420'));
-            boxesstream(socketUrlDetect,
-                (timing) => {
-                    modelFPSUpdate();
-                    // modelMSPanel.update(detect_boxes.msg.model_time.sec * 1e3 + detect_boxes.msg.model_time.nanosec * 1e-6, 33)
-                }).then((boxmsg) => {
-                    detect_boxes = boxmsg
-                })
-        } else {
-            // const maskMSPanel = stats.addPanel(new Stats.Panel('mask decode ms', '#A2A', '#420'));
-            get_shape(socketUrlMask, (height, width, length, mask) => {
-                const classes = Math.round(mask.length / height / width)
-                segstream(socketUrlMask, height, width, classes, (timing) => {
-                    modelFPSUpdate();
-                    // maskMSPanel.update(timing.decode_time, 33) 
-                }).then((texture_mask) => {
-                    material_mask = new ProjectedMask({
-                        camera: camera, // the camera that acts as a projector
-                        texture: texture_mask, // the texture being projected
-                        transparent: true,
-                        colors: mask_colors,
-                    })
-                    const mesh_mask = new THREE.Mesh(quad, material_mask);
-                    mesh_mask.needsUpdate = true;
-                    mesh_mask.position.z = 50;
-                    mesh_mask.rotation.x = PI;
-                    mask_tex = texture_mask
-                    scene.add(mesh_mask);
-                })
-            })
-        }
 
+        // const maskMSPanel = stats.addPanel(new Stats.Panel('mask decode ms', '#A2A', '#420'));
+        get_shape(socketUrlMask, (height, width, length, mask) => {
+            const classes = Math.round(mask.length / height / width)
+            segstream(socketUrlMask, height, width, classes, (timing) => {
+                modelFPSUpdate();
+                // maskMSPanel.update(timing.decode_time, 33) 
+            }).then((texture_mask) => {
+                material_mask = new ProjectedMask({
+                    camera: camera, // the camera that acts as a projector
+                    texture: texture_mask, // the texture being projected
+                    transparent: true,
+                    colors: mask_colors,
+                })
+                const mesh_mask = new THREE.Mesh(quad, material_mask);
+                mesh_mask.needsUpdate = true;
+                mesh_mask.position.z = 50;
+                mesh_mask.rotation.x = PI;
+                mask_tex = texture_mask
+                scene.add(mesh_mask);
+            })
+        })
+        boxesstream(socketUrlDetect, boxCanvas, null)
+        
         pcdStream(socketUrlPcd, fpsUpdate(radarPanel)).then((pcd) => {
             radar_points = pcd;
         })
@@ -758,3 +752,4 @@ function onWindowResize() {
     camera_grid.updateProjectionMatrix();
     renderer_grid.setSize(gridCanvasWidth, gridCanvasHeight)
 }
+

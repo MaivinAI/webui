@@ -59,10 +59,21 @@
             flex: 1 20 80%;
             display: flex;
             align-items: end;
+            position: relative;
             background-color: #a0a0a0;
         }
 
         #player {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            position: relative;
+            bottom: 0px;
+        }
+
+        #boxes {
             width: 100%;
             aspect-ratio: 16 / 9;
             max-height: 100%;
@@ -174,12 +185,13 @@
         <div id="test">
             <div id="player_div">
                 <canvas id="player"></canvas>
+                <canvas id="boxes"></canvas>
             </div>
             <div id="grid_div">
                 <canvas id="grid"></canvas>
             </div>
         </div>
-        <!-- <canvas id="boxes" width="1920" height="1080" class="boxes"></canvas> -->
+        
         <!-- <button id="toggleButton" class="btn">Hide Boxes</button> -->
     </main>
 

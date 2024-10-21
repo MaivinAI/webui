@@ -10,26 +10,77 @@ function resetTimeout() {
     }, 15000);
 }
 
-function drawBoxes(pCanvas, message) {
-    if (!boundingBoxEnabled || !message || !message.boxes || !Array.isArray(message.boxes)) {
-        return;
+const box_colors = [
+    "rgb(255, 255, 255)",
+    "rgb(0 255 0)",
+    "rgb(128 128 186)",
+    "rgb(2 48 75)"
+]
+
+
+const CHARCODE_MINUS = "-".charCodeAt(0);
+const CHARCODE_DOT = ".".charCodeAt(0);
+const CHARCODE_a = "a".charCodeAt(0);
+const CHARCODE_A = "A".charCodeAt(0);
+const CHARCODE_0 = "0".charCodeAt(0);
+function uuid_to_color(id) {
+    let hexcode = 0;
+    let bytes = 0;
+    for (const char of id) {
+        const c = char.charCodeAt(0);
+        if (c === CHARCODE_MINUS || c === CHARCODE_DOT) {
+            continue;
+        }
+        let val = 0;
+        if (c >= CHARCODE_a) {
+            val = c - CHARCODE_a + 10;
+        } else if (c >= CHARCODE_A) {
+            val = c - CHARCODE_A + 10;
+        } else if (c >= CHARCODE_0) {
+            val = c - CHARCODE_0;
+        }
+        hexcode = (hexcode << 4) + val;
+
+        // printf("c: %c val: %i hexcode: %x\n", c, val, hexcode);
+        bytes++;
+        if (bytes >= 8) {
+            break;
+        }
     }
 
-    var canvas = document.getElementById("boxes");
+    return `rgb(${((hexcode >> 24) & 0xff)} ${((hexcode >> 16) & 0xff)} ${((hexcode >> 8) & 0xff)})`
+}
+
+function drawBoxes(canvas, message) {
+    if (!message || !message.boxes || !Array.isArray(message.boxes)) {
+        return;
+    }
 
     var ctx = canvas.getContext("2d");
     if (ctx == null) {
         return
     }
+    ctx.font = "48px monospace";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (let i = 0; i < message.boxes.length; i++) {
         const box = message.boxes[i];
+        let text = "text"
+        let color = "white"
+        if (box.track.id) {
+            text = box.track.id;
+            color = uuid_to_color(text)
+        } else {
+            text = box.label;
+        }
         ctx.beginPath();
-        ctx.rect((box.center_x - box.width / 2) * 1920, (box.center_y - box.height / 2) * 1080, box.width * 1920, box.height * 1080);
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 2;
+        ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
         ctx.stroke();
+
+        ctx.fillStyle = color;
+        ctx.fillText(text, (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height)
     }
 }
 
@@ -69,7 +120,7 @@ function parseDetectBoxes2D(reader) {
     return detectBox2D
 }
 
-export default async function boxesstream(socketUrl, onMessage) {
+export default async function boxesstream(socketUrl, canvas, onMessage) {
     const boxes = {}
     boxes.msg = {}
     boxes.msg.boxes = []
@@ -95,6 +146,9 @@ export default async function boxesstream(socketUrl, onMessage) {
             boxmsg.boxes = []
             for (let i = 0; i < arrlen; i++) {
                 boxmsg.boxes.push(parseDetectBoxes2D(reader))
+            }
+            if (canvas) {
+                drawBoxes(canvas, boxmsg)
             }
             boxes.msg = boxmsg
             boxes.needsUpdate = true
