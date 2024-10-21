@@ -66,20 +66,22 @@ function drawBoxes(canvas, message) {
     for (let i = 0; i < message.boxes.length; i++) {
         const box = message.boxes[i];
         let text = "text"
-        let color = "white"
+        let color_box = "white"
+        let color_text = "black"
         if (box.track.id) {
             text = box.track.id;
-            color = uuid_to_color(text)
+            color_box = uuid_to_color(text)
+            color_text = uuid_to_color(text)
         } else {
             text = box.label;
         }
         ctx.beginPath();
         ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
-        ctx.strokeStyle = color;
+        ctx.strokeStyle = color_box;
         ctx.lineWidth = 4;
         ctx.stroke();
 
-        ctx.fillStyle = color;
+        ctx.fillStyle = color_text;
         ctx.fillText(text, (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height)
     }
 }
