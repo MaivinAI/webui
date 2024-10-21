@@ -52,7 +52,13 @@ function uuid_to_color(id) {
 }
 
 function drawBoxes(canvas, message) {
-    if (!message || !message.boxes || !Array.isArray(message.boxes)) {
+    if (!message) {
+        return;
+    }
+    if (!message.boxes) {
+        return;
+    } 
+    if (!Array.isArray(message.boxes)) {
         return;
     }
 
