@@ -8,6 +8,7 @@ import boxesstream from './boxes.js'
 import { dynamicSort } from './sort.js'
 import { PolarGridFan } from './polarGridFan.js'
 import SpriteText from './three-spritetext.js';
+import { parseNumbersInObject } from './parseNumbersInObject.js';
 const PI = Math.PI
 
 const scene = new THREE.Scene();
@@ -113,27 +114,12 @@ let WINDOW_LENGTH = 5
 let BIN_THRESHOLD = 3
 let DRAW_PCD = false
 let USE_BOX = false
+let DRAW_UNKNOWN = false
 
 let socketUrlMask = '/rt/detect/mask/'
 let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlPcd = '/rt/radar/targets/';
 
-function parseNumbersInObject(obj) {
-    for (let key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-            obj[key] = parseNumbersInObject(obj[key]);
-        } else if (typeof obj[key] === 'string') {
-            if (!isNaN(obj[key]) && obj[key].trim() !== '') {
-                if (obj[key].includes('.')) {
-                    obj[key] = parseFloat(obj[key]);
-                } else {
-                    obj[key] = parseInt(obj[key], 10);
-                }
-            }
-        }
-    }
-    return obj;
-}
 
 loader.load(
     // resource URL
@@ -183,7 +169,9 @@ loader.load(
         if (config.PCD_TOPIC) {
             socketUrlPcd = config.PCD_TOPIC
         }
-
+        if (config.DRAW_UNKNOWN) {
+            DRAW_UNKNOWN = config.DRAW_UNKNOWN
+        }
 
         alloc_bins()
 
@@ -353,6 +341,11 @@ function getClassInList(l) {
             classes[point.class] = 1
         }
     })
+    if (classes[0] == l.length) {
+        return [0, classes[0]]
+    }
+    classes[0] = 0
+
     let max_class = 0
     let max_class_val = -1
     for (var cl in classes) {
@@ -482,7 +475,9 @@ function animate() {
         }
 
         for (let p of points) {
-            if (p.class > 0) {
+            if (DRAW_UNKNOWN || p.class > 0) {
+                p.range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
+                p.angle = Math.atan2(p.y, p.x)
                 increment_bin(-p.angle * 180 / PI, p.range, p)
             }
         }
@@ -511,6 +506,7 @@ function animate() {
                     occupied.push(cell)
                     scene.add(cell)
                     foundOccupied[currInd] = true
+                    if (class_ == 0) { continue }
                     if (currInd > 0) { foundOccupied[currInd - 1] = true }
                     if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
@@ -521,6 +517,7 @@ function animate() {
                     occupied.push(cell)
                     scene.add(cell)
                     foundOccupied[currInd] = true
+                    if (class_ == 0) { continue }
                     if (currInd > 0) { foundOccupied[currInd - 1] = true }
                     if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
@@ -531,6 +528,7 @@ function animate() {
                     occupied.push(cell)
                     scene.add(cell)
                     foundOccupied[currInd] = true
+                    if (class_ == 0) { continue }
                     if (currInd > 0) { foundOccupied[currInd - 1] = true }
                     if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue

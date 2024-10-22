@@ -1,6 +1,6 @@
 import * as THREE from './three.js'
 import { dynamicSortMultiple } from './sort.js'
-
+import { parseNumbersInObject } from './parseNumbersInObject.js';
 
 function mode(a) {
     return Object.values(
@@ -316,21 +316,4 @@ export function project_points_onto_box(points, boxes) {
             boxes[l].text = `Distance: ${p.range.toFixed(1).padStart(4, " ")}m\nSpeed:    ${p.speed.toFixed(1).padStart(4, " ")}m/s`
         }
     }
-}
-
-function parseNumbersInObject(obj) {
-    for (let key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-            obj[key] = parseNumbersInObject(obj[key]);
-        } else if (typeof obj[key] === 'string') {
-            if (!isNaN(obj[key]) && obj[key].trim() !== '') {
-                if (obj[key].includes('.')) {
-                    obj[key] = parseFloat(obj[key]);
-                } else {
-                    obj[key] = parseInt(obj[key], 10);
-                }
-            }
-        }
-    }
-    return obj;
 }
