@@ -318,7 +318,18 @@ loader.load(
             boxes = b
         })
 
-        pcdStream(socketUrlPcd, fpsUpdate(radarPanel)).then((pcd) => {
+        let radarFpsFn = fpsUpdate(radarPanel);
+        pcdStream(socketUrlPcd, () => {
+            radarFpsFn();
+            let filteredPoints = []
+            for (let i = 0; i < radar_points.points.length; i++) {
+                const p = radar_points.points[i]
+                if (Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z) < RANGE_BIN_LIMITS[1]) {
+                    filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point
+                }
+            }
+            radar_points.points = filteredPoints
+        }).then((pcd) => {
             radar_points = pcd;
         })
     },
