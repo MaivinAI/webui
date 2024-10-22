@@ -132,7 +132,7 @@ let WINDOW_LENGTH = 5
 let BIN_THRESHOLD = 3
 let GRID_DRAW_PCD = "disabled"
 let CAMERA_DRAW_PCD = "disabled"
-let CAMERA_PCD_LABEL = false
+let CAMERA_PCD_LABEL = "disabled"
 
 let socketUrlH264 = '/rt/camera/h264/'
 let socketUrlPcd = '/rt/radar/targets/'
@@ -511,7 +511,7 @@ renderer_grid.setAnimationLoop(animate_grid);
 const occupied = []
 const rendered_points = []
 
-function color_points_field(points, field, scene, height = false, label = false) {
+function color_points_field(points, field, scene, height = false, label = "disabled") {
     points.sort(dynamicSort(field))
     let min_val = points[0][field]
     let max_val = points[points.length - 1][field]
@@ -544,8 +544,8 @@ function color_points_field(points, field, scene, height = false, label = false)
         rendered_points.push(sphere)
         scene.add(sphere)
 
-        if (label) {
-            const myText = new SpriteText(point[field].toFixed(2), 0.025, "0x888888")
+        if (label != "disabled") {
+            const myText = new SpriteText(point[label].toFixed(2), 0.025, "0x888888")
             myText.material.sizeAttenuation = false
             const factor = 1 - 0.12 / Math.sqrt(point.y * point.y + point.x * point.x)
             myText.position.x = point.y * factor
@@ -560,7 +560,7 @@ function color_points_field(points, field, scene, height = false, label = false)
     })
 }
 
-function color_points_class(points, scene, height = false, label = false) {
+function color_points_class(points, scene, height = false, label = "disabled") {
     points.forEach((point) => {
         const geometry = new THREE.SphereGeometry(0.1)
         let color = new THREE.Color(0xFFFFFF)
@@ -577,8 +577,8 @@ function color_points_class(points, scene, height = false, label = false) {
         rendered_points.push(sphere)
         scene.add(sphere)
 
-        if (label) {
-            const myText = new SpriteText(point.class, 0.025, "0x888888")
+        if (label != "disabled") {
+            const myText = new SpriteText(point[label], 0.025, "0x888888")
             myText.material.sizeAttenuation = false
             const factor = 1 - 0.12 / Math.sqrt(point.y * point.y + point.x * point.x)
             myText.position.x = point.y * factor
@@ -602,8 +602,8 @@ function animate_grid() {
             scene.remove(cell)
         })
         rendered_points.length = 0
-        let points_cpy = typeof mask_tex !== "undefined" ? classify_points(radar_points.points, mask_tex) : classify_points_box(radar_points.points, detect_boxes.msg.boxes)
-        // let points_cpy = radar_points.points
+        // let points_cpy = typeof mask_tex !== "undefined" ? classify_points(radar_points.points, mask_tex) : classify_points_box(radar_points.points, detect_boxes.msg.boxes)
+        let points_cpy = radar_points.points
         if (GRID_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
             if (GRID_DRAW_PCD == "class") {
                 color_points_class(points_cpy, grid_scene)
