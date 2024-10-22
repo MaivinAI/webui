@@ -454,16 +454,16 @@ function animate() {
             clearThree(cell)
         })
         rendered_points.length = 0
-        let points_cpy = typeof mask_tex !== "undefined" ? classify_points(radar_points.points, mask_tex) : classify_points_box(radar_points.points, detect_boxes.msg.boxes)
-        if (DRAW_PCD != "disabled" && radar_points.points.length > 0) {
+        let points = radar_points.points
+        if (DRAW_PCD != "disabled" && points.length > 0) {
             if (DRAW_PCD == "class") {
-                color_points_class(points_cpy)
+                color_points_class(points)
             } else {
-                color_points_field(points_cpy, DRAW_PCD)
+                color_points_field(points, DRAW_PCD)
             }
         }
 
-        for (let p of points_cpy) {
+        for (let p of points) {
             if (p.class > 0) {
                 increment_bin(-p.angle * 180 / PI, p.range, p)
             }
