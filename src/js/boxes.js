@@ -75,9 +75,9 @@ function drawBoxes(canvas, message) {
         let color_box = "white"
         let color_text = "black"
         if (box.track.id) {
-            text = box.track.id;
-            color_box = uuid_to_color(text)
-            color_text = uuid_to_color(text)
+            text = box.track.id.substring(0,8);
+            color_box = uuid_to_color(box.track.id)
+            color_text = uuid_to_color(box.track.id)
         } else {
             text = box.label;
         }
@@ -159,7 +159,6 @@ export default async function boxesstream(socketUrl, canvas, onMessage) {
                 drawBoxes(canvas, boxmsg)
             }
             boxes.msg = boxmsg
-            boxes.needsUpdate = true
         } catch (error) {
             console.error("Failed to deserialize image data:", error);
             return;
@@ -167,6 +166,7 @@ export default async function boxesstream(socketUrl, canvas, onMessage) {
         if (onMessage) {
             onMessage()
         }
+        boxes.needsUpdate = true
     };
 
     socket.onerror = function (error) {
