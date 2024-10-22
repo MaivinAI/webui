@@ -280,8 +280,8 @@ loader.load(
         alloc_bins()
         const gridHelper = new PolarGridFan(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1],
             -ANGLE_BIN_LIMITS[0] * Math.PI / 180, -ANGLE_BIN_LIMITS[1] * Math.PI / 180,
-            360 / ANGLE_BIN_WIDTH,
-            Math.floor(RANGE_BIN_LIMITS[1] / RANGE_BIN_WIDTH),
+            Math.ceil((ANGLE_BIN_LIMITS[1] - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH),
+            Math.ceil((RANGE_BIN_LIMITS[1] - RANGE_BIN_LIMITS[0]) / RANGE_BIN_WIDTH),
             64,
             0x000,
             0x000);
