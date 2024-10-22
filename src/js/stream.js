@@ -16,12 +16,12 @@ export default async function h264stream(socketUrl, width, height, fps, onMessag
     let h264decoder = new VideoDecoder({
         output: (videoFrame) => {
             ctx.drawImage(videoFrame, 0, 0);
-            texture_canvas.needsUpdate = true;
-            videoFrame.close()
             if (onMessage) {
                 timing.decode_time = performance.now() - start
                 onMessage(timing)
             }
+            texture_canvas.needsUpdate = true;
+            videoFrame.close()
         },
         error: e => console.error(e)
     });
@@ -69,12 +69,12 @@ export default async function h264stream(socketUrl, width, height, fps, onMessag
                 h264decoder = new VideoDecoder({
                     output: (videoFrame) => {
                         ctx.drawImage(videoFrame, 0, 0);
-                        texture_canvas.needsUpdate = true;
-                        videoFrame.close()
                         if (onMessage) {
                             timing.decode_time = performance.now() - start
                             onMessage(timing)
                         }
+                        texture_canvas.needsUpdate = true;
+                        videoFrame.close()
                     },
                     error: e => console.error(e)
                 });

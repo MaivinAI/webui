@@ -5,7 +5,7 @@ import segstream, { get_shape } from './mask.js'
 import h264Stream from './stream.js'
 import pcdStream from './pcd.js'
 import SpriteText from './three-spritetext.js';
-import classify_points, { classify_points_box } from './classify.js'
+import { project_points_onto_box } from './classify.js'
 import boxesstream from './boxes.js'
 import { Line2 } from './Line2.js';
 import { LineMaterial } from './LineMaterial.js';
@@ -158,6 +158,49 @@ function parseNumbersInObject(obj) {
     return obj;
 }
 
+function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
+
+    if (!boxes) {
+        return
+    }
+    if (!radar_points) {
+        return
+    }
+
+    project_points_onto_box(radar_points, boxes)
+    var ctx = canvas.getContext("2d");
+    if (ctx == null) {
+        return
+    }
+    ctx.font = "48px monospace";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < boxes.length; i++) {
+        const box = boxes[i];
+        let text = "text"
+        let color_box = "white"
+        let color_text = "black"
+        if (box.text) {
+            text = box.text
+        } else {
+            text = box.label;
+        }
+        ctx.beginPath();
+        ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
+        ctx.strokeStyle = color_box;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.fillStyle = color_text;
+        let lines = text.split('\n');
+
+        let lineheight = 40;
+        for (let i = 0; i < lines.length; i++) {
+            ctx.fillText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+        }
+    }
+}
+
 const loader = new THREE.FileLoader();
 loader.load(
     // resource URL
@@ -266,8 +309,15 @@ loader.load(
                 scene.add(mesh_mask);
             })
         })
-        boxesstream(socketUrlDetect, boxCanvas, null)
-        
+        let boxes;
+        boxesstream(socketUrlDetect, null, () => {
+            if (boxes && radar_points) {
+                drawBoxesSpeedDistance(boxCanvas, boxes.msg.boxes, radar_points.points)
+            }
+        }).then((b) => {
+            boxes = b
+        })
+
         pcdStream(socketUrlPcd, fpsUpdate(radarPanel)).then((pcd) => {
             radar_points = pcd;
         })
@@ -422,8 +472,6 @@ const rendered_boxes = []
 renderer.setAnimationLoop(animate);
 
 // const animationUpdate = fpsUpdate(renderPanel, 100)
-
-let points_cpy;
 function animate() {
     // animationUpdate()
 
@@ -602,25 +650,24 @@ function animate_grid() {
             scene.remove(cell)
         })
         rendered_points.length = 0
-        // let points_cpy = typeof mask_tex !== "undefined" ? classify_points(radar_points.points, mask_tex) : classify_points_box(radar_points.points, detect_boxes.msg.boxes)
-        let points_cpy = radar_points.points
+        let points = radar_points.points
         if (GRID_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
             if (GRID_DRAW_PCD == "class") {
-                color_points_class(points_cpy, grid_scene)
+                color_points_class(points, grid_scene)
             } else {
-                color_points_field(points_cpy, GRID_DRAW_PCD, grid_scene)
+                color_points_field(points, GRID_DRAW_PCD, grid_scene)
             }
         }
 
         if (CAMERA_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
             if (CAMERA_DRAW_PCD == "class") {
-                color_points_class(points_cpy, scene, true, CAMERA_PCD_LABEL)
+                color_points_class(points, scene, true, CAMERA_PCD_LABEL)
             } else {
-                color_points_field(points_cpy, CAMERA_DRAW_PCD, scene, true, CAMERA_PCD_LABEL)
+                color_points_field(points, CAMERA_DRAW_PCD, scene, true, CAMERA_PCD_LABEL)
             }
         }
 
-        for (let p of points_cpy) {
+        for (let p of points) {
             if (p.class > 0) {
                 p.range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
                 p.angle = Math.atan2(p.y, p.x)

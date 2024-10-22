@@ -250,6 +250,74 @@ export function classify_points_box(points, boxes) {
     return points_cpy
 }
 
+export function project_points_onto_box(points, boxes) {
+    // console.log(points, mask_tex);
+
+    const cam_mtx = new THREE.Matrix3().set(
+        1260 / 1920, 0, 960 / 1920,
+        0, 1260 / 1080, 540 / 1080,
+        0, 0, 1
+    )
+
+    const points_cpy = []
+    var index = 0
+
+    console.log(points)
+
+    for (let p of points) {
+        // project points to camera space
+        // console.log(p)
+        // x, y, dist
+        const pos = new THREE.Vector3(p.y, p.z, p.x)
+        const point_cpy = {}
+        point_cpy.x = p.x
+        point_cpy.y = p.y
+        point_cpy.z = p.z
+        point_cpy.speed = p.speed
+
+        pos.applyMatrix3(cam_mtx)
+        pos.x /= pos.z
+        pos.y /= pos.z
+        pos.z /= pos.z
+
+        let i = 1 - pos.y
+        let j = 1 - pos.x
+
+        point_cpy.index = index++
+        point_cpy.range = Math.sqrt(point_cpy.x * point_cpy.x + point_cpy.y * point_cpy.y + point_cpy.z * point_cpy.z)
+        point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
+        point_cpy.i = i;
+        point_cpy.j = j;
+        points_cpy.push(point_cpy)
+    }
+
+    points_cpy.sort(dynamicSortMultiple("range"))
+
+
+    for (let p of points_cpy)  {
+        let i = p.i;
+        let j = p.j;
+        for (let l = 0; l < boxes.length; l++) {
+            if (j < boxes[l].center_x - boxes[l].width / 2 - 0.15) { // pad 0.15 left of the box
+                continue
+            }
+            if (j > boxes[l].center_x + boxes[l].width / 2 + 0.15) { // pad 0.15 right of the box
+                continue
+            }
+            if (i < boxes[l].center_y - boxes[l].height / 2) {
+                continue
+            }
+            if (i > boxes[l].center_y + boxes[l].height / 2) {
+                continue
+            }
+            if (boxes[l].text) {
+                continue
+            }
+            boxes[l].text = `Distance: ${p.range.toFixed(1).padStart(4, " ")}m\nSpeed:    ${p.speed.toFixed(1).padStart(4, " ")}m/s`
+        }
+    }
+}
+
 function parseNumbersInObject(obj) {
     for (let key in obj) {
         if (typeof obj[key] === 'object' && obj[key] !== null) {
