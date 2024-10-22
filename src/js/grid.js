@@ -6,6 +6,8 @@ import pcdStream from './pcd.js'
 import classify_points, { classify_points_box } from './classify.js'
 import boxesstream from './boxes.js'
 import { dynamicSort } from './sort.js'
+import { PolarGridFan } from './polarGridFan.js'
+import SpriteText from './three-spritetext.js';
 const PI = Math.PI
 
 const scene = new THREE.Scene();
@@ -181,16 +183,28 @@ loader.load(
         if (config.PCD_TOPIC) {
             socketUrlPcd = config.PCD_TOPIC
         }
-        console.log("dbdf")
 
 
         alloc_bins()
-        console.log("i am out of bin")
-        const gridHelper = new THREE.PolarGridHelper(RANGE_BIN_LIMITS[1], 360 / ANGLE_BIN_WIDTH, Math.floor(RANGE_BIN_LIMITS[1] / RANGE_BIN_WIDTH), 64, 0x000, 0x000);
-        gridHelper.rotation.y = ANGLE_BIN_LIMITS[0] / 180 * PI;
+
+        const gridHelper = new PolarGridFan(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1],
+            -ANGLE_BIN_LIMITS[0] * Math.PI / 180, -ANGLE_BIN_LIMITS[1] * Math.PI / 180,
+            360 / ANGLE_BIN_WIDTH,
+            Math.floor(RANGE_BIN_LIMITS[1] / RANGE_BIN_WIDTH),
+            64,
+            0x000,
+            0x000
+        );
         gridHelper.position.z = 0.002;
         scene.add(gridHelper);
 
+        for (let i = RANGE_BIN_LIMITS[0]; i <= RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
+            const myText = new SpriteText(i.toFixed(2) + "m", 0.20, "0x888888")
+            // myText.material.sizeAttenuation = false
+            myText.position.x = 0
+            myText.position.z = i
+            scene.add(myText)
+        }
 
         const modelFPSUpdate = fpsUpdate(modelPanel)
         if (USE_BOX) {
