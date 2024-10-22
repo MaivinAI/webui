@@ -209,14 +209,18 @@ loader.load(
         const config = parseNumbersInObject(JSON.parse(data));
         console.log(config)
         if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
-        if (config.ANGLE_BIN_LIMITS) {
-            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS[0]
-            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS[1]
+        if (config.ANGLE_BIN_LIMITS_MIN) {
+            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS_MIN
+        }
+        if (config.ANGLE_BIN_LIMITS_MAX) {
+            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS_MAX
         }
         if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH }
-        if (config.RANGE_BIN_LIMITS) {
-            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS[0]
-            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS[1]
+        if (config.RANGE_BIN_LIMITS_MIN) {
+            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
+        }
+        if (config.RANGE_BIN_LIMITS_MAX) {
+            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
         }
         if (config.WINDOW_LENGTH) {
             WINDOW_LENGTH = config.WINDOW_LENGTH
