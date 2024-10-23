@@ -169,7 +169,7 @@ loader.load(
         if (config.PCD_TOPIC) {
             socketUrlPcd = config.PCD_TOPIC
         }
-        if (config.DRAW_UNKNOWN_CELLS) {
+        if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
             DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
         }
 

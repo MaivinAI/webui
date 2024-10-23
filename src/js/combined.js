@@ -136,6 +136,8 @@ let GRID_DRAW_PCD = "disabled"
 let CAMERA_DRAW_PCD = "disabled"
 let CAMERA_PCD_LABEL = "disabled"
 let DRAW_UNKNOWN_CELLS = false
+let DRAW_BOX = false
+let DRAW_BOX_TEXT = true
 
 let socketUrlH264 = '/rt/camera/h264/'
 let socketUrlPcd = '/rt/radar/targets/'
@@ -169,22 +171,23 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
         let color_box = "white"
         let color_text = "black"
 
-        ctx.beginPath();
-        ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
-        ctx.strokeStyle = color_box;
-        ctx.lineWidth = 4;
-        ctx.stroke();
-
-        if (!box.text) {
-            continue
+        if (DRAW_BOX) {
+            ctx.beginPath();
+            ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
+            ctx.strokeStyle = color_box;
+            ctx.lineWidth = 4;
+            ctx.stroke();
         }
-        text = box.text
-        ctx.fillStyle = color_text;
-        let lines = text.split('\n');
 
-        let lineheight = 40;
-        for (let i = 0; i < lines.length; i++) {
-            ctx.fillText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+        if (DRAW_BOX_TEXT && box.text) {
+            text = box.text
+            ctx.fillStyle = color_text;
+            let lines = text.split('\n');
+
+            let lineheight = 40;
+            for (let i = 0; i < lines.length; i++) {
+                ctx.fillText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+            }
         }
     }
 }
@@ -243,8 +246,16 @@ loader.load(
         if (config.COMBINED_CAMERA_PCD_LABEL) {
             CAMERA_PCD_LABEL = config.COMBINED_CAMERA_PCD_LABEL
         }
-        if (config.DRAW_UNKNOWN_CELLS) {
+        if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
             DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
+        }
+
+        if (typeof config.DRAW_BOX == "boolean") {
+            DRAW_BOX = config.DRAW_BOX
+        }
+
+        if (typeof config.DRAW_BOX_TEXT == "boolean") {
+            DRAW_BOX_TEXT = config.DRAW_BOX_TEXT
         }
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
