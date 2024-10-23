@@ -716,9 +716,6 @@ function animate_grid() {
                     occupied.push(cell)
                     grid_scene.add(cell)
                     foundOccupied[currInd] = true
-                    if (class_ == 0) { continue }
-                    if (currInd > 0) { foundOccupied[currInd - 1] = true }
-                    if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
                 }
                 if (sum0 + sum1 >= BIN_THRESHOLD) {
@@ -727,9 +724,6 @@ function animate_grid() {
                     occupied.push(cell)
                     grid_scene.add(cell)
                     foundOccupied[currInd] = true
-                    if (class_ == 0) { continue }
-                    if (currInd > 0) { foundOccupied[currInd - 1] = true }
-                    if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
                 }
                 if (sum0 + sum1 + sum2 >= BIN_THRESHOLD) {
@@ -738,9 +732,6 @@ function animate_grid() {
                     occupied.push(cell)
                     grid_scene.add(cell)
                     foundOccupied[currInd] = true
-                    if (class_ == 0) { continue }
-                    if (currInd > 0) { foundOccupied[currInd - 1] = true }
-                    if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
                 }
             }
