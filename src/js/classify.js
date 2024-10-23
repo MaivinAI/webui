@@ -275,6 +275,9 @@ export function project_points_onto_box(points, boxes) {
 
 
     for (let p of points_cpy)  {
+        if (p.class == 0) {
+            continue
+        }
         let i = p.i;
         let j = p.j;
         for (let box of boxes) {
