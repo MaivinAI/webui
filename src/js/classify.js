@@ -30,9 +30,7 @@ loader.load(
             OCCLUSION_LIMIT_DEGREES = config.OCCLUSION_LIMIT_DEGREES;
         }
     },
-    function (xhr) {
-        // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-    },
+    function (xhr) { },
     function (err) {
         console.error('An error happened', err);
     }
@@ -40,7 +38,6 @@ loader.load(
 THREE.Cache.enabled = true;
 
 export default function classify_points(points, mask_tex) {
-    // console.log(points, mask_tex);
     // this is reformatted to be Nx240x320x4
     const mask = mask_tex.source.data.data
 
@@ -62,7 +59,6 @@ export default function classify_points(points, mask_tex) {
     var index = 0
     for (let p of points) {
         // project points to camera space
-        // console.log(p)
         // x, y, dist
         const pos = new THREE.Vector3(p.y, p.z, p.x)
         const point_cpy = structuredClone(p)
@@ -71,8 +67,6 @@ export default function classify_points(points, mask_tex) {
         pos.x /= pos.z
         pos.y /= pos.z
         pos.z /= pos.z
-        // pos.applyMatrix3(coord_cvt)
-        // console.log(pos)
 
         let i = mask_height - Math.round(pos.y)
         let j = mask_width - Math.round(pos.x)
@@ -128,7 +122,6 @@ export default function classify_points(points, mask_tex) {
         point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
         points_cpy.push(point_cpy)
     }
-    // console.log(points_cpy)
     points_cpy.sort(dynamicSortMultiple("range"))
 
     for (let i = 0; i < points_cpy.length; i++) {
@@ -139,7 +132,6 @@ export default function classify_points(points, mask_tex) {
             if (points_cpy[j].class == 0) {
                 continue
             }
-            // if points_cpy[i].range < 5
             if (Math.abs(points_cpy[i].angle - points_cpy[j].angle) <= OCCLUSION_LIMIT_DEGREES / 180 * PI && points_cpy[i].range - points_cpy[j].range > 1.0) {
                 points_cpy[i].class = 0
                 break
@@ -152,7 +144,6 @@ export default function classify_points(points, mask_tex) {
 const labels = { "background": 0 }
 let label_count = 1
 export function classify_points_box(points, boxes) {
-    // console.log(points, mask_tex);
 
     const cam_mtx = new THREE.Matrix3().set(
         1260 / 1920, 0, 960 / 1920,
@@ -164,7 +155,6 @@ export function classify_points_box(points, boxes) {
     var index = 0
     for (let p of points) {
         // project points to camera space
-        // console.log(p)
         // x, y, dist
         const pos = new THREE.Vector3(p.y, p.z, p.x)
         const point_cpy = {}
@@ -176,8 +166,7 @@ export function classify_points_box(points, boxes) {
         pos.x /= pos.z
         pos.y /= pos.z
         pos.z /= pos.z
-        // pos.applyMatrix3(coord_cvt)
-        // console.log(pos)
+
 
         let i = pos.y
         let j = 1 - pos.x
@@ -229,7 +218,6 @@ export function classify_points_box(points, boxes) {
         point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
         points_cpy.push(point_cpy)
     }
-    // console.log(points_cpy)
     points_cpy.sort(dynamicSortMultiple("range"))
 
     for (let i = 0; i < points_cpy.length; i++) {
@@ -240,7 +228,6 @@ export function classify_points_box(points, boxes) {
             if (points_cpy[j].class == 0) {
                 continue
             }
-            // if points_cpy[i].range < 5
             if (Math.abs(points_cpy[i].angle - points_cpy[j].angle) <= OCCLUSION_LIMIT_DEGREES / 180 * PI && points_cpy[i].range - points_cpy[j].range > 1.0) {
                 points_cpy[i].class = 0
                 break
@@ -251,7 +238,6 @@ export function classify_points_box(points, boxes) {
 }
 
 export function project_points_onto_box(points, boxes) {
-    // console.log(points, mask_tex);
 
     const cam_mtx = new THREE.Matrix3().set(
         1260 / 1920, 0, 960 / 1920,
@@ -262,11 +248,8 @@ export function project_points_onto_box(points, boxes) {
     const points_cpy = []
     var index = 0
 
-    console.log(points)
-
     for (let p of points) {
         // project points to camera space
-        // console.log(p)
         // x, y, dist
         const pos = new THREE.Vector3(p.y, p.z, p.x)
         const point_cpy = {}

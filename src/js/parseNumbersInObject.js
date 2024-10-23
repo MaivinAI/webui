@@ -1,6 +1,5 @@
 
 export function parseNumbersInObject(obj) {
-    console.log(obj)
     for (let key in obj) {
         if (typeof obj[key] === 'object' && obj[key] !== null) {
             obj[key] = parseNumbersInObject(obj[key]);
