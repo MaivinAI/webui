@@ -3,9 +3,11 @@ import segstream, { get_shape } from './mask.js'
 import { OrbitControls } from './OrbitControls.js'
 import Stats from './Stats.js'
 import pcdStream from './pcd.js'
-import classify_points, { classify_points_box } from './classify.js'
 import boxesstream from './boxes.js'
 import { dynamicSort } from './sort.js'
+import { PolarGridFan } from './polarGridFan.js'
+import SpriteText from './three-spritetext.js';
+import { parseNumbersInObject } from './parseNumbersInObject.js';
 const PI = Math.PI
 
 const scene = new THREE.Scene();
@@ -22,9 +24,9 @@ renderer.domElement.style.cssText = "display:flex; position: absolute; top: 0; l
 document.querySelector('main').appendChild(renderer.domElement);
 
 const stats = new Stats();
-var renderPanel = stats.addPanel(new Stats.Panel('renderFPS', '#4ff', '#022'));
-var radarPanel = stats.addPanel(new Stats.Panel('radarFPS', '#ff4', '#220'));
-var modelPanel = stats.addPanel(new Stats.Panel('modelFPS', '#f4f', '#210'));
+const renderPanel = stats.addPanel(new Stats.Panel('renderFPS', '#4ff', '#022'));
+const radarPanel = stats.addPanel(new Stats.Panel('radarFPS', '#ff4', '#220'));
+const modelPanel = stats.addPanel(new Stats.Panel('modelFPS', '#f4f', '#210'));
 stats.dom.style.cssText = "position: absolute; top: 0px; right: 0px; opacity: 0.9; z-index: 10000;";
 stats.showPanel([3, 4, 5, 6])
 document.querySelector('main').appendChild(stats.dom);
@@ -111,27 +113,12 @@ let WINDOW_LENGTH = 5
 let BIN_THRESHOLD = 3
 let DRAW_PCD = false
 let USE_BOX = false
+let DRAW_UNKNOWN_CELLS = false
 
 let socketUrlMask = '/rt/detect/mask/'
 let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlPcd = '/rt/radar/targets/';
 
-function parseNumbersInObject(obj) {
-    for (let key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-            obj[key] = parseNumbersInObject(obj[key]);
-        } else if (typeof obj[key] === 'string') {
-            if (!isNaN(obj[key]) && obj[key].trim() !== '') {
-                if (obj[key].includes('.')) {
-                    obj[key] = parseFloat(obj[key]);
-                } else {
-                    obj[key] = parseInt(obj[key], 10);
-                }
-            }
-        }
-    }
-    return obj;
-}
 
 loader.load(
     // resource URL
@@ -143,15 +130,19 @@ loader.load(
         // Now you can use config.ANGLE_BIN_WIDTH, config.RANGE_BIN_WIDTH, etc.
         // They will be numbers, not strings
 
-        if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH; }
-        if (config.ANGLE_BIN_LIMITS) {
-            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS[0];
-            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS[1];
+        if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
+        if (config.ANGLE_BIN_LIMITS_MIN) {
+            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS_MIN
         }
-        if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH; }
-        if (config.RANGE_BIN_LIMITS) {
-            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS[0];
-            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS[1];
+        if (config.ANGLE_BIN_LIMITS_MAX) {
+            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS_MAX
+        }
+        if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH }
+        if (config.RANGE_BIN_LIMITS_MIN) {
+            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
+        }
+        if (config.RANGE_BIN_LIMITS_MAX) {
+            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
         }
         if (config.WINDOW_LENGTH) {
             WINDOW_LENGTH = config.WINDOW_LENGTH
@@ -177,16 +168,30 @@ loader.load(
         if (config.PCD_TOPIC) {
             socketUrlPcd = config.PCD_TOPIC
         }
-        console.log("dbdf")
-
+        if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
+            DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
+        }
 
         alloc_bins()
-        console.log("i am out of bin")
-        const gridHelper = new THREE.PolarGridHelper(RANGE_BIN_LIMITS[1], 360 / ANGLE_BIN_WIDTH, Math.floor(RANGE_BIN_LIMITS[1] / RANGE_BIN_WIDTH), 64, 0x000, 0x000);
-        gridHelper.rotation.y = ANGLE_BIN_LIMITS[0] / 180 * PI;
+
+        const gridHelper = new PolarGridFan(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1],
+            -ANGLE_BIN_LIMITS[0] * Math.PI / 180, -ANGLE_BIN_LIMITS[1] * Math.PI / 180,
+            Math.ceil((ANGLE_BIN_LIMITS[1] - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH),
+            Math.ceil((RANGE_BIN_LIMITS[1] - RANGE_BIN_LIMITS[0]) / RANGE_BIN_WIDTH),
+            64,
+            0x000,
+            0x000
+        );
         gridHelper.position.z = 0.002;
         scene.add(gridHelper);
 
+        for (let i = RANGE_BIN_LIMITS[0]; i <= RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
+            const myText = new SpriteText(i.toFixed(2) + "m", 0.20, "0x888888")
+            // myText.material.sizeAttenuation = false
+            myText.position.x = 0
+            myText.position.z = i
+            scene.add(myText)
+        }
 
         const modelFPSUpdate = fpsUpdate(modelPanel)
         if (USE_BOX) {
@@ -226,7 +231,7 @@ THREE.Cache.enabled = true;
 
 
 const bins = []
-var window_index = 0
+let window_index = 0
 function alloc_bins() {
     console.log("i am here")
     bins.length = 0
@@ -335,9 +340,14 @@ function getClassInList(l) {
             classes[point.class] = 1
         }
     })
+    if (classes[0] == l.length) {
+        return [0, classes[0]]
+    }
+    classes[0] = 0
+
     let max_class = 0
     let max_class_val = -1
-    for (var cl in classes) {
+    for (let cl in classes) {
         if (max_class_val < classes[cl]) {
             max_class = cl
             max_class_val = classes[cl]
@@ -454,17 +464,19 @@ function animate() {
             clearThree(cell)
         })
         rendered_points.length = 0
-        let points_cpy = typeof mask_tex !== "undefined" ? classify_points(radar_points.points, mask_tex) : classify_points_box(radar_points.points, detect_boxes.msg.boxes)
-        if (DRAW_PCD != "disabled" && radar_points.points.length > 0) {
+        let points = radar_points.points
+        if (DRAW_PCD != "disabled" && points.length > 0) {
             if (DRAW_PCD == "class") {
-                color_points_class(points_cpy)
+                color_points_class(points)
             } else {
-                color_points_field(points_cpy, DRAW_PCD)
+                color_points_field(points, DRAW_PCD)
             }
         }
 
-        for (let p of points_cpy) {
-            if (p.class > 0) {
+        for (let p of points) {
+            if (DRAW_UNKNOWN_CELLS || p.class > 0) {
+                p.range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
+                p.angle = Math.atan2(p.y, p.x)
                 increment_bin(-p.angle * 180 / PI, p.range, p)
             }
         }
@@ -493,6 +505,7 @@ function animate() {
                     occupied.push(cell)
                     scene.add(cell)
                     foundOccupied[currInd] = true
+                    if (class_ == 0) { continue }
                     if (currInd > 0) { foundOccupied[currInd - 1] = true }
                     if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
@@ -503,6 +516,7 @@ function animate() {
                     occupied.push(cell)
                     scene.add(cell)
                     foundOccupied[currInd] = true
+                    if (class_ == 0) { continue }
                     if (currInd > 0) { foundOccupied[currInd - 1] = true }
                     if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
@@ -513,6 +527,7 @@ function animate() {
                     occupied.push(cell)
                     scene.add(cell)
                     foundOccupied[currInd] = true
+                    if (class_ == 0) { continue }
                     if (currInd > 0) { foundOccupied[currInd - 1] = true }
                     if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue

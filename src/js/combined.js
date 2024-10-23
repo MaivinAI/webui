@@ -5,7 +5,7 @@ import segstream, { get_shape } from './mask.js'
 import h264Stream from './stream.js'
 import pcdStream from './pcd.js'
 import SpriteText from './three-spritetext.js';
-import classify_points, { classify_points_box } from './classify.js'
+import { project_points_onto_box } from './classify.js'
 import boxesstream from './boxes.js'
 import { Line2 } from './Line2.js';
 import { LineMaterial } from './LineMaterial.js';
@@ -13,6 +13,8 @@ import { LineGeometry } from './LineGeometry.js';
 import Stats from "./Stats.js"
 import droppedframes from './droppedframes.js'
 import { dynamicSort } from './sort.js'
+import { parseNumbersInObject } from './parseNumbersInObject.js';
+
 const PI = Math.PI
 
 
@@ -84,6 +86,14 @@ const height = 1080;
 const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: playerCanvas });
 renderer.setSize(width, height)
 renderer.domElement.style.cssText = ""
+
+
+
+const boxCanvas = document.getElementById("boxes")
+boxCanvas.width = width;
+boxCanvas.height = height;
+
+
 // const camera_proj = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, -1, 1000);
 const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000);
 camera.rotation.z = PI
@@ -122,33 +132,66 @@ let RANGE_BIN_WIDTH = 0.5
 let RANGE_BIN_LIMITS = [0, 20]
 let WINDOW_LENGTH = 5
 let BIN_THRESHOLD = 3
-let USE_BOX = false
 let GRID_DRAW_PCD = "disabled"
 let CAMERA_DRAW_PCD = "disabled"
-let CAMERA_PCD_LABEL = false
+let CAMERA_PCD_LABEL = "disabled"
+let DRAW_UNKNOWN_CELLS = false
+let DRAW_BOX = false
+let DRAW_BOX_TEXT = true
 
 let socketUrlH264 = '/rt/camera/h264/'
 let socketUrlPcd = '/rt/radar/targets/'
 let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlMask = '/rt/detect/mask/'
 let socketUrlErrors = '/ws/dropped'
+
+
 droppedframes(socketUrlErrors, playerCanvas)
 
-function parseNumbersInObject(obj) {
-    for (let key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-            obj[key] = parseNumbersInObject(obj[key]);
-        } else if (typeof obj[key] === 'string') {
-            if (!isNaN(obj[key]) && obj[key].trim() !== '') {
-                if (obj[key].includes('.')) {
-                    obj[key] = parseFloat(obj[key]);
-                } else {
-                    obj[key] = parseInt(obj[key], 10);
-                }
+function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
+
+    if (!boxes) {
+        return
+    }
+    if (!radar_points) {
+        return
+    }
+
+    project_points_onto_box(radar_points, boxes)
+    const ctx = canvas.getContext("2d");
+    if (ctx == null) {
+        return
+    }
+    ctx.font = "48px monospace";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let box of boxes) {
+        let text = ""
+        let color_box = "white"
+        let color_text = "red"
+
+        if (DRAW_BOX) {
+            ctx.beginPath();
+            ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
+            ctx.strokeStyle = color_box;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+
+        if (DRAW_BOX_TEXT && box.text) {
+            text = box.text
+            let lines = text.split('\n');
+            let lineheight = 40;
+            ctx.strokeStyle = color_box
+            ctx.fillStyle = color_text;
+            ctx.lineWidth = 1;
+            for (let i = 0; i < lines.length; i++) {
+                ctx.fillText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+                ctx.strokeText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
             }
+
         }
     }
-    return obj;
 }
 
 const loader = new THREE.FileLoader();
@@ -159,24 +202,24 @@ loader.load(
         const config = parseNumbersInObject(JSON.parse(data));
         console.log(config)
         if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
-        if (config.ANGLE_BIN_LIMITS) {
-            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS[0]
-            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS[1]
+        if (config.ANGLE_BIN_LIMITS_MIN) {
+            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS_MIN
+        }
+        if (config.ANGLE_BIN_LIMITS_MAX) {
+            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS_MAX
         }
         if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH }
-        if (config.RANGE_BIN_LIMITS) {
-            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS[0]
-            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS[1]
+        if (config.RANGE_BIN_LIMITS_MIN) {
+            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
+        }
+        if (config.RANGE_BIN_LIMITS_MAX) {
+            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
         }
         if (config.WINDOW_LENGTH) {
             WINDOW_LENGTH = config.WINDOW_LENGTH
         }
         if (config.BIN_THRESHOLD) {
             BIN_THRESHOLD = config.BIN_THRESHOLD
-        }
-
-        if (config.USE_BOX) {
-            USE_BOX = config.USE_BOX.toLowerCase() === 'true';
         }
 
         if (config.MASK_TOPIC) {
@@ -205,6 +248,17 @@ loader.load(
         if (config.COMBINED_CAMERA_PCD_LABEL) {
             CAMERA_PCD_LABEL = config.COMBINED_CAMERA_PCD_LABEL
         }
+        if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
+            DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
+        }
+
+        if (typeof config.DRAW_BOX == "boolean") {
+            DRAW_BOX = config.DRAW_BOX
+        }
+
+        if (typeof config.DRAW_BOX_TEXT == "boolean") {
+            DRAW_BOX_TEXT = config.DRAW_BOX_TEXT
+        }
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
         const cameraUpdate = fpsUpdate(cameraPanel)
@@ -227,54 +281,88 @@ loader.load(
         })
 
         alloc_bins()
-        const gridHelper = new THREE.PolarGridHelper(RANGE_BIN_LIMITS[1], 360 / ANGLE_BIN_WIDTH, Math.floor(RANGE_BIN_LIMITS[1] / RANGE_BIN_WIDTH), 64, 0x000, 0x000);
-        gridHelper.rotation.y = ANGLE_BIN_LIMITS[0] / 180 * PI;
+        const gridHelper = new PolarGridFan(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1],
+            -ANGLE_BIN_LIMITS[0] * Math.PI / 180, -ANGLE_BIN_LIMITS[1] * Math.PI / 180,
+            Math.ceil((ANGLE_BIN_LIMITS[1] - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH),
+            Math.ceil((RANGE_BIN_LIMITS[1] - RANGE_BIN_LIMITS[0]) / RANGE_BIN_WIDTH),
+            64,
+            0x000,
+            0x000);
         gridHelper.position.z = 0.002;
         grid_scene.add(gridHelper);
+        let decimals = 1
+        if (Number.isInteger(RANGE_BIN_LIMITS[0]) && Number.isInteger(RANGE_BIN_WIDTH * 2)) {
+            decimals = 0
+        }
+        for (let i = RANGE_BIN_LIMITS[0]; i <= RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
+            const myText = new SpriteText(i.toFixed(decimals) + "m", 0.03, "0x888888")           
+            myText.material.sizeAttenuation = false
+            myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[0]+1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI)*0.16
+            myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[0]+1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI)*0.16
+            grid_scene.add(myText)
+        }
+        for (let i = RANGE_BIN_LIMITS[0]; i <= RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
+            const myText = new SpriteText(i.toFixed(decimals) + "m", 0.03, "0x888888")
+            myText.material.sizeAttenuation = false
+            myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[1]-1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.16
+            myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[1]-1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.16
+            grid_scene.add(myText)
+        }
 
-        for (let i = RANGE_BIN_LIMITS[0]; i < RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
-            const myText = new SpriteText(i.toFixed(2) + "m", 0.20, "0x888888")
-            // myText.material.sizeAttenuation = false
-            myText.position.x = 0
-            myText.position.z = i
+        for (let i = ANGLE_BIN_LIMITS[0]; i <= ANGLE_BIN_LIMITS[1]; i += ANGLE_BIN_WIDTH * 2) {
+            let pad = i < 0 ? "" : " "
+            const myText = new SpriteText(pad + i.toFixed(0) + "°", 0.03, "0x888888")
+            myText.material.sizeAttenuation = false
+            myText.position.x = Math.sin(-i / 180 * PI) * RANGE_BIN_LIMITS[1]
+            myText.position.y = 0.2
+            myText.position.z = Math.cos(-i / 180 * PI) * RANGE_BIN_LIMITS[1]
             grid_scene.add(myText)
         }
 
         const modelFPSUpdate = fpsUpdate(modelPanel)
-        if (USE_BOX) {
-            // const modelMSPanel = stats.addPanel(new Stats.Panel('model inference ms', '#A2A', '#420'));
-            boxesstream(socketUrlDetect,
-                (timing) => {
-                    modelFPSUpdate();
-                    // modelMSPanel.update(detect_boxes.msg.model_time.sec * 1e3 + detect_boxes.msg.model_time.nanosec * 1e-6, 33)
-                }).then((boxmsg) => {
-                    detect_boxes = boxmsg
-                })
-        } else {
-            // const maskMSPanel = stats.addPanel(new Stats.Panel('mask decode ms', '#A2A', '#420'));
-            get_shape(socketUrlMask, (height, width, length, mask) => {
-                const classes = Math.round(mask.length / height / width)
-                segstream(socketUrlMask, height, width, classes, (timing) => {
-                    modelFPSUpdate();
-                    // maskMSPanel.update(timing.decode_time, 33) 
-                }).then((texture_mask) => {
-                    material_mask = new ProjectedMask({
-                        camera: camera, // the camera that acts as a projector
-                        texture: texture_mask, // the texture being projected
-                        transparent: true,
-                        colors: mask_colors,
-                    })
-                    const mesh_mask = new THREE.Mesh(quad, material_mask);
-                    mesh_mask.needsUpdate = true;
-                    mesh_mask.position.z = 50;
-                    mesh_mask.rotation.x = PI;
-                    mask_tex = texture_mask
-                    scene.add(mesh_mask);
-                })
-            })
-        }
 
-        pcdStream(socketUrlPcd, fpsUpdate(radarPanel)).then((pcd) => {
+        // const maskMSPanel = stats.addPanel(new Stats.Panel('mask decode ms', '#A2A', '#420'));
+        get_shape(socketUrlMask, (height, width, length, mask) => {
+            const classes = Math.round(mask.length / height / width)
+            segstream(socketUrlMask, height, width, classes, (timing) => {
+                modelFPSUpdate();
+                // maskMSPanel.update(timing.decode_time, 33) 
+            }).then((texture_mask) => {
+                material_mask = new ProjectedMask({
+                    camera: camera, // the camera that acts as a projector
+                    texture: texture_mask, // the texture being projected
+                    transparent: true,
+                    colors: mask_colors,
+                })
+                const mesh_mask = new THREE.Mesh(quad, material_mask);
+                mesh_mask.needsUpdate = true;
+                mesh_mask.position.z = 50;
+                mesh_mask.rotation.x = PI;
+                mask_tex = texture_mask
+                scene.add(mesh_mask);
+            })
+        })
+        let boxes;
+        boxesstream(socketUrlDetect, null, () => {
+            if (boxes && radar_points) {
+                drawBoxesSpeedDistance(boxCanvas, boxes.msg.boxes, radar_points.points)
+            }
+        }).then((b) => {
+            boxes = b
+        })
+
+        let radarFpsFn = fpsUpdate(radarPanel);
+        pcdStream(socketUrlPcd, () => {
+            radarFpsFn();
+            let filteredPoints = []
+            for (let p of radar_points.points) {
+                const range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
+                if (RANGE_BIN_LIMITS[0] <= range && range <= RANGE_BIN_LIMITS[1]) {
+                    filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point
+                }
+            }
+            radar_points.points = filteredPoints
+        }).then((pcd) => {
             radar_points = pcd;
         })
     },
@@ -390,6 +478,11 @@ function getClassInList(l) {
             classes[point.class] = 1
         }
     })
+    if (classes[0] == l.length) {
+        return [0, classes[0]]
+    }
+    classes[0] = 0
+    
     let max_class = 0
     let max_class_val = -1
     for (var cl in classes) {
@@ -428,8 +521,6 @@ const rendered_boxes = []
 renderer.setAnimationLoop(animate);
 
 // const animationUpdate = fpsUpdate(renderPanel, 100)
-
-let points_cpy;
 function animate() {
     // animationUpdate()
 
@@ -497,19 +588,20 @@ function newRingGeo(angle, range, class_) {
     return mesh
 }
 import { OrbitControls } from './OrbitControls.js'
+import { PolarGridFan } from './polarGridFan.js'
 
 
 const HFOV = 82
 let aspect = gridCanvasWidth / gridCanvasHeight
-let fov = Math.atan(Math.tan(HFOV * Math.PI / 360) / aspect) * 360 / Math.PI
-// let fov = 20
+// let fov = Math.atan(Math.tan(HFOV * Math.PI / 360) / aspect) * 360 / Math.PI
+let fov = 20
 
 const camera_grid = new THREE.PerspectiveCamera(fov, aspect, 0.1, 1000);
-camera_grid.position.y = 2;
-camera_grid.position.z = -5;
+camera_grid.position.y = 1.9;
+camera_grid.position.z = -4;
 
 const orbitControls = new OrbitControls(camera_grid, gridCanvas);
-orbitControls.target = new THREE.Vector3(0, 0, 3);
+orbitControls.target = new THREE.Vector3(0, 0, 3.25);
 orbitControls.update();
 
 renderer_grid.setAnimationLoop(animate_grid);
@@ -517,7 +609,7 @@ renderer_grid.setAnimationLoop(animate_grid);
 const occupied = []
 const rendered_points = []
 
-function color_points_field(points, field, scene, height = false, label = false) {
+function color_points_field(points, field, scene, height = false, label = "disabled") {
     points.sort(dynamicSort(field))
     let min_val = points[0][field]
     let max_val = points[points.length - 1][field]
@@ -550,8 +642,8 @@ function color_points_field(points, field, scene, height = false, label = false)
         rendered_points.push(sphere)
         scene.add(sphere)
 
-        if (label) {
-            const myText = new SpriteText(point[field].toFixed(2), 0.025, "0x888888")
+        if (label != "disabled") {
+            const myText = new SpriteText(point[label].toFixed(2), 0.025, "0x888888")
             myText.material.sizeAttenuation = false
             const factor = 1 - 0.12 / Math.sqrt(point.y * point.y + point.x * point.x)
             myText.position.x = point.y * factor
@@ -566,7 +658,7 @@ function color_points_field(points, field, scene, height = false, label = false)
     })
 }
 
-function color_points_class(points, scene, height = false, label = false) {
+function color_points_class(points, scene, height = false, label = "disabled") {
     points.forEach((point) => {
         const geometry = new THREE.SphereGeometry(0.1)
         let color = new THREE.Color(0xFFFFFF)
@@ -583,8 +675,8 @@ function color_points_class(points, scene, height = false, label = false) {
         rendered_points.push(sphere)
         scene.add(sphere)
 
-        if (label) {
-            const myText = new SpriteText(point.class, 0.025, "0x888888")
+        if (label != "disabled") {
+            const myText = new SpriteText(point[label], 0.025, "0x888888")
             myText.material.sizeAttenuation = false
             const factor = 1 - 0.12 / Math.sqrt(point.y * point.y + point.x * point.x)
             myText.position.x = point.y * factor
@@ -608,26 +700,25 @@ function animate_grid() {
             scene.remove(cell)
         })
         rendered_points.length = 0
-        let points_cpy = typeof mask_tex !== "undefined" ? classify_points(radar_points.points, mask_tex) : classify_points_box(radar_points.points, detect_boxes.msg.boxes)
-        // let points_cpy = radar_points.points
+        let points = radar_points.points
         if (GRID_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
             if (GRID_DRAW_PCD == "class") {
-                color_points_class(points_cpy, grid_scene)
+                color_points_class(points, grid_scene)
             } else {
-                color_points_field(points_cpy, GRID_DRAW_PCD, grid_scene)
+                color_points_field(points, GRID_DRAW_PCD, grid_scene)
             }
         }
 
         if (CAMERA_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
             if (CAMERA_DRAW_PCD == "class") {
-                color_points_class(points_cpy, scene, true, CAMERA_PCD_LABEL)
+                color_points_class(points, scene, true, CAMERA_PCD_LABEL)
             } else {
-                color_points_field(points_cpy, CAMERA_DRAW_PCD, scene, true, CAMERA_PCD_LABEL)
+                color_points_field(points, CAMERA_DRAW_PCD, scene, true, CAMERA_PCD_LABEL)
             }
         }
 
-        for (let p of points_cpy) {
-            if (p.class > 0) {
+        for (let p of points) {
+            if (DRAW_UNKNOWN_CELLS || p.class > 0) {
                 p.range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
                 p.angle = Math.atan2(p.y, p.x)
                 increment_bin(-p.angle * 180 / PI, p.range, p)
@@ -657,8 +748,6 @@ function animate_grid() {
                     occupied.push(cell)
                     grid_scene.add(cell)
                     foundOccupied[currInd] = true
-                    if (currInd > 0) { foundOccupied[currInd - 1] = true }
-                    if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
                 }
                 if (sum0 + sum1 >= BIN_THRESHOLD) {
@@ -667,8 +756,6 @@ function animate_grid() {
                     occupied.push(cell)
                     grid_scene.add(cell)
                     foundOccupied[currInd] = true
-                    if (currInd > 0) { foundOccupied[currInd - 1] = true }
-                    if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
                 }
                 if (sum0 + sum1 + sum2 >= BIN_THRESHOLD) {
@@ -677,8 +764,6 @@ function animate_grid() {
                     occupied.push(cell)
                     grid_scene.add(cell)
                     foundOccupied[currInd] = true
-                    if (currInd > 0) { foundOccupied[currInd - 1] = true }
-                    if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
                     continue
                 }
             }
@@ -753,8 +838,9 @@ function onWindowResize() {
     let gridCanvasHeight = gridCanvas.parentElement.offsetHeight
 
     camera_grid.aspect = gridCanvasWidth / gridCanvasHeight
-    camera_grid.fov = Math.atan(Math.tan(HFOV * Math.PI / 360) / camera_grid.aspect) * 360 / Math.PI
+    // camera_grid.fov = Math.atan(Math.tan(HFOV * Math.PI / 360) / camera_grid.aspect) * 360 / Math.PI
     // camera_grid.rotation.x = -Math.atan2(camera_grid.position.y, camera_grid.position.z-0.5) - camera_grid.fov * 0.5 * PI / 180;
     camera_grid.updateProjectionMatrix();
     renderer_grid.setSize(gridCanvasWidth, gridCanvasHeight)
 }
+
