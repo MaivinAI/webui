@@ -278,8 +278,8 @@ export function project_points_onto_box(points, boxes) {
         let i = p.i;
         let j = p.j;
         for (let box of boxes) {
-            if (point_in_box(j, i, box)) {
-                return
+            if (!point_in_box(j, i, box)) {
+                continue
             }
             if (box.text) {
                 continue
@@ -290,10 +290,10 @@ export function project_points_onto_box(points, boxes) {
 }
 
 function point_in_box(x,y, box) {
-    if (x < box.center_x - box.width / 2 - 0.15) { // pad 0.15 left of the box
+    if (x < box.center_x - box.width / 2 - 0.05) { // pad 0.15 left of the box
         return false
     }
-    if (x > box.center_x + box.width / 2 + 0.15) { // pad 0.15 right of the box
+    if (x > box.center_x + box.width / 2 + 0.05) { // pad 0.15 right of the box
         return false
     }
     if (y < box.center_y - box.height / 2) {
