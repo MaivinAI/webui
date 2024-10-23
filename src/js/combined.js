@@ -168,7 +168,7 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
     for (let box of boxes) {
         let text = ""
         let color_box = "white"
-        let color_text = "black"
+        let color_text = "red"
 
         if (DRAW_BOX) {
             ctx.beginPath();
@@ -180,13 +180,15 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
 
         if (DRAW_BOX_TEXT && box.text) {
             text = box.text
-            ctx.fillStyle = color_text;
             let lines = text.split('\n');
-
             let lineheight = 40;
+            ctx.strokeStyle = color_box
+            ctx.fillStyle = color_text;
             for (let i = 0; i < lines.length; i++) {
                 ctx.fillText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+                ctx.strokeText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
             }
+
         }
     }
 }
