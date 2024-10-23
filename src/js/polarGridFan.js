@@ -1,4 +1,4 @@
-import { LineSegments, Color, BufferGeometry, Float32BufferAttribute, LineBasicMaterial } from "./three";
+import { LineSegments, Color, BufferGeometry, Float32BufferAttribute, LineBasicMaterial } from "./three.js";
 
 export class PolarGridFan extends LineSegments {
 
