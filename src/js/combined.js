@@ -184,6 +184,7 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
             let lineheight = 40;
             ctx.strokeStyle = color_box
             ctx.fillStyle = color_text;
+            ctx.lineWidth = 1;
             for (let i = 0; i < lines.length; i++) {
                 ctx.fillText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
                 ctx.strokeText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
