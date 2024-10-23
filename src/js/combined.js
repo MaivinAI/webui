@@ -165,20 +165,20 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
 
     for (let i = 0; i < boxes.length; i++) {
         const box = boxes[i];
-        let text = "text"
+        let text = ""
         let color_box = "white"
         let color_text = "black"
-        if (box.text) {
-            text = box.text
-        } else {
-            text = box.label;
-        }
+
         ctx.beginPath();
         ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
         ctx.strokeStyle = color_box;
         ctx.lineWidth = 4;
         ctx.stroke();
 
+        if (!box.text) {
+            continue
+        }
+        text = box.text
         ctx.fillStyle = color_text;
         let lines = text.split('\n');
 
