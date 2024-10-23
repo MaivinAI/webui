@@ -288,25 +288,28 @@ loader.load(
             0x000);
         gridHelper.position.z = 0.002;
         grid_scene.add(gridHelper);
+        let decimals = 1
+        if (Number.isInteger(RANGE_BIN_LIMITS[0]) && Number.isInteger(RANGE_BIN_WIDTH * 2)) {
+            decimals = 0
+        }
         for (let i = RANGE_BIN_LIMITS[0]; i <= RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
-            const myText = new SpriteText(i.toFixed(1) + "m", 0.03, "0x888888")           
+            const myText = new SpriteText(i.toFixed(decimals) + "m", 0.03, "0x888888")           
             myText.material.sizeAttenuation = false
-            myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[0]+1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI)*0.2
-            // myText.position.y = -0.1
-            myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[0]+1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI)*0.2
+            myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[0]+1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI)*0.16
+            myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[0]+1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI)*0.16
             grid_scene.add(myText)
         }
         for (let i = RANGE_BIN_LIMITS[0]; i <= RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
-            const myText = new SpriteText(i.toFixed(1) + "m", 0.03, "0x888888")
+            const myText = new SpriteText(i.toFixed(decimals) + "m", 0.03, "0x888888")
             myText.material.sizeAttenuation = false
-            myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[1]-1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.2
-            // myText.position.y = -0.1
-            myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[1]-1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.2
+            myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[1]-1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.16
+            myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[1]-1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.16
             grid_scene.add(myText)
         }
 
         for (let i = ANGLE_BIN_LIMITS[0]; i <= ANGLE_BIN_LIMITS[1]; i += ANGLE_BIN_WIDTH * 2) {
-            const myText = new SpriteText(i.toFixed(0) + "°", 0.03, "0x888888")
+            let pad = i < 0 ? "" : " "
+            const myText = new SpriteText(pad + i.toFixed(0) + "°", 0.03, "0x888888")
             myText.material.sizeAttenuation = false
             myText.position.x = Math.sin(-i / 180 * PI) * RANGE_BIN_LIMITS[1]
             myText.position.y = 0.2
