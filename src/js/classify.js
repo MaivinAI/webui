@@ -56,7 +56,7 @@ export default function classify_points(points, mask_tex) {
     const n_layer_stride = mask_height * mask_width * 4;
     const n_row_stride = mask_width * 4;
     const n_col_stride = 4;
-    var index = 0
+    let index = 0
     for (let p of points) {
         // project points to camera space
         // x, y, dist
@@ -152,7 +152,7 @@ export function classify_points_box(points, boxes) {
     )
 
     const points_cpy = []
-    var index = 0
+    let index = 0
     for (let p of points) {
         // project points to camera space
         // x, y, dist
@@ -246,8 +246,6 @@ export function project_points_onto_box(points, boxes) {
     )
 
     const points_cpy = []
-    var index = 0
-
     for (let p of points) {
         // project points to camera space
         // x, y, dist
@@ -266,7 +264,6 @@ export function project_points_onto_box(points, boxes) {
         let i = 1 - pos.y
         let j = 1 - pos.x
 
-        point_cpy.index = index++
         point_cpy.range = Math.sqrt(point_cpy.x * point_cpy.x + point_cpy.y * point_cpy.y + point_cpy.z * point_cpy.z)
         point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
         point_cpy.i = i;
@@ -280,23 +277,30 @@ export function project_points_onto_box(points, boxes) {
     for (let p of points_cpy)  {
         let i = p.i;
         let j = p.j;
-        for (let l = 0; l < boxes.length; l++) {
-            if (j < boxes[l].center_x - boxes[l].width / 2 - 0.15) { // pad 0.15 left of the box
+        for (let box of boxes) {
+            if (point_in_box(j, i, box)) {
+                return
+            }
+            if (box.text) {
                 continue
             }
-            if (j > boxes[l].center_x + boxes[l].width / 2 + 0.15) { // pad 0.15 right of the box
-                continue
-            }
-            if (i < boxes[l].center_y - boxes[l].height / 2) {
-                continue
-            }
-            if (i > boxes[l].center_y + boxes[l].height / 2) {
-                continue
-            }
-            if (boxes[l].text) {
-                continue
-            }
-            boxes[l].text = `${p.range.toFixed(1).padStart(5, " ")}m\n${p.speed.toFixed(1).padStart(5, " ")}m/s`
+            box.text = `${p.range.toFixed(1).padStart(5, " ")}m\n${p.speed.toFixed(1).padStart(5, " ")}m/s`
         }
     }
+}
+
+function point_in_box(x,y, box) {
+    if (x < box.center_x - box.width / 2 - 0.15) { // pad 0.15 left of the box
+        return false
+    }
+    if (x > box.center_x + box.width / 2 + 0.15) { // pad 0.15 right of the box
+        return false
+    }
+    if (y < box.center_y - box.height / 2) {
+        return false
+    }
+    if (y > box.center_y + box.height / 2) {
+        return false
+    }
+    return true
 }

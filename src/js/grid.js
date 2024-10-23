@@ -3,7 +3,6 @@ import segstream, { get_shape } from './mask.js'
 import { OrbitControls } from './OrbitControls.js'
 import Stats from './Stats.js'
 import pcdStream from './pcd.js'
-import classify_points, { classify_points_box } from './classify.js'
 import boxesstream from './boxes.js'
 import { dynamicSort } from './sort.js'
 import { PolarGridFan } from './polarGridFan.js'
@@ -25,9 +24,9 @@ renderer.domElement.style.cssText = "display:flex; position: absolute; top: 0; l
 document.querySelector('main').appendChild(renderer.domElement);
 
 const stats = new Stats();
-var renderPanel = stats.addPanel(new Stats.Panel('renderFPS', '#4ff', '#022'));
-var radarPanel = stats.addPanel(new Stats.Panel('radarFPS', '#ff4', '#220'));
-var modelPanel = stats.addPanel(new Stats.Panel('modelFPS', '#f4f', '#210'));
+const renderPanel = stats.addPanel(new Stats.Panel('renderFPS', '#4ff', '#022'));
+const radarPanel = stats.addPanel(new Stats.Panel('radarFPS', '#ff4', '#220'));
+const modelPanel = stats.addPanel(new Stats.Panel('modelFPS', '#f4f', '#210'));
 stats.dom.style.cssText = "position: absolute; top: 0px; right: 0px; opacity: 0.9; z-index: 10000;";
 stats.showPanel([3, 4, 5, 6])
 document.querySelector('main').appendChild(stats.dom);
@@ -232,7 +231,7 @@ THREE.Cache.enabled = true;
 
 
 const bins = []
-var window_index = 0
+let window_index = 0
 function alloc_bins() {
     console.log("i am here")
     bins.length = 0
@@ -348,7 +347,7 @@ function getClassInList(l) {
 
     let max_class = 0
     let max_class_val = -1
-    for (var cl in classes) {
+    for (let cl in classes) {
         if (max_class_val < classes[cl]) {
             max_class = cl
             max_class_val = classes[cl]

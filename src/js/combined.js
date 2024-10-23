@@ -158,15 +158,14 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
     }
 
     project_points_onto_box(radar_points, boxes)
-    var ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
     if (ctx == null) {
         return
     }
     ctx.font = "48px monospace";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    for (let i = 0; i < boxes.length; i++) {
-        const box = boxes[i];
+    for (let box of boxes) {
         let text = ""
         let color_box = "white"
         let color_text = "black"
@@ -353,8 +352,7 @@ loader.load(
         pcdStream(socketUrlPcd, () => {
             radarFpsFn();
             let filteredPoints = []
-            for (let i = 0; i < radar_points.points.length; i++) {
-                const p = radar_points.points[i]
+            for (let p of radar_points.points) {
                 const range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
                 if (RANGE_BIN_LIMITS[0] <= range && range <= RANGE_BIN_LIMITS[1]) {
                     filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point

@@ -62,7 +62,7 @@ function drawBoxes(canvas, message) {
         return;
     }
 
-    var ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
     if (ctx == null) {
         return
     }
@@ -71,7 +71,7 @@ function drawBoxes(canvas, message) {
 
     for (let i = 0; i < message.boxes.length; i++) {
         const box = message.boxes[i];
-        let text = "text"
+        let text
         let color_box = "white"
         let color_text = "black"
         if (box.track.id) {
