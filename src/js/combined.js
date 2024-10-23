@@ -288,12 +288,29 @@ loader.load(
             0x000);
         gridHelper.position.z = 0.002;
         grid_scene.add(gridHelper);
-
         for (let i = RANGE_BIN_LIMITS[0]; i <= RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
-            const myText = new SpriteText(i.toFixed(2) + "m", 0.20, "0x888888")
-            // myText.material.sizeAttenuation = false
-            myText.position.x = 0
-            myText.position.z = i
+            const myText = new SpriteText(i.toFixed(1) + "m", 0.03, "0x888888")           
+            myText.material.sizeAttenuation = false
+            myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[0]+1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI)*0.2
+            // myText.position.y = -0.1
+            myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[0]+1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI)*0.2
+            grid_scene.add(myText)
+        }
+        for (let i = RANGE_BIN_LIMITS[0]; i <= RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
+            const myText = new SpriteText(i.toFixed(1) + "m", 0.03, "0x888888")
+            myText.material.sizeAttenuation = false
+            myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[1]-1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.2
+            // myText.position.y = -0.1
+            myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[1]-1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.2
+            grid_scene.add(myText)
+        }
+
+        for (let i = ANGLE_BIN_LIMITS[0]; i <= ANGLE_BIN_LIMITS[1]; i += ANGLE_BIN_WIDTH * 2) {
+            const myText = new SpriteText(i.toFixed(0) + "°", 0.03, "0x888888")
+            myText.material.sizeAttenuation = false
+            myText.position.x = Math.sin(-i / 180 * PI) * RANGE_BIN_LIMITS[1]
+            myText.position.y = 0.2
+            myText.position.z = Math.cos(-i / 180 * PI) * RANGE_BIN_LIMITS[1]
             grid_scene.add(myText)
         }
 
@@ -572,15 +589,15 @@ import { PolarGridFan } from './polarGridFan.js'
 
 const HFOV = 82
 let aspect = gridCanvasWidth / gridCanvasHeight
-let fov = Math.atan(Math.tan(HFOV * Math.PI / 360) / aspect) * 360 / Math.PI
-// let fov = 20
+// let fov = Math.atan(Math.tan(HFOV * Math.PI / 360) / aspect) * 360 / Math.PI
+let fov = 20
 
 const camera_grid = new THREE.PerspectiveCamera(fov, aspect, 0.1, 1000);
-camera_grid.position.y = 2;
-camera_grid.position.z = -5;
+camera_grid.position.y = 1.9;
+camera_grid.position.z = -4;
 
 const orbitControls = new OrbitControls(camera_grid, gridCanvas);
-orbitControls.target = new THREE.Vector3(0, 0, 3);
+orbitControls.target = new THREE.Vector3(0, 0, 3.25);
 orbitControls.update();
 
 renderer_grid.setAnimationLoop(animate_grid);
@@ -817,7 +834,7 @@ function onWindowResize() {
     let gridCanvasHeight = gridCanvas.parentElement.offsetHeight
 
     camera_grid.aspect = gridCanvasWidth / gridCanvasHeight
-    camera_grid.fov = Math.atan(Math.tan(HFOV * Math.PI / 360) / camera_grid.aspect) * 360 / Math.PI
+    // camera_grid.fov = Math.atan(Math.tan(HFOV * Math.PI / 360) / camera_grid.aspect) * 360 / Math.PI
     // camera_grid.rotation.x = -Math.atan2(camera_grid.position.y, camera_grid.position.z-0.5) - camera_grid.fov * 0.5 * PI / 180;
     camera_grid.updateProjectionMatrix();
     renderer_grid.setSize(gridCanvasWidth, gridCanvasHeight)

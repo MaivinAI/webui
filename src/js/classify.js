@@ -296,7 +296,7 @@ export function project_points_onto_box(points, boxes) {
             if (boxes[l].text) {
                 continue
             }
-            boxes[l].text = ` ${p.range.toFixed(1).padStart(5, " ")}m\n${p.speed.toFixed(1).padStart(6, " ")}m/s`
+            boxes[l].text = `${p.range.toFixed(1).padStart(5, " ")}m\n${p.speed.toFixed(1).padStart(5, " ")}m/s`
         }
     }
 }
