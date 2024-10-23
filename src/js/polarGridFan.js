@@ -18,11 +18,14 @@ export class PolarGridFan extends LineSegments {
 
                 const v = (angle_min) + (i / sectors) * (angle_max-angle_min);
 
-                const x = Math.sin(v) * radius_max;
-                const z = Math.cos(v) * radius_max;
+                const x0 = Math.sin(v) * radius_min;
+                const z0 = Math.cos(v) * radius_min;
 
-                vertices.push(0, 0, 0);
-                vertices.push(x, 0, z);
+                const x1 = Math.sin(v) * radius_max;
+                const z1 = Math.cos(v) * radius_max;
+
+                vertices.push(x0, 0, z0);
+                vertices.push(x1, 0, z1);
 
                 const color = (i & 1) ? color1 : color2;
 
