@@ -114,7 +114,7 @@ let WINDOW_LENGTH = 5
 let BIN_THRESHOLD = 3
 let DRAW_PCD = false
 let USE_BOX = false
-let DRAW_UNKNOWN = false
+let DRAW_UNKNOWN_CELLS = false
 
 let socketUrlMask = '/rt/detect/mask/'
 let socketUrlDetect = '/rt/detect/boxes2d/'
@@ -169,8 +169,8 @@ loader.load(
         if (config.PCD_TOPIC) {
             socketUrlPcd = config.PCD_TOPIC
         }
-        if (config.DRAW_UNKNOWN) {
-            DRAW_UNKNOWN = config.DRAW_UNKNOWN
+        if (config.DRAW_UNKNOWN_CELLS) {
+            DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
         }
 
         alloc_bins()
@@ -475,7 +475,7 @@ function animate() {
         }
 
         for (let p of points) {
-            if (DRAW_UNKNOWN || p.class > 0) {
+            if (DRAW_UNKNOWN_CELLS || p.class > 0) {
                 p.range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
                 p.angle = Math.atan2(p.y, p.x)
                 increment_bin(-p.angle * 180 / PI, p.range, p)

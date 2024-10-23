@@ -135,7 +135,7 @@ let BIN_THRESHOLD = 3
 let GRID_DRAW_PCD = "disabled"
 let CAMERA_DRAW_PCD = "disabled"
 let CAMERA_PCD_LABEL = "disabled"
-let DRAW_UNKNOWN = false
+let DRAW_UNKNOWN_CELLS = false
 
 let socketUrlH264 = '/rt/camera/h264/'
 let socketUrlPcd = '/rt/radar/targets/'
@@ -243,8 +243,8 @@ loader.load(
         if (config.COMBINED_CAMERA_PCD_LABEL) {
             CAMERA_PCD_LABEL = config.COMBINED_CAMERA_PCD_LABEL
         }
-        if (config.DRAW_UNKNOWN) {
-            DRAW_UNKNOWN = config.DRAW_UNKNOWN
+        if (config.DRAW_UNKNOWN_CELLS) {
+            DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
         }
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
@@ -685,7 +685,7 @@ function animate_grid() {
         }
 
         for (let p of points) {
-            if (DRAW_UNKNOWN || p.class > 0) {
+            if (DRAW_UNKNOWN_CELLS || p.class > 0) {
                 p.range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
                 p.angle = Math.atan2(p.y, p.x)
                 increment_bin(-p.angle * 180 / PI, p.range, p)
