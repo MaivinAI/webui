@@ -235,6 +235,18 @@
                     <label for="topic_gps">/gps</label>
                 </div>
                 <div>
+                    <input type="checkbox" id="topic_radar" name="topics" value="/radar/targets">
+                    <label for="topic_radar">/radar/targets</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="topic_radarcube" name="topics" value="/radar/cube">
+                    <label for="topic_radarcube">/radar/cube</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="topic_radarclusters" name="topics" value="/radar/clusters">
+                    <label for="topic_radarclusters">/radar/clusters</label>
+                </div>
+                <div>
                     <input type="checkbox" id="topic_camera_info" name="topics" value="/camera/info">
                     <label for="topic_camera_info">/camera/info</label>
                 </div>
@@ -243,13 +255,26 @@
                     <label for="topic_camera_h264">/camera/h264</label>
                 </div>
                 <div>
-                    <input type="checkbox" id="topic_detect_info" name="topics" value="/detect/info">
-                    <label for="topic_detect_info">/detect/info</label>
+                    <input type="checkbox" id="topic_model_info" name="topics" value="/model/info">
+                    <label for="topic_model_info">/model/info</label>
                 </div>
                 <div>
-                    <input type="checkbox" id="topic_detect_boxes2d" name="topics" value="/detect/boxes2d">
-                    <label for="topic_detect_boxes2d">/detect/boxes2d</label>
+                    <input type="checkbox" id="topic_model_boxes2d" name="topics" value="/model/boxes2d">
+                    <label for="topic_model_boxes2d">/model/boxes2d</label>
                 </div>
+                <div>
+                    <input type="checkbox" id="topic_model_mask" name="topics" value="/model/mask_compressed">
+                    <label for="topic_model_mask">/model/mask_compressed</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="topic_fusion_targets" name="topics" value="/fusion/targets">
+                    <label for="topic_fusion_targets">/fusion/targets</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="topic_fusion_occupancy" name="topics" value="/fusion/occupancy">
+                    <label for="topic_fusion_occupancy">/fusion/occupancy</label>
+                </div>
+
             </div>
 
             <button id="saveConfig">Save Configuration</button>
