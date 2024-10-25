@@ -100,6 +100,15 @@ export default async function pcdStream(socketUrl, onMessage) {
             // Deserialize PCD data
             const pcd = deserialize_pcd(reader)
             radar_data.points = pcd_to_points(pcd)
+            for (let p of radar_data.points) {
+                if (typeof p.range == "undefined") {
+                    p.range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
+                }   
+                if (typeof p.angle == "undefined") {
+                    p.angle = Math.atan2(p.y, p.x)
+                }
+            }
+
             
         } catch (error) {
             console.error("Failed to deserialize PCD data:", error);

@@ -13,6 +13,7 @@ import { LineGeometry } from './LineGeometry.js';
 import Stats from "./Stats.js"
 import droppedframes from './droppedframes.js'
 import { dynamicSort } from './sort.js'
+import { mask_colors } from './utils.js'
 const PI = Math.PI
 
 
@@ -56,18 +57,6 @@ function fpsUpdate(panel, max) {
         lastUpdateTime = curr
     }
 }
-const mask_colors = [
-    new THREE.Color(1.0, 1.0, 1.0),
-    new THREE.Color(0., 1., 0.),
-    new THREE.Color(0.50980392, 0.50980392, 0.72941176),
-    new THREE.Color(0.00784314, 0.18823529, 0.29411765)
-]
-
-const mask_class_names = ["background",
-    "person",
-    "car", "truck"
-]
-
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0xa0a0a0)

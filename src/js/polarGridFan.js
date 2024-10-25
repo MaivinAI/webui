@@ -11,7 +11,6 @@ export class PolarGridFan extends LineSegments {
         const colors = [];
 
         // create the sectors
-        console.log(angle_max)
         if (sectors > 1) {
 
             for (let i = 0; i <= sectors; i++) {
