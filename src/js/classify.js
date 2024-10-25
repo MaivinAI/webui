@@ -1,6 +1,6 @@
 import * as THREE from './three.js'
 import { dynamicSortMultiple } from './sort.js'
-
+import { parseNumbersInObject } from './parseNumbersInObject.js';
 
 function mode(a) {
     return Object.values(
@@ -30,9 +30,7 @@ loader.load(
             OCCLUSION_LIMIT_DEGREES = config.OCCLUSION_LIMIT_DEGREES;
         }
     },
-    function (xhr) {
-        // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-    },
+    function (xhr) { },
     function (err) {
         console.error('An error happened', err);
     }
@@ -40,7 +38,6 @@ loader.load(
 THREE.Cache.enabled = true;
 
 export default function classify_points(points, mask_tex) {
-    // console.log(points, mask_tex);
     // this is reformatted to be Nx240x320x4
     const mask = mask_tex.source.data.data
 
@@ -59,10 +56,9 @@ export default function classify_points(points, mask_tex) {
     const n_layer_stride = mask_height * mask_width * 4;
     const n_row_stride = mask_width * 4;
     const n_col_stride = 4;
-    var index = 0
+    let index = 0
     for (let p of points) {
         // project points to camera space
-        // console.log(p)
         // x, y, dist
         const pos = new THREE.Vector3(p.y, p.z, p.x)
         const point_cpy = structuredClone(p)
@@ -71,8 +67,6 @@ export default function classify_points(points, mask_tex) {
         pos.x /= pos.z
         pos.y /= pos.z
         pos.z /= pos.z
-        // pos.applyMatrix3(coord_cvt)
-        // console.log(pos)
 
         let i = mask_height - Math.round(pos.y)
         let j = mask_width - Math.round(pos.x)
@@ -128,7 +122,6 @@ export default function classify_points(points, mask_tex) {
         point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
         points_cpy.push(point_cpy)
     }
-    // console.log(points_cpy)
     points_cpy.sort(dynamicSortMultiple("range"))
 
     for (let i = 0; i < points_cpy.length; i++) {
@@ -139,7 +132,6 @@ export default function classify_points(points, mask_tex) {
             if (points_cpy[j].class == 0) {
                 continue
             }
-            // if points_cpy[i].range < 5
             if (Math.abs(points_cpy[i].angle - points_cpy[j].angle) <= OCCLUSION_LIMIT_DEGREES / 180 * PI && points_cpy[i].range - points_cpy[j].range > 1.0) {
                 points_cpy[i].class = 0
                 break
@@ -152,7 +144,6 @@ export default function classify_points(points, mask_tex) {
 const labels = { "background": 0 }
 let label_count = 1
 export function classify_points_box(points, boxes) {
-    // console.log(points, mask_tex);
 
     const cam_mtx = new THREE.Matrix3().set(
         1260 / 1920, 0, 960 / 1920,
@@ -161,10 +152,9 @@ export function classify_points_box(points, boxes) {
     )
 
     const points_cpy = []
-    var index = 0
+    let index = 0
     for (let p of points) {
         // project points to camera space
-        // console.log(p)
         // x, y, dist
         const pos = new THREE.Vector3(p.y, p.z, p.x)
         const point_cpy = {}
@@ -176,8 +166,7 @@ export function classify_points_box(points, boxes) {
         pos.x /= pos.z
         pos.y /= pos.z
         pos.z /= pos.z
-        // pos.applyMatrix3(coord_cvt)
-        // console.log(pos)
+
 
         let i = pos.y
         let j = 1 - pos.x
@@ -229,7 +218,6 @@ export function classify_points_box(points, boxes) {
         point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
         points_cpy.push(point_cpy)
     }
-    // console.log(points_cpy)
     points_cpy.sort(dynamicSortMultiple("range"))
 
     for (let i = 0; i < points_cpy.length; i++) {
@@ -240,7 +228,6 @@ export function classify_points_box(points, boxes) {
             if (points_cpy[j].class == 0) {
                 continue
             }
-            // if points_cpy[i].range < 5
             if (Math.abs(points_cpy[i].angle - points_cpy[j].angle) <= OCCLUSION_LIMIT_DEGREES / 180 * PI && points_cpy[i].range - points_cpy[j].range > 1.0) {
                 points_cpy[i].class = 0
                 break
@@ -250,19 +237,73 @@ export function classify_points_box(points, boxes) {
     return points_cpy
 }
 
-function parseNumbersInObject(obj) {
-    for (let key in obj) {
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-            obj[key] = parseNumbersInObject(obj[key]);
-        } else if (typeof obj[key] === 'string') {
-            if (!isNaN(obj[key]) && obj[key].trim() !== '') {
-                if (obj[key].includes('.')) {
-                    obj[key] = parseFloat(obj[key]);
-                } else {
-                    obj[key] = parseInt(obj[key], 10);
-                }
+export function project_points_onto_box(points, boxes) {
+
+    const cam_mtx = new THREE.Matrix3().set(
+        1260 / 1920, 0, 960 / 1920,
+        0, 1260 / 1080, 540 / 1080,
+        0, 0, 1
+    )
+
+    const points_cpy = []
+    for (let p of points) {
+        // project points to camera space
+        // x, y, dist
+        const pos = new THREE.Vector3(p.y, p.z, p.x)
+        const point_cpy = {}
+        point_cpy.x = p.x
+        point_cpy.y = p.y
+        point_cpy.z = p.z
+        point_cpy.speed = p.speed
+
+        pos.applyMatrix3(cam_mtx)
+        pos.x /= pos.z
+        pos.y /= pos.z
+        pos.z /= pos.z
+
+        let i = 1 - pos.y
+        let j = 1 - pos.x
+
+        point_cpy.range = Math.sqrt(point_cpy.x * point_cpy.x + point_cpy.y * point_cpy.y + point_cpy.z * point_cpy.z)
+        point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
+        point_cpy.i = i;
+        point_cpy.j = j;
+        points_cpy.push(point_cpy)
+    }
+
+    points_cpy.sort(dynamicSortMultiple("range"))
+
+
+    for (let p of points_cpy)  {
+        if (p.class == 0) {
+            continue
+        }
+        let i = p.i;
+        let j = p.j;
+        for (let box of boxes) {
+            if (!point_in_box(j, i, box)) {
+                continue
             }
+            if (box.text) {
+                continue
+            }
+            box.text = `${p.range.toFixed(1).padStart(5, " ")}m\n${p.speed.toFixed(1).padStart(5, " ")}m/s`
         }
     }
-    return obj;
+}
+
+function point_in_box(x,y, box) {
+    if (x < box.center_x - box.width / 2 - 0.05) { // pad 0.15 left of the box
+        return false
+    }
+    if (x > box.center_x + box.width / 2 + 0.05) { // pad 0.15 right of the box
+        return false
+    }
+    if (y < box.center_y - box.height / 2) {
+        return false
+    }
+    if (y > box.center_y + box.height / 2) {
+        return false
+    }
+    return true
 }

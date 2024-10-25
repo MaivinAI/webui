@@ -100,7 +100,7 @@ export default async function pcdStream(socketUrl, onMessage) {
             // Deserialize PCD data
             const pcd = deserialize_pcd(reader)
             radar_data.points = pcd_to_points(pcd)
-            radar_data.needsUpdate = true
+            
         } catch (error) {
             console.error("Failed to deserialize PCD data:", error);
         }
@@ -108,6 +108,7 @@ export default async function pcdStream(socketUrl, onMessage) {
         if (onMessage) {
             onMessage()
         }
+        radar_data.needsUpdate = true
     };
 
     socket.onerror = function (error) {

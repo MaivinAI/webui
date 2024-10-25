@@ -185,8 +185,8 @@ if (STREAM) {
 
 
 const socketUrlImu = '/rt/imu'
-var imuData;
-var oldImuData = {};
+let imuData;
+let oldImuData = {};
 ImuStream(socketUrlImu).then(data => { imuData = data })
 
 const loader = new STLLoader();

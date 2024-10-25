@@ -110,11 +110,11 @@ export default async function segstream(socketUrl, height, width, classes, onMes
         // let elapsed = performance.now() - start;
         // console.log("Array reshaping took ", elapsed, " ms");
 
-        texture_mask.needsUpdate = true;
         if (onMessage) {
             timing.decode_time = performance.now() - start
             onMessage(timing)
         }
+        texture_mask.needsUpdate = true;
 
     };
     socket.onerror = function (error) {
