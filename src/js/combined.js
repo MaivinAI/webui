@@ -4,15 +4,10 @@ import ProjectedMask from './ProjectedMask.js'
 import segstream, { get_shape } from './mask.js'
 import h264Stream from './stream.js'
 import pcdStream from './pcd.js'
-import SpriteText from './three-spritetext.js';
 import { project_points_onto_box } from './classify.js'
 import boxesstream from './boxes.js'
-import { Line2 } from './Line2.js';
-import { LineMaterial } from './LineMaterial.js';
-import { LineGeometry } from './LineGeometry.js';
 import Stats from "./Stats.js"
 import droppedframes from './droppedframes.js'
-import { dynamicSort } from './sort.js'
 import { parseNumbersInObject } from './parseNumbersInObject.js';
 import { OrbitControls } from './OrbitControls.js'
 import { clearThree, color_points_class, color_points_field } from './utils.js'
@@ -104,31 +99,8 @@ let detect_boxes;
 let radar_points;
 
 
-// const MAX_TRIANGLE_COUNT = 1000
-// const instancedMeshHelper = new THREE.Object3D();
-// let triangles
-
-const MAX_TRIANGLES = 100
-// const geometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
-const shape = new THREE.Shape();
-const x = 0;
-const y = 1;
-shape.moveTo(x - 18, y);
-shape.lineTo(x + 18, y);
-shape.lineTo(x, y - 10);
-
-
-
-let ANGLE_BIN_WIDTH = 10
-let ANGLE_BIN_LIMITS = [-65, 65]
-let RANGE_BIN_WIDTH = 0.5
-let RANGE_BIN_LIMITS = [0, 20]
-let WINDOW_LENGTH = 5
-let BIN_THRESHOLD = 3
-let GRID_DRAW_PCD = "disabled"
 let CAMERA_DRAW_PCD = "disabled"
 let CAMERA_PCD_LABEL = "disabled"
-let DRAW_UNKNOWN_CELLS = false
 let DRAW_BOX = false
 let DRAW_BOX_TEXT = true
 
@@ -137,6 +109,8 @@ let socketUrlPcd = '/rt/radar/targets/'
 let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlMask = '/rt/detect/mask/'
 let socketUrlErrors = '/ws/dropped'
+let RANGE_BIN_LIMITS = [0, 20]
+
 
 
 droppedframes(socketUrlErrors, playerCanvas)
@@ -213,25 +187,11 @@ loader.load(
     function (data) {
         const config = parseNumbersInObject(JSON.parse(data));
         console.log(config)
-        if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
-        if (config.ANGLE_BIN_LIMITS_MIN) {
-            ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS_MIN
-        }
-        if (config.ANGLE_BIN_LIMITS_MAX) {
-            ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS_MAX
-        }
-        if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH }
         if (config.RANGE_BIN_LIMITS_MIN) {
             RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
         }
         if (config.RANGE_BIN_LIMITS_MAX) {
             RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
-        }
-        if (config.WINDOW_LENGTH) {
-            WINDOW_LENGTH = config.WINDOW_LENGTH
-        }
-        if (config.BIN_THRESHOLD) {
-            BIN_THRESHOLD = config.BIN_THRESHOLD
         }
 
         if (config.MASK_TOPIC) {
