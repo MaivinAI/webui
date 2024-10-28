@@ -248,72 +248,55 @@ function animate_grid() {
         })
         occupied.length = 0
         let foundOccupied = new Array(bins.length).fill(false)
-        
-        for (let j = RANGE_BIN_LIMITS[0]; j <= RANGE_BIN_LIMITS[1]; j += RANGE_BIN_WIDTH) {
-            for (let i = ANGLE_BIN_LIMITS[0] + ANGLE_BIN_WIDTH; i <= ANGLE_BIN_LIMITS[1] - ANGLE_BIN_WIDTH; i += ANGLE_BIN_WIDTH) {
-                let currInd = (i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH
-                if (foundOccupied[currInd]) {
-                    continue;
-                }
-                let val = [getValsInBin(i, j, 0, 0), getValsInBin(i, j, 0, -1), getValsInBin(i, j, 0, -2)]
-                let sum = val.map((v) => { return v.length })
-
-                let acc = 0
-                let cumsum = sum.map(n => acc += n)
-                acc = []
-                let cumconcat = val.map(n => acc = acc.concat(n))
-
-                for(let k = 0; k < val.length; k++) {
-                    if (cumsum[k] >= BIN_THRESHOLD) {
-                        const [class_, _] = getClassInList(cumconcat[k])
-                        const cell = newRingGeo(i, j - RANGE_BIN_WIDTH * k, class_)
-                        occupied.push(cell)
-                        grid_scene.add(cell)
-                        foundOccupied[currInd] = true
-                        break
-                    }
-                }
-            }
-        }
-
-        for (let j = RANGE_BIN_LIMITS[0]; j <= RANGE_BIN_LIMITS[1]; j += RANGE_BIN_WIDTH) {
-            for (let i = ANGLE_BIN_LIMITS[0] + ANGLE_BIN_WIDTH; i <= ANGLE_BIN_LIMITS[1] - ANGLE_BIN_WIDTH; i += ANGLE_BIN_WIDTH) {
-                let currInd = (i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH
-                if (foundOccupied[currInd]) {
-                    continue;
-                }
-                let val = [getValsInBin(i, j, 0, 0), getValsInBin(i, j, 0, -1), getValsInBin(i, j, 0, -2)]
-                if (!foundOccupied[(i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH + 1]) {
-                    val = val.map((v, ind) => { return v.concat(getValsInBin(i, j, 1, -ind)) })
-                }
-                if (!foundOccupied[((i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH - 1 + bins.length) % bins.length]) {
-                    val = val.map((v, ind) => { return v.concat(getValsInBin(i, j, -1, -ind)) })
-                }
-                let sum = val.map((v) => { return v.length })
-
-                let acc = 0
-                let cumsum = sum.map(n => acc += n)
-
-                acc = []
-                let cumconcat = val.map(n => acc = acc.concat(n))
-
-                for (let k = 0; k < val.length; k++) {
-                    if (cumsum[k] >= BIN_THRESHOLD) {
-                        const [class_, _] = getClassInList(cumconcat[k])
-                        const cell = newRingGeo(i, j - RANGE_BIN_WIDTH * k, class_)
-                        occupied.push(cell)
-                        grid_scene.add(cell)
-                        foundOccupied[currInd] = true
-                        if (currInd > 0) { foundOccupied[currInd - 1] = true }
-                        if (currInd < bins.length - 1) { foundOccupied[currInd + 1] = true }
-                        break
-                    }
-                }
-            }
-        }
-
+        checkBins([0], foundOccupied)
+        checkBins([-1, 0, 1], foundOccupied)        
         grid_renderer.render(grid_scene, grid_camera);
     }
     
 }
 
+function checkBins(angleBinDeltas, foundOccupied) {
+    for (let j = RANGE_BIN_LIMITS[0]; j <= RANGE_BIN_LIMITS[1]; j += RANGE_BIN_WIDTH) {
+        for (let i = ANGLE_BIN_LIMITS[0] + ANGLE_BIN_WIDTH; i <= ANGLE_BIN_LIMITS[1] - ANGLE_BIN_WIDTH; i += ANGLE_BIN_WIDTH) {
+            let currInd = (i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH
+
+            if (foundOccupied[currInd]) {
+                continue;
+            }
+            let val = [[], [], []]
+            for (let delta of angleBinDeltas) {
+                let angleBin = (i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH + delta
+                if (0 <= angleBin && angleBin < foundOccupied.length) {
+                    val = val.map((v, ind) => { return v.concat(getValsInBin(i, j, delta, -ind)) })
+                }
+            }
+            console.log(val)
+            let sum = val.map((v) => { return v.length })
+
+            let acc = 0
+            let cumsum = sum.map(n => acc += n)
+
+            acc = []
+            let cumconcat = val.map(n => acc = acc.concat(n))
+
+            for (let k = 0; k < val.length; k++) {
+                if (cumsum[k] >= BIN_THRESHOLD) {
+                    const class_ = getClassInList(cumconcat[k])[0]
+                    const cell = newRingGeo(i, j - RANGE_BIN_WIDTH * k, class_)
+                    occupied.push(cell)
+                    grid_scene.add(cell)
+                    setOccupied(currInd, angleBinDeltas, foundOccupied)
+                    break
+                }
+            }
+        }
+    }
+}
+
+function setOccupied(currInd, deltas, foundOccupied){
+    for (let delta of deltas) {
+        if (0 <= currInd + delta && currInd + delta < foundOccupied.length) {
+            foundOccupied[currInd + delta] = true
+        }
+    }
+}
