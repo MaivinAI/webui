@@ -131,9 +131,9 @@ function alloc_bins() {
 
 function clear_bins() {
     window_index = (window_index + 1) % WINDOW_LENGTH
-    for (let i = 0; i < bins.length; i++) {
-        for (let j = 0; j < bins[i].length; j++) {
-            bins[i][j][window_index] = []
+    for (let b of bins) {
+        for (let w of b) {
+            w[window_index] = []
         }
     }
 }
