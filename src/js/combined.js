@@ -10,9 +10,8 @@ import Stats from "./Stats.js"
 import droppedframes from './droppedframes.js'
 import { parseNumbersInObject } from './parseNumbersInObject.js';
 import { OrbitControls } from './OrbitControls.js'
-import { clearThree, color_points_class, color_points_field } from './utils.js'
+import { clearThree, color_points_class, color_points_field, mask_colors } from './utils.js'
 import { grid_set_radarpoints, init_grid } from './grid_render.js'
-import { mask_colors } from './utils.js'
 
 const PI = Math.PI
 
@@ -248,7 +247,7 @@ loader.load(
             scene.add(mesh_cam);
         })
 
-        
+
 
         const modelFPSUpdate = fpsUpdate(modelPanel)
 

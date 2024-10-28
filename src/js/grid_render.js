@@ -1,8 +1,7 @@
 import { PolarGridFan } from "./polarGridFan";
 import * as THREE from './three.js'
-import { clearThree, color_points_class, color_points_field } from "./utils.js";
+import { clearThree, color_points_class, color_points_field, mask_colors } from "./utils.js";
 import SpriteText from './three-spritetext.js';
-import { mask_colors } from './utils.js'
 const PI = Math.PI
 
 const occupied = []
@@ -178,7 +177,6 @@ function getValsInBin(angle, range, angleBinOffset, rangeBinOffset) {
 }
 
 function getCountInBin(angle, range, angleBinOffset, rangeBinOffset) {
-    
     return getValsInBin(angle, range, angleBinOffset, rangeBinOffset).length
 }
 
@@ -237,10 +235,10 @@ function animate_grid() {
         occupied.length = 0
         let foundOccupied = new Array(bins.length).fill(false)
         checkBins([0], foundOccupied)
-        checkBins([-1, 0, 1], foundOccupied)        
+        checkBins([-1, 0, 1], foundOccupied)
         grid_renderer.render(grid_scene, grid_camera);
     }
-    
+
 }
 
 function checkBins(angleBinDeltas, foundOccupied) {
@@ -258,7 +256,7 @@ function checkBins(angleBinDeltas, foundOccupied) {
                     val = val.map((v, ind) => v.concat(getValsInBin(i, j, delta, -ind)))
                 }
             }
-            
+
             let sum = val.map((v) => v.length)
 
             let acc = 0
@@ -281,7 +279,7 @@ function checkBins(angleBinDeltas, foundOccupied) {
     }
 }
 
-function setOccupied(currInd, deltas, foundOccupied){
+function setOccupied(currInd, deltas, foundOccupied) {
     for (let delta of deltas) {
         if (0 <= currInd + delta && currInd + delta < foundOccupied.length) {
             foundOccupied[currInd + delta] = true
