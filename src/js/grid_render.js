@@ -262,6 +262,9 @@ function checkBin(range, angle, angleBinDeltas, foundOccupied) {
     let val = [[], [], []]
     for (let delta of angleBinDeltas) {
         let angleBin = (angle - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH + delta
+        if (foundOccupied[angleBin]) {
+            return
+        }
         if (0 <= angleBin && angleBin < foundOccupied.length) {
             val = val.map((v, ind) => v.concat(getValsInBin(angle, range, delta, -ind)))
         }
