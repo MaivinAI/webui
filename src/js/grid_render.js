@@ -174,24 +174,12 @@ function getValsInBin(angle, range, angleBinOffset, rangeBinOffset) {
         // rangeBin = bins[angleBin].length - 1
         return []
     }
-    let sum = bins[angleBin][rangeBin].reduce((a, b) => a.concat(b), [])
-    return sum
+    return bins[angleBin][rangeBin].reduce((a, b) => a.concat(b), [])
 }
 
 function getCountInBin(angle, range, angleBinOffset, rangeBinOffset) {
-    let angleBin = Math.floor((angle - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH) + angleBinOffset
-    let rangeBin = Math.floor((range - RANGE_BIN_LIMITS[0]) / RANGE_BIN_WIDTH) + rangeBinOffset
-    angleBin = (angleBin + bins.length) % bins.length
-    if (rangeBin < 0) {
-        // rangeBin = 0
-        return 0
-    }
-    if (rangeBin >= bins[angleBin].length) {
-        // rangeBin = bins[angleBin].length - 1
-        return 0
-    }
-    let sum = bins[angleBin][rangeBin].reduce((a, b) => a + b.length, 0)
-    return sum
+    
+    return getValsInBin(angle, range, angleBinOffset, rangeBinOffset).length
 }
 
 function getClassInList(l) {
@@ -267,11 +255,11 @@ function checkBins(angleBinDeltas, foundOccupied) {
             for (let delta of angleBinDeltas) {
                 let angleBin = (i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH + delta
                 if (0 <= angleBin && angleBin < foundOccupied.length) {
-                    val = val.map((v, ind) => { return v.concat(getValsInBin(i, j, delta, -ind)) })
+                    val = val.map((v, ind) => v.concat(getValsInBin(i, j, delta, -ind)))
                 }
             }
-            console.log(val)
-            let sum = val.map((v) => { return v.length })
+            
+            let sum = val.map((v) => v.length)
 
             let acc = 0
             let cumsum = sum.map(n => acc += n)
