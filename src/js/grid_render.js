@@ -8,7 +8,7 @@ const occupied = []
 const rendered_points = []
 
 const bins = []
-var window_index = 0
+let window_index = 0
 let radar_points
 let grid_scene
 let grid_renderer
@@ -196,7 +196,7 @@ function getClassInList(l) {
 
     let max_class = 0
     let max_class_val = -1
-    for (var cl in classes) {
+    for (let cl in classes) {
         if (max_class_val < classes[cl]) {
             max_class = cl
             max_class_val = classes[cl]
