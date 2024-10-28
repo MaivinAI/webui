@@ -186,43 +186,8 @@ loader.load(
     function (data) {
         const config = parseNumbersInObject(JSON.parse(data));
         console.log(config)
-        if (config.RANGE_BIN_LIMITS_MIN) {
-            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
-        }
-        if (config.RANGE_BIN_LIMITS_MAX) {
-            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
-        }
 
-        if (config.MASK_TOPIC) {
-            socketUrlMask = config.MASK_TOPIC
-        }
-
-        if (config.DETECT_TOPIC) {
-            socketUrlDetect = config.DETECT_TOPIC
-        }
-
-        if (config.PCD_TOPIC) {
-            socketUrlPcd = config.PCD_TOPIC
-        }
-
-        if (config.H264_TOPIC) {
-            socketUrlH264 = config.H264_TOPIC
-        }
-
-        if (config.COMBINED_CAMERA_DRAW_PCD) {
-            CAMERA_DRAW_PCD = config.COMBINED_CAMERA_DRAW_PCD
-        }
-        if (config.COMBINED_CAMERA_PCD_LABEL) {
-            CAMERA_PCD_LABEL = config.COMBINED_CAMERA_PCD_LABEL
-        }
-
-        if (typeof config.DRAW_BOX == "boolean") {
-            DRAW_BOX = config.DRAW_BOX
-        }
-
-        if (typeof config.DRAW_BOX_TEXT == "boolean") {
-            DRAW_BOX_TEXT = config.DRAW_BOX_TEXT
-        }
+        init_config(config)
 
         config.GRID_DRAW_PCD = config.COMBINED_GRID_DRAW_PCD
         init_grid(grid_scene, renderer_grid, camera_grid, config)
@@ -304,6 +269,48 @@ loader.load(
         console.error('An error happened', err);
     }
 );
+
+function init_config(config) {
+    if (config.RANGE_BIN_LIMITS_MIN) {
+        RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
+    }
+    if (config.RANGE_BIN_LIMITS_MAX) {
+        RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
+    }
+
+    if (config.MASK_TOPIC) {
+        socketUrlMask = config.MASK_TOPIC
+    }
+
+    if (config.DETECT_TOPIC) {
+        socketUrlDetect = config.DETECT_TOPIC
+    }
+
+    if (config.PCD_TOPIC) {
+        socketUrlPcd = config.PCD_TOPIC
+    }
+
+    if (config.H264_TOPIC) {
+        socketUrlH264 = config.H264_TOPIC
+    }
+
+    if (config.COMBINED_CAMERA_DRAW_PCD) {
+        CAMERA_DRAW_PCD = config.COMBINED_CAMERA_DRAW_PCD
+    }
+    if (config.COMBINED_CAMERA_PCD_LABEL) {
+        CAMERA_PCD_LABEL = config.COMBINED_CAMERA_PCD_LABEL
+    }
+
+    if (typeof config.DRAW_BOX == "boolean") {
+        DRAW_BOX = config.DRAW_BOX
+    }
+
+    if (typeof config.DRAW_BOX_TEXT == "boolean") {
+        DRAW_BOX_TEXT = config.DRAW_BOX_TEXT
+    }
+}
+
+
 THREE.Cache.enabled = true;
 
 

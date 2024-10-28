@@ -78,24 +78,7 @@ loader.load(
         const config = parseNumbersInObject(JSON.parse(data));
         console.log("Parsed config:", config);
 
-        if (config.RANGE_BIN_LIMITS_MIN) {
-            RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
-        }
-        if (config.RANGE_BIN_LIMITS_MAX) {
-            RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
-        }
-
-        if (config.MASK_TOPIC) {
-            socketUrlMask = config.MASK_TOPIC
-        }
-
-        if (config.DETECT_TOPIC) {
-            socketUrlDetect = config.DETECT_TOPIC
-        }
-
-        if (config.PCD_TOPIC) {
-            socketUrlPcd = config.PCD_TOPIC
-        }
+        init_config(config)
 
         init_grid(scene, renderer, camera, config)
 
@@ -115,6 +98,28 @@ loader.load(
         console.error('An error happened', err);
     }
 );
+
+function init_config(config) {
+    if (config.RANGE_BIN_LIMITS_MIN) {
+        RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
+    }
+    if (config.RANGE_BIN_LIMITS_MAX) {
+        RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
+    }
+
+    if (config.MASK_TOPIC) {
+        socketUrlMask = config.MASK_TOPIC
+    }
+
+    if (config.DETECT_TOPIC) {
+        socketUrlDetect = config.DETECT_TOPIC
+    }
+
+    if (config.PCD_TOPIC) {
+        socketUrlPcd = config.PCD_TOPIC
+    }
+}
+
 THREE.Cache.enabled = true;
 
 function onWindowResize() {

@@ -26,32 +26,7 @@ let DRAW_UNKNOWN_CELLS = false
 
 
 export function init_grid(grid_scene_, grid_renderer_, grid_camera_, config) {
-    if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
-    if (config.ANGLE_BIN_LIMITS_MIN) {
-        ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS_MIN
-    }
-    if (config.ANGLE_BIN_LIMITS_MAX) {
-        ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS_MAX
-    }
-    if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH }
-    if (config.RANGE_BIN_LIMITS_MIN) {
-        RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
-    }
-    if (config.RANGE_BIN_LIMITS_MAX) {
-        RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
-    }
-    if (config.WINDOW_LENGTH) {
-        WINDOW_LENGTH = config.WINDOW_LENGTH
-    }
-    if (config.BIN_THRESHOLD) {
-        BIN_THRESHOLD = config.BIN_THRESHOLD
-    }
-    if (config.GRID_DRAW_PCD) {
-        GRID_DRAW_PCD = config.GRID_DRAW_PCD
-    }
-    if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
-        DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
-    }
+    init_config(config)
 
     grid_scene = grid_scene_
     grid_renderer = grid_renderer_
@@ -103,6 +78,35 @@ export function init_grid(grid_scene_, grid_renderer_, grid_camera_, config) {
 
 export function grid_set_radarpoints(radar_points_) {
     radar_points = radar_points_
+}
+
+function init_config(config) {
+    if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
+    if (config.ANGLE_BIN_LIMITS_MIN) {
+        ANGLE_BIN_LIMITS[0] = config.ANGLE_BIN_LIMITS_MIN
+    }
+    if (config.ANGLE_BIN_LIMITS_MAX) {
+        ANGLE_BIN_LIMITS[1] = config.ANGLE_BIN_LIMITS_MAX
+    }
+    if (config.RANGE_BIN_WIDTH) { RANGE_BIN_WIDTH = config.RANGE_BIN_WIDTH }
+    if (config.RANGE_BIN_LIMITS_MIN) {
+        RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
+    }
+    if (config.RANGE_BIN_LIMITS_MAX) {
+        RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
+    }
+    if (config.WINDOW_LENGTH) {
+        WINDOW_LENGTH = config.WINDOW_LENGTH
+    }
+    if (config.BIN_THRESHOLD) {
+        BIN_THRESHOLD = config.BIN_THRESHOLD
+    }
+    if (config.GRID_DRAW_PCD) {
+        GRID_DRAW_PCD = config.GRID_DRAW_PCD
+    }
+    if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
+        DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
+    }
 }
 
 function newRingGeo(angle, range, class_) {
@@ -242,39 +246,43 @@ function animate_grid() {
 }
 
 function checkBins(angleBinDeltas, foundOccupied) {
-    for (let j = RANGE_BIN_LIMITS[0]; j <= RANGE_BIN_LIMITS[1]; j += RANGE_BIN_WIDTH) {
-        for (let i = ANGLE_BIN_LIMITS[0] + ANGLE_BIN_WIDTH; i <= ANGLE_BIN_LIMITS[1] - ANGLE_BIN_WIDTH; i += ANGLE_BIN_WIDTH) {
-            let currInd = (i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH
+    for (let range = RANGE_BIN_LIMITS[0]; range <= RANGE_BIN_LIMITS[1]; range += RANGE_BIN_WIDTH) {
+        for (let angle = ANGLE_BIN_LIMITS[0] + ANGLE_BIN_WIDTH; angle <= ANGLE_BIN_LIMITS[1] - ANGLE_BIN_WIDTH; angle += ANGLE_BIN_WIDTH) {
+            checkBin(range, angle, angleBinDeltas, foundOccupied)
+        }
+    }
+}
 
-            if (foundOccupied[currInd]) {
-                continue;
-            }
-            let val = [[], [], []]
-            for (let delta of angleBinDeltas) {
-                let angleBin = (i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH + delta
-                if (0 <= angleBin && angleBin < foundOccupied.length) {
-                    val = val.map((v, ind) => v.concat(getValsInBin(i, j, delta, -ind)))
-                }
-            }
+function checkBin(range, angle, angleBinDeltas, foundOccupied) {
+    let currInd = (angle - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH
 
-            let sum = val.map((v) => v.length)
+    if (foundOccupied[currInd]) {
+        return;
+    }
+    let val = [[], [], []]
+    for (let delta of angleBinDeltas) {
+        let angleBin = (angle - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH + delta
+        if (0 <= angleBin && angleBin < foundOccupied.length) {
+            val = val.map((v, ind) => v.concat(getValsInBin(angle, range, delta, -ind)))
+        }
+    }
 
-            let acc = 0
-            let cumsum = sum.map(n => acc += n)
+    let sum = val.map((v) => v.length)
 
-            acc = []
-            let cumconcat = val.map(n => acc = acc.concat(n))
+    let acc = 0
+    let cumsum = sum.map(n => acc += n)
 
-            for (let k = 0; k < val.length; k++) {
-                if (cumsum[k] >= BIN_THRESHOLD) {
-                    const class_ = getClassInList(cumconcat[k])[0]
-                    const cell = newRingGeo(i, j - RANGE_BIN_WIDTH * k, class_)
-                    occupied.push(cell)
-                    grid_scene.add(cell)
-                    setOccupied(currInd, angleBinDeltas, foundOccupied)
-                    break
-                }
-            }
+    acc = []
+    let cumconcat = val.map(n => acc = acc.concat(n))
+
+    for (let k = 0; k < val.length; k++) {
+        if (cumsum[k] >= BIN_THRESHOLD) {
+            const class_ = getClassInList(cumconcat[k])[0]
+            const cell = newRingGeo(angle, range - RANGE_BIN_WIDTH * k, class_)
+            occupied.push(cell)
+            grid_scene.add(cell)
+            setOccupied(currInd, angleBinDeltas, foundOccupied)
+            return
         }
     }
 }
