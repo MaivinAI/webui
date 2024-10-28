@@ -23,6 +23,9 @@ let BIN_THRESHOLD = 3
 let GRID_DRAW_PCD = "disabled"
 let DRAW_UNKNOWN_CELLS = false
 
+
+
+
 export function init_grid(grid_scene_, grid_renderer_, grid_camera_, config) {
     if (config.ANGLE_BIN_WIDTH) { ANGLE_BIN_WIDTH = config.ANGLE_BIN_WIDTH }
     if (config.ANGLE_BIN_LIMITS_MIN) {
@@ -156,21 +159,7 @@ function get_bin(angle, range) {
 }
 
 function increment_bin(angle, range, value) {
-    if (angle < ANGLE_BIN_LIMITS[0]) {
-        angle = ANGLE_BIN_LIMITS[0]
-    }
-    if (angle > ANGLE_BIN_LIMITS[1]) {
-        angle = ANGLE_BIN_LIMITS[1]
-    }
-    if (range < RANGE_BIN_LIMITS[0]) {
-        range = RANGE_BIN_LIMITS[0]
-    }
-    if (range > RANGE_BIN_LIMITS[1]) {
-        range = RANGE_BIN_LIMITS[1]
-    }
-    const i = Math.floor((angle - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH)
-    const j = Math.floor((range - RANGE_BIN_LIMITS[0]) / RANGE_BIN_WIDTH)
-    bins[i][j][window_index].push(value)
+    get_bin(angle, range).push(value)
 }
 
 function getValsInBin(angle, range, angleBinOffset, rangeBinOffset) {
@@ -289,13 +278,11 @@ function animate_grid() {
 
         for (let j = RANGE_BIN_LIMITS[0]; j <= RANGE_BIN_LIMITS[1]; j += RANGE_BIN_WIDTH) {
             for (let i = ANGLE_BIN_LIMITS[0] + ANGLE_BIN_WIDTH; i <= ANGLE_BIN_LIMITS[1] - ANGLE_BIN_WIDTH; i += ANGLE_BIN_WIDTH) {
-                let angle = i + ANGLE_BIN_WIDTH / 2
                 let currInd = (i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH
                 if (foundOccupied[currInd]) {
                     continue;
                 }
                 let val = [getValsInBin(i, j, 0, 0), getValsInBin(i, j, 0, -1), getValsInBin(i, j, 0, -2)]
-
                 if (!foundOccupied[(i - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH + 1]) {
                     val = val.map((v, ind) => { return v.concat(getValsInBin(i, j, 1, -ind)) })
                 }
@@ -306,6 +293,7 @@ function animate_grid() {
 
                 let acc = 0
                 let cumsum = sum.map(n => acc += n)
+
                 acc = []
                 let cumconcat = val.map(n => acc = acc.concat(n))
 
