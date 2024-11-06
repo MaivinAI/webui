@@ -9,10 +9,6 @@
     <link href="../css/full.css" rel="stylesheet" type="text/css" />
     <script src="../js/tailwind.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f4f7f9;
@@ -20,7 +16,6 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            overflow-y: auto;
         }
 
         header {
@@ -38,7 +33,7 @@
             padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             background-color: #ffffff;
             overflow-y: auto;
         }
@@ -50,9 +45,8 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             background-color: #ffffff;
-            overflow-y: auto;
-            max-height: 90vh;
-            margin-top: 20px;
+            max-height: auto;
+            margin-top: auto;
         }
 
         h2 {
@@ -257,6 +251,21 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label for="clustering_eps">Clustering EPS:</label>
+                <input type="number" id="clustering_eps" name="clustering_eps" step="0.1" value="0.3">
+            </div>
+
+            <div class="form-group">
+                <label for="clustering_param_scale">Clustering Parameter Scale:</label>
+                <input type="text" id="clustering_param_scale" name="clustering_param_scale" value="1.0 1.0 0.0 0.0">
+            </div>
+
+            <div class="form-group">
+                <label for="clustering_point_limit">Clustering Point Limit:</label>
+                <input type="number" id="clustering_point_limit" name="clustering_point_limit" min="3" value="3">
+            </div>
+
             <button id="saveConfig">Save Configuration</button>
         </div>
     </main>
@@ -333,6 +342,9 @@
                     CLUSTERING: document.getElementById('clustering').value,
                     WINDOW_SIZE: document.getElementById('window_size').value,
                     CUBE: document.getElementById('cube').value,
+                    CLUSTERING_EPS: document.getElementById('clustering_eps').value,
+                    CLUSTERING_PARAM_SCALE: document.getElementById('clustering_param_scale').value,
+                    CLUSTERING_POINT_LIMIT: document.getElementById('clustering_point_limit').value,
                 };
 
                 fetch(`/config/radarpub`, {

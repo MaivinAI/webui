@@ -182,14 +182,11 @@
             <a href="/config/camera" class="settings-card">
                 <h3>Camera Settings</h3>
             </a>
-            <a href="/config/detect" class="settings-card">
-                <h3>Detect Settings</h3>
-            </a>
             <a href="/config/webui" class="settings-card">
                 <h3>WebUI Settings</h3>
             </a>
-            <a href="/config/segment" class="settings-card">
-                <h3>Segment Settings</h3>
+            <a href="/config/model" class="settings-card">
+                <h3>Model Settings</h3>
             </a>
             <a href="/config/vpkui" class="settings-card">
                 <h3>VPKUI Settings</h3>
@@ -216,6 +213,12 @@
                         radarSettingsCard.className = 'settings-card';
                         radarSettingsCard.innerHTML = '<h3>Radar Settings</h3>';
                         settingsContainer.appendChild(radarSettingsCard);
+                        const fusionSettingsCard = document.createElement('a');
+                        fusionSettingsCard.href = '/config/fusion';
+                        fusionSettingsCard.className = 'settings-card';
+                        fusionSettingsCard.innerHTML = '<h3>Fusion Settings</h3>';
+                        settingsContainer.appendChild(fusionSettingsCard);
+
                     }
                 })
                 .catch(error => {

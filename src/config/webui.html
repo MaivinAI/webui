@@ -23,7 +23,6 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            overflow-y: auto;
         }
 
         header {
@@ -53,9 +52,8 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             background-color: #ffffff;
-            overflow-y: auto;
-            max-height: 90vh;
-            margin-top: 20px;
+            max-height: auto;
+            margin-top: auto;
         }
 
         h2 {
@@ -378,6 +376,24 @@
                 <input type="text" id="h264_topic" name="h264_topic" placeholder="/rt/camera/h264/">
             </div>
 
+            <!-- Draw Unknown Cells Checkbox -->
+            <div class="form-group">
+                <label for="draw_unknown_cells">Draw Unknown Cells:</label>
+                <input type="checkbox" id="draw_unknown_cells" name="draw_unknown_cells">
+            </div>
+
+            <!-- Draw Box Checkbox -->
+            <div class="form-group">
+                <label for="draw_box">Draw Box:</label>
+                <input type="checkbox" id="draw_box" name="draw_box">
+            </div>
+
+            <!-- Draw Box Text Checkbox -->
+            <div class="form-group">
+                <label for="draw_box_text">Draw Box Text:</label>
+                <input type="checkbox" id="draw_box_text" name="draw_box_text">
+            </div>
+
             <button id="saveConfig">Save Configuration</button>
         </div>
     </main>
@@ -410,6 +426,9 @@
                     document.getElementById('detect_topic').value = data.DETECT_TOPIC || '/rt/detect/boxes2d/';
                     document.getElementById('pcd_topic').value = data.PCD_TOPIC || '/rt/radar/targets/';
                     document.getElementById('h264_topic').value = data.H264_TOPIC || '/rt/camera/h264/';
+                    document.getElementById('draw_unknown_cells').checked = data.DRAW_UNKNOWN_CELLS === 'true' || data.DRAW_UNKNOWN_CELLS === true;
+                    document.getElementById('draw_box').checked = data.DRAW_BOX === 'true' || data.DRAW_BOX === true;
+                    document.getElementById('draw_box_text').checked = data.DRAW_BOX_TEXT === 'true' || data.DRAW_BOX_TEXT === true;
 
                     const deviceToggle = document.getElementById('device_type');
                     const deviceTypeText = document.getElementById('device_type_text');
@@ -445,6 +464,9 @@
                 PCD_TOPIC: document.getElementById('pcd_topic').value,
                 H264_TOPIC: document.getElementById('h264_topic').value,
                 DEVICE: document.getElementById('device_type').checked ? 'RAIVIN' : 'MAIVIN',
+                DRAW_UNKNOWN_CELLS: document.getElementById('draw_unknown_cells').checked.toString(),
+                DRAW_BOX: document.getElementById('draw_box').checked.toString(),
+                DRAW_BOX_TEXT: document.getElementById('draw_box_text').checked.toString(),
             };
 
             fetch('/config/webui', {
