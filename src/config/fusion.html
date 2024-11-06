@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPKUI Configuration</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>Fusion Configuration</title>
     <link href="../css/styles.css" rel="stylesheet">
     <link href="../css/full.css" rel="stylesheet" type="text/css" />
 
@@ -154,7 +153,7 @@
                     alt=""></a>
         </div>
         <div class="navbar-center">
-            <span class="text-xl">VPKUI Configuration</span>
+            <span class="text-xl">Fusion Configuration</span>
         </div>
         <div class="navbar-end">
             <ul class="menu menu-horizontal px-1">
@@ -173,43 +172,56 @@
     </header>
     <main>
         <div class="container">
-            <h2>VPKUI Configuration</h2>
+            <h2>Fusion Configuration</h2>
 
             <div class="form-group">
-                <label for="cache_graph">Enable Graph Caching:</label>
-                <select id="cache_graph" name="cache_graph">
-                    <option value="0">Disable</option>
-                    <option value="1">Enable</option>
-                </select>
+                <label for="rust_log">Log Level:</label>
+                <input type="text" id="rust_log" name="rust_log" value="info">
             </div>
 
             <div class="form-group">
-                <label for="cache_dir">Cache Directory:</label>
-                <input type="text" id="cache_dir" name="cache_dir" placeholder="/var/cache">
+                <label for="radar_input_topic">Radar Input Topic:</label>
+                <input type="text" id="radar_input_topic" name="radar_input_topic" value="rt/radar/clusters">
             </div>
 
             <div class="form-group">
-                <label for="show_overlay">Show Overlay:</label>
-                <select id="show_overlay" name="show_overlay">
-                    <option value="false">Disable</option>
-                    <option value="true">Enable</option>
-                </select>
+                <label for="threshold">Threshold:</label>
+                <input type="number" id="threshold" name="threshold" min="1" value="3">
             </div>
 
             <div class="form-group">
-                <label for="show_model_output">Show Model Output:</label>
-                <select id="show_model_output" name="show_model_output">
-                    <option value="false">Disable</option>
-                    <option value="true">Enable</option>
-                </select>
+                <label for="occ_angle_limit">Occlusion Angle Limit:</label>
+                <input type="number" id="occ_angle_limit" name="occ_angle_limit" step="0.1" value="20.0">
             </div>
 
             <div class="form-group">
-                <label for="show_timing">Show Model Timing:</label>
-                <select id="show_timing" name="show_timing">
-                    <option value="false">Disable</option>
-                    <option value="true">Enable</option>
-                </select>
+                <label for="occ_range_limit">Occlusion Range Limit:</label>
+                <input type="number" id="occ_range_limit" name="occ_range_limit" step="0.1" value="1.0">
+            </div>
+
+            <div class="form-group">
+                <label for="range_bin_limit">Range Bin Limit:</label>
+                <input type="text" id="range_bin_limit" name="range_bin_limit" value="0.0 20.0">
+            </div>
+
+            <div class="form-group">
+                <label for="range_bin_width">Range Bin Width:</label>
+                <input type="number" id="range_bin_width" name="range_bin_width" step="0.1" value="0.5">
+            </div>
+
+            <div class="form-group">
+                <label for="angle_bin_limit">Angle Bin Limit:</label>
+                <input type="text" id="angle_bin_limit" name="angle_bin_limit" value="-70.0 70.0">
+            </div>
+
+            <div class="form-group">
+                <label for="angle_bin_width">Angle Bin Width:</label>
+                <input type="number" id="angle_bin_width" name="angle_bin_width" step="0.1" value="10.0">
+            </div>
+
+            <div class="form-group">
+                <label for="bin_delay">Bin Delay:</label>
+                <input type="number" id="bin_delay" name="bin_delay" min="1" value="3">
             </div>
 
             <button id="saveConfig">Save Configuration</button>
@@ -218,42 +230,61 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            fetch(`/config/vpkui/details`, {
+            fetch(`/config/fusion/details`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('cache_graph').value = data.VIV_VX_ENABLE_CACHE_GRAPH_BINARY || '0';
-                    document.getElementById('cache_dir').value = data.VIV_VX_CACHE_BINARY_GRAPH_DIR || '/var/cache';
-                    document.getElementById('show_overlay').value = data.SHOW_OVERLAY || 'false';
-                    document.getElementById('show_model_output').value = data.SHOW_MODEL_OUTPUT || 'false';
-                    document.getElementById('show_timing').value = data.SHOW_TIMING || 'false';
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                }).then(data => {
+                    document.getElementById('rust_log').value = data.RUST_LOG || '';
+                    document.getElementById('radar_input_topic').value = data.RADAR_INPUT_TOPIC || '';
+                    document.getElementById('threshold').value = data.THRESHOLD || '';
+                    document.getElementById('occ_angle_limit').value = data.OCC_ANGLE_LIMIT || '';
+                    document.getElementById('occ_range_limit').value = data.OCC_RANGE_LIMIT || '';
+                    document.getElementById('range_bin_limit').value = data.RANGE_BIN_LIMIT || '';
+                    document.getElementById('range_bin_width').value = data.RANGE_BIN_WIDTH || '';
+                    document.getElementById('angle_bin_limit').value = data.ANGLE_BIN_LIMIT || '';
+                    document.getElementById('angle_bin_width').value = data.ANGLE_BIN_WIDTH || '';
+                    document.getElementById('bin_delay').value = data.BIN_DELAY || '';
+
                 })
-                .catch(error => console.error('Error fetching config:', error));
+                .catch(error => console.error('Error fetching configuration:', error));
         });
-
         document.getElementById('saveConfig').addEventListener('click', function () {
-            const viv_vx_enable_cache_graph_binary = document.getElementById('cache_graph').value;
-            const viv_vx_cache_binary_graph_dir = document.getElementById('cache_dir').value;
-            const show_overlay = document.getElementById('show_overlay').value;
-            const show_model_output = document.getElementById('show_model_output').value;
-            const show_timing = document.getElementById('show_timing').value;
+            const rustLog = document.getElementById('rust_log').value;
+            const radarInputTopic = document.getElementById('radar_input_topic').value;
+            const threshold = document.getElementById('threshold').value;
+            const occAngleLimit = document.getElementById('occ_angle_limit').value;
+            const occRangeLimit = document.getElementById('occ_range_limit').value;
+            const rangeBinLimit = document.getElementById('range_bin_limit').value;
+            const rangeBinWidth = document.getElementById('range_bin_width').value;
+            const angleBinLimit = document.getElementById('angle_bin_limit').value;
+            const angleBinWidth = document.getElementById('angle_bin_width').value;
+            const binDelay = document.getElementById('bin_delay').value;
 
-            fetch('/config/vpkui', {
+            fetch('/config/fusion', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    fileName: "vpkui",
-                    viv_vx_enable_cache_graph_binary: viv_vx_enable_cache_graph_binary,
-                    viv_vx_cache_binary_graph_dir: viv_vx_cache_binary_graph_dir,
-                    show_overlay: show_overlay,
-                    show_model_output: show_model_output,
-                    show_timing: show_timing
+                    fileName: "fusion",
+                    rust_log: rustLog,
+                    radar_input_topic: radarInputTopic,
+                    threshold: threshold,
+                    occ_angle_limit: occAngleLimit,
+                    occ_range_limit: occRangeLimit,
+                    range_bin_limit: rangeBinLimit,
+                    range_bin_width: rangeBinWidth,
+                    angle_bin_limit: angleBinLimit,
+                    angle_bin_width: angleBinWidth,
+                    bin_delay: binDelay
                 })
             })
                 .then(response => {
@@ -263,7 +294,10 @@
                         alert('Error saving configuration');
                     }
                 })
-                .catch(error => console.error('Error saving config:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error saving configuration');
+                });
         });
     </script>
 </body>

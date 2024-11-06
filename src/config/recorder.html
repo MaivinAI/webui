@@ -16,7 +16,6 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            overflow-y: auto;
         }
 
         header {
@@ -27,35 +26,6 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        header .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        header .nav-menu {
-            display: flex;
-            gap: 20px;
-        }
-
-        header .nav-menu a {
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: 500;
-            position: relative;
-        }
-
-        header .nav-menu a.active::after {
-            content: '';
-            display: block;
-            width: 100%;
-            height: 3px;
-            background-color: #ffffff;
-            position: absolute;
-            bottom: -5px;
-            left: 0;
         }
 
         main {
@@ -75,7 +45,8 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             background-color: #ffffff;
-            overflow-y: auto;
+            max-height: auto;
+            margin-top: auto;
         }
 
         h2 {
@@ -202,10 +173,6 @@
         <div class="container">
             <h2>MCAP Recorder Configuration</h2>
 
-            <div class="comment">
-                Configure the storage, compression, and topics for recording.
-            </div>
-
             <div class="form-group">
                 <label for="storage">Storage Location:</label>
                 <input type="text" id="storage" name="storage" placeholder="/home/torizon/recordings">
@@ -221,64 +188,112 @@
             </div>
 
             <div class="form-group">
-                <label>Topics to Record:</label>
-                <div>
-                    <input type="checkbox" id="topic_tf_static" name="topics" value="/tf_static">
-                    <label for="topic_tf_static">/tf_static</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_imu" name="topics" value="/imu">
-                    <label for="topic_imu">/imu</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_gps" name="topics" value="/gps">
-                    <label for="topic_gps">/gps</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_radar" name="topics" value="/radar/targets">
-                    <label for="topic_radar">/radar/targets</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_radarcube" name="topics" value="/radar/cube">
-                    <label for="topic_radarcube">/radar/cube</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_radarclusters" name="topics" value="/radar/clusters">
-                    <label for="topic_radarclusters">/radar/clusters</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_radar_info" name="topics" value="/radar/info">
-                    <label for="topic_radar_info">/radar/info</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_camera_info" name="topics" value="/camera/info">
-                    <label for="topic_camera_info">/camera/info</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_camera_h264" name="topics" value="/camera/h264">
-                    <label for="topic_camera_h264">/camera/h264</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_model_info" name="topics" value="/model/info">
-                    <label for="topic_model_info">/model/info</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_model_boxes2d" name="topics" value="/model/boxes2d">
-                    <label for="topic_model_boxes2d">/model/boxes2d</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_model_mask" name="topics" value="/model/mask_compressed">
-                    <label for="topic_model_mask">/model/mask_compressed</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_fusion_targets" name="topics" value="/fusion/targets">
-                    <label for="topic_fusion_targets">/fusion/targets</label>
-                </div>
-                <div>
-                    <input type="checkbox" id="topic_fusion_occupancy" name="topics" value="/fusion/occupancy">
-                    <label for="topic_fusion_occupancy">/fusion/occupancy</label>
-                </div>
+                <label>Search Topics:</label>
+                <input type="text" class="search-bar" id="topicSearch" placeholder="Search topics...">
+            </div>
 
+            <div class="form-group">
+                <label>Topics to Record:</label>
+                <div class="topics-container" id="topicsContainer">
+                    <div class="topic-item">
+                        <span>/tf_static</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_tf_static" name="topics" value="/tf_static">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/imu</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_imu" name="topics" value="/imu">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/gps</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_gps" name="topics" value="/gps">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/radar/targets</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_radar" name="topics" value="/radar/targets">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/radar/cube</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_radarcube" name="topics" value="/radar/cube">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/radar/clusters</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_radarclusters" name="topics" value="/radar/clusters">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/radar/info</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_radar_info" name="topics" value="/radar/info">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/camera/info</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_camera_info" name="topics" value="/camera/info">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/camera/h264</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_camera_h264" name="topics" value="/camera/h264">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/model/info</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_model_info" name="topics" value="/model/info">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/model/boxes2d</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_model_boxes2d" name="topics" value="/model/boxes2d">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/model/mask_compressed</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_model_mask" name="topics" value="/model/mask_compressed">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/fusion/targets</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_fusion_targets" name="topics" value="/fusion/targets">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="topic-item">
+                        <span>/fusion/occupancy</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="topic_fusion_occupancy" name="topics" value="/fusion/occupancy">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <button id="saveConfig">Save Configuration</button>
@@ -297,7 +312,7 @@
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
-                    return response.json();  // Ensure you return this to chain it
+                    return response.json();
                 })
                 .then(data => {
                     document.getElementById('storage').value = data.STORAGE || '';
@@ -311,6 +326,16 @@
                     });
                 })
                 .catch(error => console.error('Error fetching config:', error));
+
+            // Search functionality
+            document.getElementById('topicSearch').addEventListener('input', function () {
+                const searchTerm = this.value.toLowerCase();
+                const topicItems = document.querySelectorAll('.topic-item');
+                topicItems.forEach(item => {
+                    const topicText = item.querySelector('span').textContent.toLowerCase();
+                    item.style.display = topicText.includes(searchTerm) ? 'flex' : 'none';
+                });
+            });
         });
 
         document.getElementById('saveConfig').addEventListener('click', function () {
