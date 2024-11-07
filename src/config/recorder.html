@@ -188,7 +188,7 @@
             </div>
 
             <div class="form-group">
-                <label>Search Topics:</label>
+                <label for="topicSearch">Search Topics:</label>
                 <input type="text" class="search-bar" id="topicSearch" placeholder="Search topics...">
             </div>
 
@@ -302,32 +302,43 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            fetchConfigDetails();
+            setupSearchFunctionality();
+        });
+
+        function fetchConfigDetails() {
             fetch(`/config/recorder/details`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    document.getElementById('storage').value = data.STORAGE || '';
-                    document.getElementById('compression').value = data.COMPRESSION || '';
-                    const topics = Array.isArray(data.TOPICS) ? data.TOPICS : (data.TOPICS || '').split(' ');
-                    topics.forEach(topic => {
-                        const checkbox = document.querySelector(`input[value="${topic}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                        }
-                    });
-                })
+                .then(handleFetchResponse)
                 .catch(error => console.error('Error fetching config:', error));
+        }
 
-            // Search functionality
+        function handleFetchResponse(response) {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json().then(updateConfigFields);
+        }
+
+        function updateConfigFields(data) {
+            document.getElementById('storage').value = data.STORAGE || '';
+            document.getElementById('compression').value = data.COMPRESSION || '';
+            const topics = Array.isArray(data.TOPICS) ? data.TOPICS : (data.TOPICS || '').split(' ');
+            topics.forEach(checkTopic);
+        }
+
+        function checkTopic(topic) {
+            const checkbox = document.querySelector(`input[value="${topic}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        }
+
+        function setupSearchFunctionality() {
             document.getElementById('topicSearch').addEventListener('input', function () {
                 const searchTerm = this.value.toLowerCase();
                 const topicItems = document.querySelectorAll('.topic-item');
@@ -336,7 +347,7 @@
                     item.style.display = topicText.includes(searchTerm) ? 'flex' : 'none';
                 });
             });
-        });
+        }
 
         document.getElementById('saveConfig').addEventListener('click', function () {
             const storage = document.getElementById('storage').value;
@@ -345,6 +356,10 @@
                 .map(checkbox => checkbox.value)
                 .join(' ');
 
+            saveConfig(storage, compression, topics);
+        });
+
+        function saveConfig(storage, compression, topics) {
             fetch('/config/recorder', {
                 method: 'POST',
                 headers: {
@@ -365,7 +380,7 @@
                     }
                 })
                 .catch(error => console.error('Error saving config:', error));
-        });
+        }
     </script>
 </body>
 

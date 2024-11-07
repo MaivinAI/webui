@@ -452,7 +452,17 @@
                     })
                 });
                 if (response.ok) {
-                    alert(`Service ${action === 'start' ? 'started' : action === 'stop' ? 'stopped' : action === 'enable' ? 'enabled' : 'disabled'} successfully.`);
+                    let actionMessage;
+                    if (action === 'start') {
+                        actionMessage = 'started';
+                    } else if (action === 'stop') {
+                        actionMessage = 'stopped';
+                    } else if (action === 'enable') {
+                        actionMessage = 'enabled';
+                    } else {
+                        actionMessage = 'disabled';
+                    }
+                    alert(`Service ${actionMessage} successfully.`);
                     fetchServices();
                 } else {
                     alert('Error updating service.');
