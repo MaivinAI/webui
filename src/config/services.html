@@ -9,10 +9,9 @@
     <link href="../css/styles.css" rel="stylesheet">
     <link href="../css/full.css" rel="stylesheet" type="text/css" />
     <style>
-        /* Global Styles */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f5f7fa;
+            background-color: #e9ecef;
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -22,8 +21,8 @@
         }
 
         header {
-            background-color: #343a40;
-            color: #060606;
+            background-color: #007bff;
+            color: #ffffff;
             padding: 20px 30px;
             display: flex;
             justify-content: space-between;
@@ -45,7 +44,7 @@
         }
 
         header .nav-menu a:hover {
-            background-color: #6b63ff;
+            background-color: #0056b3;
         }
 
         main {
@@ -76,45 +75,45 @@
 
         .service-list {
             display: flex;
-            /* Changed to flex for centering */
             flex-wrap: wrap;
-            /* Allow wrapping of items */
             justify-content: center;
-            /* Center the items */
             gap: 20px;
         }
 
         .service-item {
             width: 240px;
-            /* Reduced width for smaller cards */
-            padding: 15px;
-            /* Adjusted padding */
-            background: #f8f9fa;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px;
+            border: 1px solid #007bff;
         }
 
         .service-item:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            background-color: #f8f9fa;
         }
 
-        .service-item h3 {
-            margin: 10px 0;
-            font-size: 1.2rem;
-            font-weight: 500;
+        h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
             color: #333;
         }
 
         .status {
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: 600;
-            padding: 5px 15px;
+            padding: 5px 10px;
             border-radius: 20px;
             text-transform: uppercase;
+            margin-bottom: 15px;
+            display: inline-block;
         }
 
         .status.running {
@@ -129,34 +128,111 @@
 
         .action-buttons {
             display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
             gap: 10px;
-            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            border-radius: 34px;
+            transition: background-color 0.2s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-label span {
+            font-weight: 600;
+        }
+
+        .enabled-status {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .enabled-status.enabled {
+            color: #34d399;
+        }
+
+        .enabled-status.disabled {
+            color: #ef4444;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
         }
 
         .action-button {
-            padding: 10px 20px;
+            padding: 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-weight: 500;
             color: white;
             transition: background-color 0.3s;
+            width: 100%;
         }
 
         .action-button.start-button {
-            background-color: #22c55e;
+            background-color: #28a745;
         }
 
         .action-button.start-button:hover {
-            background-color: #16a34a;
+            background-color: #218838;
         }
 
         .action-button.stop-button {
-            background-color: #ef4444;
+            background-color: #dc3545;
         }
 
         .action-button.stop-button:hover {
-            background-color: #dc2626;
+            background-color: #c82333;
         }
 
         .no-services {
@@ -164,6 +240,7 @@
             color: #6c757d;
             font-size: 1rem;
             margin-top: 20px;
+            font-weight: bold;
         }
 
 
@@ -244,25 +321,56 @@
 
     <main>
         <div class="container">
-            <h1></h1>
+            <h1>Service Overview</h1>
             <ul id="service-list" class="service-list"></ul>
             <div id="error-message" class="no-services"></div>
         </div>
     </main>
 
     <script>
-        const allowedServices = [
-            'navsat', 'recorder', 'imu', 'radarpub',
-            'camera', 'segment', 'detect', 'zenohd'
-        ];
+        var allowedServices;
+
+        async function fetchConfigAndUpdateDeviceName() {
+            console.log("Fetching configuration...");
+            try {
+                const response = await fetch('/config/webui/details');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                const deviceValue = data.DEVICE;
+
+                if (!deviceValue) {
+                    console.error('DEVICE property is missing in the response.');
+                    return;
+                }
+
+                const isRaivin = deviceValue.toLowerCase().includes('raivin');
+                const maivinServices = [
+                    'navsat', 'recorder', 'imu',
+                    'camera', 'model', 'zenohd', 'gpsd'
+                ];
+                const raivinServices = [
+                    'navsat', 'recorder', 'imu', 'radarpub',
+                    'camera', 'model', 'fusion', 'zenohd', 'gpsd'
+                ];
+                allowedServices = (isRaivin ? raivinServices : maivinServices);
+                console.log('Allowed Services:', allowedServices);
+            } catch (error) {
+                console.error('Error fetching config details:', error);
+            }
+        }
 
         async function fetchServices() {
             try {
+                console.log("In services", allowedServices);
+                const requestBody = JSON.stringify({ services: allowedServices });
                 const response = await fetch('/config/service/status', {
-                    method: 'GET',
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: requestBody
                 });
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -275,38 +383,53 @@
             }
         }
 
+        async function initialize() {
+            await fetchConfigAndUpdateDeviceName();
+            console.log('Allowed Services outside the function:', allowedServices);
+            await fetchServices();
+        }
+
+        initialize();
+
         function displayServices(services) {
             const serviceList = document.getElementById('service-list');
             const errorMessage = document.getElementById('error-message');
-            serviceList.innerHTML = ''; // Clear previous entries
-            errorMessage.textContent = ''; // Clear previous error message
-
-            // Filter services based on allowed keywords
-            const filteredServices = services.filter(service =>
-                allowedServices.some(keyword => service.name.toLowerCase().includes(keyword))
-            );
-
-            if (filteredServices.length > 0) {
-                filteredServices.forEach(service => {
+            serviceList.innerHTML = '';
+            errorMessage.textContent = '';
+            if (services.length > 0) {
+                services.forEach(service => {
                     const listItem = document.createElement('li');
                     listItem.className = 'service-item';
-                    // Remove '.service' and capitalize the first letter
-                    const serviceName = service.name.replace('.service', '');
-                    const formattedServiceName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1);
                     listItem.innerHTML = `
-                        <h3>${formattedServiceName}</h3>
+                        <h3>${service.service}</h3>
                         <span class="status ${service.status === 'running' ? 'running' : 'not-running'}">
-                            ${service.status === 'running' ? 'Running' : 'Not Running'}
+                            ${service.status}
                         </span>
                         <div class="action-buttons">
-                            <button class="action-button start-button" onclick="updateService('${service.name}', 'start')">Start</button>
-                            <button class="action-button stop-button" onclick="updateService('${service.name}', 'stop')">Stop</button>
+                            <div class="toggle-label">
+                                <span>Start/Stop</span>
+                                <label class="switch">
+                                    <input type="checkbox" ${service.status === 'running' ? 'checked' : ''} 
+                                           onchange="updateService('${service.service}', this.checked ? 'start' : 'stop')">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-label">
+                                <span>Enable/Disable</span>
+                                <label class="switch">
+                                    <input type="checkbox" ${service.enabled === 'enabled' ? 'checked' : ''} 
+                                           onchange="updateService('${service.service}', this.checked ? 'enable' : 'disable')">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         </div>
+                        <span class="enabled-status ${service.enabled === 'enabled' ? 'enabled' : 'disabled'}">
+                            ${service.enabled}
+                        </span>
                     `;
                     serviceList.appendChild(listItem);
                 });
             } else {
-                // Handle the case where no services match the filter
                 errorMessage.textContent = 'No matching services found.';
             }
         }
@@ -329,8 +452,8 @@
                     })
                 });
                 if (response.ok) {
-                    alert(`Service ${action === 'start' ? 'started' : 'stopped'} successfully.`);
-                    fetchServices(); // Refresh the service list
+                    alert(`Service ${action === 'start' ? 'started' : action === 'stop' ? 'stopped' : action === 'enable' ? 'enabled' : 'disabled'} successfully.`);
+                    fetchServices();
                 } else {
                     alert('Error updating service.');
                 }
@@ -339,8 +462,8 @@
                 alert('Error updating service. Please try again later.');
             }
         }
-
         window.addEventListener('load', fetchServices);
+
     </script>
 </body>
 
