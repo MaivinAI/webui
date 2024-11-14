@@ -117,9 +117,6 @@ export default function classify_points(points, mask_tex) {
         point_cpy.x_vel = 0
 
         point_cpy.index = index++
-
-        point_cpy.range = Math.sqrt(point_cpy.x * point_cpy.x + point_cpy.y * point_cpy.y + point_cpy.z * point_cpy.z)
-        point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
         points_cpy.push(point_cpy)
     }
     points_cpy.sort(dynamicSortMultiple("range"))
@@ -213,9 +210,6 @@ export function classify_points_box(points, boxes) {
 
 
         point_cpy.index = index++
-
-        point_cpy.range = Math.sqrt(point_cpy.x * point_cpy.x + point_cpy.y * point_cpy.y + point_cpy.z * point_cpy.z)
-        point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
         points_cpy.push(point_cpy)
     }
     points_cpy.sort(dynamicSortMultiple("range"))
@@ -250,11 +244,14 @@ export function project_points_onto_box(points, boxes) {
         // project points to camera space
         // x, y, dist
         const pos = new THREE.Vector3(p.y, p.z, p.x)
-        const point_cpy = {}
-        point_cpy.x = p.x
-        point_cpy.y = p.y
-        point_cpy.z = p.z
-        point_cpy.speed = p.speed
+        const point_cpy = {
+            x: p.x,
+            y: p.y,
+            z: p.z,
+            range: p.range,
+            angle: p.angle,
+            speed: p.speed
+        }
 
         pos.applyMatrix3(cam_mtx)
         pos.x /= pos.z
@@ -264,10 +261,9 @@ export function project_points_onto_box(points, boxes) {
         let i = 1 - pos.y
         let j = 1 - pos.x
 
-        point_cpy.range = Math.sqrt(point_cpy.x * point_cpy.x + point_cpy.y * point_cpy.y + point_cpy.z * point_cpy.z)
-        point_cpy.angle = Math.atan2(point_cpy.y, point_cpy.x)
         point_cpy.i = i;
         point_cpy.j = j;
+
         points_cpy.push(point_cpy)
     }
 

@@ -7,6 +7,7 @@ import { ImuStream, quaternionToEuler } from './imu'
 import { OrbitControls } from './OrbitControls.js'
 import Stats from 'three/addons/libs/stats.module.js'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
+import { mask_colors } from './utils.js'
 const PI = 3.1415;
 
 const STREAM = true;
@@ -81,30 +82,6 @@ function createLegend(colors) {
 }
 
 
-const mask_colors = [
-    new THREE.Color(1.0, 1.0, 1.0),
-    new THREE.Color(0., 1., 0.),
-    new THREE.Color(0.50980392, 0.50980392, 0.72941176),
-    new THREE.Color(0.00784314, 0.18823529, 0.29411765),
-    // new THREE.Color(1., 1., 1.),
-    // new THREE.Color(0.8, 0.76470588, 0.78039216),
-    // new THREE.Color(0.31372549, 0.31372549, 0.31372549),
-    // new THREE.Color(0.14117647, 0.30980392, 0.12156863),
-    // new THREE.Color(1., 0.95686275, 0.51372549),
-    // new THREE.Color(0.35294118, 0.32156863, 0.),
-    // new THREE.Color(0.42352941, 0.62352941, 0.65098039),
-
-    // new THREE.Color(1., 0.55686275, 0.),
-
-    // new THREE.Color(0.0, 0.2706, 1.0),
-    // new THREE.Color(0.0, 0.0, 0.0),
-    // new THREE.Color(0.0, 0.5, 0.0),
-    // new THREE.Color(0.1333, 0.5451, 0.1333),
-    // new THREE.Color(0.1176, 0.4118, 0.8235),
-]
-const mask_class_names = ["background",
-    "person",
-    "car", "truck"]
 // let colors = 
 // mask_colors.forEach((color, i) => {
 //     const div = document.createElement("div");

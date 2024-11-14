@@ -7,11 +7,10 @@ export default async function h264stream(socketUrl, width, height, fps, onMessag
     canvas.width = width;
     canvas.height = height;
     canvas.hidden = false;
-    // document.body.appendChild(canvas);
     const ctx = canvas.getContext("2d");
 
-    // const renderTarget = new THREE.WebGLRenderTarget(width, height);
     const texture_canvas = new THREE.CanvasTexture(canvas);
+    texture_canvas.needsUpdate = false
     let start = performance.now()
     let h264decoder = new VideoDecoder({
         output: (videoFrame) => {
