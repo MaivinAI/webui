@@ -4,12 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detection Configuration</title>
+    <title>Model Configuration</title>
     <link href="../css/styles.css" rel="stylesheet">
     <link href="../css/full.css" rel="stylesheet" type="text/css" />
-
     <script src="../js/tailwind.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f4f7f9;
@@ -34,7 +37,7 @@
             padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             background-color: #ffffff;
             overflow-y: auto;
         }
@@ -46,8 +49,8 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             background-color: #ffffff;
-            max-height: auto;
-            margin-top: auto;
+            max-height: 90vh;
+            margin-top: 20px;
         }
 
         h2 {
@@ -153,7 +156,7 @@
                     alt=""></a>
         </div>
         <div class="navbar-center">
-            <span class="text-xl">Detect Configuration</span>
+            <span class="text-xl">Model Configuration</span>
         </div>
         <div class="navbar-end">
             <ul class="menu menu-horizontal px-1">
@@ -172,173 +175,174 @@
     </header>
     <main>
         <div class="container">
-            <h2>Detect System Configuration</h2>
+            <h2>Model Configuration</h2>
 
             <div class="comment">
-                Configure the settings for the detection system.
+                Configure the settings for the Model service.
             </div>
-
+            <div class="card"></div>
             <div class="form-group">
-                <label for="model">Model Path:</label>
-                <input type="text" id="model" name="model" placeholder="/usr/share/detect/peopledetect.rtm">
+                <label for="model">MODEL:</label>
+                <input type="text" id="model" value="/usr/share/model/peoplesegdet.rtm">
             </div>
-
             <div class="form-group">
-                <label for="visualization">Enable Visualization:</label>
-                <select id="visualization" name="visualization">
-                    <option value="true">True</option>
+                <label for="decoder_model">DECODER_MODEL:</label>
+                <input type="text" id="decoder_model" value="">
+            </div>
+            <div class="form-group">
+                <label for="visualization">VISUALIZATION:</label>
+                <select id="visualization">
                     <option value="false">False</option>
+                    <option value="true">True</option>
                 </select>
             </div>
-
             <div class="form-group">
-                <label for="labels">Labels:</label>
-                <select id="labels" name="labels">
-                    <option value="index">Index</option>
-                    <option value="score">Score</option>
+                <label for="labels">LABELS:</label>
+                <select id="labels">
                     <option value="label">Label</option>
-                    <option value="label-score">Label-Score</option>
-                    <option value="track">Track</option>
                 </select>
             </div>
-
             <div class="form-group">
-                <label for="threshold">Score Threshold:</label>
-                <input type="text" id="threshold" name="threshold" placeholder="0.7">
+                <label for="threshold">THRESHOLD:</label>
+                <input type="number" id="threshold" value="0.2" step="0.01">
             </div>
-
             <div class="form-group">
-                <label for="iou">Detection IOU:</label>
-                <input type="text" id="iou" name="iou" placeholder="0.45">
+                <label for="iou">IOU:</label>
+                <input type="number" id="iou" value="0.2" step="0.01">
             </div>
-
             <div class="form-group">
-                <label for="maxBoxes">Max Boxes:</label>
-                <input type="text" id="maxBoxes" name="maxBoxes" placeholder="50">
+                <label for="max_boxes">MAX_BOXES:</label>
+                <input type="number" id="max_boxes" value="50">
             </div>
-
             <div class="form-group">
-                <label for="labelOffset">Label Offset:</label>
-                <input type="text" id="labelOffset" name="labelOffset" placeholder="0">
+                <label for="label_offset">LABEL_OFFSET:</label>
+                <input type="number" id="label_offset" value="0">
             </div>
-
             <div class="form-group">
-                <label for="engine">Computation Engine:</label>
-                <select id="engine" name="engine">
+                <label for="engine">ENGINE:</label>
+                <select id="engine">
                     <option value="NPU">NPU</option>
                     <option value="CPU">CPU</option>
                     <option value="GPU">GPU</option>
                 </select>
             </div>
-
             <div class="form-group">
-                <label for="track">Enable Tracking:</label>
-                <input type="checkbox" id="track" name="track">
-                <label for="track">Enabled</label>
+                <label for="track">TRACK:</label>
+                <select id="track">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
             </div>
-
             <div class="form-group">
                 <label for="trackExtraLifespan">Track Extra Lifespan (seconds):</label>
                 <input type="text" id="trackExtraLifespan" name="trackExtraLifespan" placeholder="2.0">
             </div>
-
             <div class="form-group">
-                <label for="trackHighConf">Track High Confidence Threshold:</label>
-                <input type="text" id="trackHighConf" name="trackHighConf" placeholder="0.1">
+                <label for="track_high_conf">TRACK_HIGH_CONF:</label>
+                <input type="number" id="track_high_conf" value="0.4" step="0.01">
             </div>
-
             <div class="form-group">
-                <label for="trackIOU">Track IOU Threshold:</label>
-                <input type="text" id="trackIOU" name="trackIOU" placeholder="0.25">
+                <label for="track_iou">TRACK_IOU:</label>
+                <input type="number" id="track_iou" value="0.25" step="0.01">
             </div>
-
             <div class="form-group">
-                <label for="trackUpdate">Track Update Factor:</label>
-                <input type="text" id="trackUpdate" name="trackUpdate" placeholder="0.25">
+                <label for="track_update">TRACK_UPDATE:</label>
+                <input type="number" id="track_update" value="0.25" step="0.01">
             </div>
-
             <div class="form-group">
-                <label for="cacheGraphBinary">Enable Graph Caching:</label>
-                <select id="cacheGraphBinary" name="cacheGraphBinary">
-                    <option value="0">No</option>
-                    <option value="1">Yes</option>
+                <label for="mask_compression">MASK_COMPRESSION:</label>
+                <select id="mask_compression">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
                 </select>
             </div>
-
             <div class="form-group">
-                <label for="cacheGraphDir">Graph Cache Directory:</label>
-                <input type="text" id="cacheGraphDir" name="cacheGraphDir" placeholder="/var/cache">
+                <label for="viv_vx_enable_cache">VIV_VX_ENABLE_CACHE_GRAPH_BINARY:</label>
+                <input type="number" id="viv_vx_enable_cache" value="0">
             </div>
-
+            <div class="form-group">
+                <label for="viv_vx_cache_dir">VIV_VX_CACHE_BINARY_GRAPH_DIR:</label>
+                <input type="text" id="viv_vx_cache_dir" value="/var/cache">
+            </div>
             <button id="saveConfig">Save Configuration</button>
         </div>
     </main>
-
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            fetch(`/config/detect/details`, {
+            fetch(`/config/model/details`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('model').value = data.MODEL || '';
-                    document.getElementById('visualization').value = data.VISUALIZATION || 'true';
-                    document.getElementById('labels').value = data.LABELS || 'label';
-                    document.getElementById('threshold').value = data.THRESHOLD || '0.7';
-                    document.getElementById('iou').value = data.IOU || '0.45';
-                    document.getElementById('maxBoxes').value = data.MAX_BOXES || '50';
-                    document.getElementById('labelOffset').value = data.LABEL_OFFSET || '0';
-                    document.getElementById('engine').value = data.ENGINE || 'NPU';
-                    document.getElementById('track').checked = data.TRACK === 'true';
-                    document.getElementById('trackExtraLifespan').value = data.TRACK_EXTRA_LIFESPAN || '2.0';
-                    document.getElementById('trackHighConf').value = data.TRACK_HIGH_CONF || '0.1';
-                    document.getElementById('trackIOU').value = data.TRACK_IOU || '0.25';
-                    document.getElementById('trackUpdate').value = data.TRACK_UPDATE || '0.25';
-                    document.getElementById('cacheGraphBinary').value = data.CACHE_GRAPH_BINARY || '0';
-                    document.getElementById('cacheGraphDir').value = data.CACHE_GRAPH_DIR || '/var/cache';
-                });
-
-            document.getElementById('saveConfig').addEventListener('click', function () {
-                console.log(document.getElementById('track').checked)
-                const configData = {
-                    fileName: "detect",
-                    MODEL: document.getElementById('model').value,
-                    VISUALIZATION: document.getElementById('visualization').value,
-                    LABELS: document.getElementById('labels').value,
-                    THRESHOLD: document.getElementById('threshold').value,
-                    IOU: document.getElementById('iou').value,
-                    MAX_BOXES: document.getElementById('maxBoxes').value,
-                    LABEL_OFFSET: document.getElementById('labelOffset').value,
-                    ENGINE: document.getElementById('engine').value,
-                    TRACK: document.getElementById('track').checked ? 'true' : 'false',
-                    TRACK_EXTRA_LIFESPAN: document.getElementById('trackExtraLifespan').value,
-                    TRACK_HIGH_CONF: document.getElementById('trackHighConf').value,
-                    TRACK_IOU: document.getElementById('trackIOU').value,
-                    TRACK_UPDATE: document.getElementById('trackUpdate').value,
-                    CACHE_GRAPH_BINARY: document.getElementById('cacheGraphBinary').value,
-                    CACHE_GRAPH_DIR: document.getElementById('cacheGraphDir').value
-                };
-
-                fetch('/config/detect', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(configData)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('Configuration saved successfully!');
-                        } else {
-                            alert('Error saving configuration.');
-                        }
-                    });
-            });
+                .then(data => {
+                    setInputValue('model', data.MODEL);
+                    setInputValue('decoder_model', data.DECODER_MODEL);
+                    setInputValue('visualization', data.VISUALIZATION, 'false');
+                    setInputValue('labels', data.LABELS, 'label');
+                    setInputValue('threshold', data.THRESHOLD, 0.2);
+                    setInputValue('iou', data.IOU, 0.2);
+                    setInputValue('max_boxes', data.MAX_BOXES, 50);
+                    setInputValue('label_offset', data.LABEL_OFFSET, 0);
+                    setInputValue('engine', data.ENGINE, 'NPU');
+                    setInputValue('track', data.TRACK, 'true');
+                    setInputValue('trackExtraLifespan', data.TRACK_EXTRA_LIFESPAN, 0.5);
+                    setInputValue('track_high_conf', data.TRACK_HIGH_CONF, 0.4);
+                    setInputValue('track_iou', data.TRACK_IOU, 0.25);
+                    setInputValue('track_update', data.TRACK_UPDATE, 0.25);
+                    setInputValue('mask_compression', data.MASK_COMPRESSION, 'true');
+                    setInputValue('viv_vx_enable_cache', data.VIV_VX_ENABLE_CACHE_GRAPH_BINARY, 0);
+                    setInputValue('viv_vx_cache_dir', data.VIV_VX_CACHE_BINARY_GRAPH_DIR, '/var/cache');
+                })
+                .catch(error => console.error('Error fetching configuration:', error));
         });
+        document.getElementById('saveConfig').onclick = function () {
+            const configData = {
+                fileName: "model",
+                MODEL: document.getElementById('model').value,
+                DECODER_MODEL: document.getElementById('decoder_model').value,
+                VISUALIZATION: document.getElementById('visualization').value,
+                LABELS: document.getElementById('labels').value,
+                THRESHOLD: (document.getElementById('threshold').value),
+                IOU: (document.getElementById('iou').value),
+                MAX_BOXES: (document.getElementById('max_boxes').value),
+                LABEL_OFFSET: (document.getElementById('label_offset').value),
+                ENGINE: document.getElementById('engine').value,
+                TRACK: document.getElementById('track').value,
+                TRACK_EXTRA_LIFESPAN: document.getElementById('trackExtraLifespan').value,
+                TRACK_HIGH_CONF: (document.getElementById('track_high_conf').value),
+                TRACK_IOU: (document.getElementById('track_iou').value),
+                TRACK_UPDATE: (document.getElementById('track_update').value),
+                MASK_COMPRESSION: document.getElementById('mask_compression').value,
+                VIV_VX_ENABLE_CACHE_GRAPH_BINARY: (document.getElementById('viv_vx_enable_cache').value),
+                VIV_VX_CACHE_BINARY_GRAPH_DIR: document.getElementById('viv_vx_cache_dir').value
+            };
+
+            fetch('/config/model', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(configData)
+            }).then(response => {
+                if (response.ok) {
+                    alert('Configuration saved successfully');
+                } else {
+                    alert('Error saving configuration');
+                }
+            })
+                .catch(error => console.error('Error saving config:', error));
+        };
+
+        function setInputValue(elementId, value, defaultValue) {
+            document.getElementById(elementId).value = value || defaultValue;
+        }
     </script>
 </body>
 
