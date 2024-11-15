@@ -1,8 +1,7 @@
-import { PolarGridFan } from "./polarGridFan";
+import { PolarGridFan } from "./polarGridFan.js";
 import * as THREE from './three.js'
 import { clearThree, color_points_class, color_points_field, mask_colors } from "./utils.js";
 import SpriteText from './three-spritetext.js';
-import { round } from "mathjs";
 const PI = Math.PI
 
 const occupied = []
@@ -29,7 +28,7 @@ function create_text() {
     const container = document.createElement('div');
     container.style.cssText = 'position:fixed;bottom:0;right:0;opacity:0.9;z-index:10000';
     document.body.appendChild(container)
-    const PR = round(window.devicePixelRatio || 1);
+    const PR = Math.round(window.devicePixelRatio || 1);
     let canvas = document.createElement('canvas');
     canvas.width = 200;
     canvas.height = 50;
