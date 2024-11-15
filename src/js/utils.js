@@ -1,4 +1,4 @@
-import { dynamicSort } from "./sort";
+import { dynamicSort } from "./sort.js";
 import * as THREE from './three.js'
 export function clearThree(obj) {
     while (obj.children.length > 0) {

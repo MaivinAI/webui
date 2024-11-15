@@ -1,4 +1,4 @@
-import { PolarGridFan } from "./polarGridFan";
+import { PolarGridFan } from "./polarGridFan.js";
 import * as THREE from './three.js'
 import { clearThree, color_points_class, color_points_field, mask_colors } from "./utils.js";
 import SpriteText from './three-spritetext.js';
@@ -22,10 +22,38 @@ let BIN_THRESHOLD = 3
 let GRID_DRAW_PCD = "disabled"
 let DRAW_UNKNOWN_CELLS = false
 
+let textContext = null
+let count = 0
+function create_text() {
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;bottom:0;right:0;opacity:0.9;z-index:10000';
+    document.body.appendChild(container)
+    const PR = Math.round(window.devicePixelRatio || 1);
+    let canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 50;
+    canvas.style.cssText = 'width:200;height:50px';
 
+    textContext = canvas.getContext('2d');
+    textContext.font = 'bold '+ (20 * PR) + 'px Helvetica,Arial,sans-serif';
+    textContext.textBaseline = 'top';
+    textContext.fillText(`${count}`, 20, 20);
+    container.appendChild(canvas)
+    setInterval(draw_text, 1000);
+}
 
+function draw_text() {
+    textContext.clearRect(0, 0, textContext.canvas.width, textContext.canvas.height);
+    textContext.fillText(`People: ${count}`, 20, 20);
+}
+
+function update_text(c) {
+    count = c
+}
 
 export function init_grid(grid_scene_, grid_renderer_, grid_camera_, config) {
+
+
     init_config(config)
 
     grid_scene = grid_scene_
@@ -69,8 +97,7 @@ export function init_grid(grid_scene_, grid_renderer_, grid_camera_, config) {
         myText.position.z = Math.cos(-i / 180 * PI) * (RANGE_BIN_LIMITS[1] + 0.2)
         grid_scene.add(myText)
     }
-
-
+    create_text()
 
     grid_renderer.setAnimationLoop(animate_grid);
 }
@@ -144,16 +171,16 @@ function clear_bins() {
 
 function get_bin(angle, range) {
     if (angle < ANGLE_BIN_LIMITS[0]) {
-        angle = ANGLE_BIN_LIMITS[0]
+        return null
     }
     if (angle > ANGLE_BIN_LIMITS[1]) {
-        angle = ANGLE_BIN_LIMITS[1]
+        return null
     }
     if (range < RANGE_BIN_LIMITS[0]) {
-        range = RANGE_BIN_LIMITS[0]
+        return null
     }
     if (range > RANGE_BIN_LIMITS[1]) {
-        range = RANGE_BIN_LIMITS[1]
+        return null
     }
     const i = Math.floor((angle - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH)
     const j = Math.floor((range - RANGE_BIN_LIMITS[0]) / RANGE_BIN_WIDTH)
@@ -162,7 +189,10 @@ function get_bin(angle, range) {
 }
 
 function increment_bin(angle, range, value) {
-    get_bin(angle, range).push(value)
+    let bin = get_bin(angle, range)
+    if (bin !== null) {
+        bin.push(value)
+    }
 }
 
 function getValsInBin(angle, range, angleBinOffset, rangeBinOffset) {
@@ -212,6 +242,7 @@ function getClassInList(l) {
 
 
 function animate_grid() {
+    let count = 0
     if (typeof radar_points !== "undefined" && bins.length > 0) {
         clear_bins()
         rendered_points.forEach((cell) => {
@@ -231,6 +262,9 @@ function animate_grid() {
             if (DRAW_UNKNOWN_CELLS || p.class > 0) {
                 increment_bin(-p.angle * 180 / PI, p.range, p)
             }
+            if (p.class > 0) {
+                count+=1
+            }
         }
         occupied.forEach((cell) => {
             clearThree(cell)
@@ -238,22 +272,26 @@ function animate_grid() {
         })
         occupied.length = 0
         let foundOccupied = new Array(bins.length).fill(false)
-        checkBins([0], foundOccupied)
-        checkBins([-1, 0, 1], foundOccupied)
+        checkBins([0], foundOccupied, [1])
+        checkBins([-1, 0, 1], foundOccupied, [1])
+        checkBins([0], foundOccupied, null)
+        checkBins([-1, 0, 1], foundOccupied, null)
         grid_renderer.render(grid_scene, grid_camera);
     }
 
+    update_text(count)
+
 }
 
-function checkBins(angleBinDeltas, foundOccupied) {
+function checkBins(angleBinDeltas, foundOccupied, classes) {
     for (let range = RANGE_BIN_LIMITS[0]; range <= RANGE_BIN_LIMITS[1]; range += RANGE_BIN_WIDTH) {
         for (let angle = ANGLE_BIN_LIMITS[0] + ANGLE_BIN_WIDTH; angle <= ANGLE_BIN_LIMITS[1] - ANGLE_BIN_WIDTH; angle += ANGLE_BIN_WIDTH) {
-            checkBin(range, angle, angleBinDeltas, foundOccupied)
+            checkBin(range, angle, angleBinDeltas, foundOccupied, classes)
         }
     }
 }
 
-function checkBin(range, angle, angleBinDeltas, foundOccupied) {
+function checkBin(range, angle, angleBinDeltas, foundOccupied, classes) {
     let currInd = (angle - ANGLE_BIN_LIMITS[0]) / ANGLE_BIN_WIDTH
 
     if (foundOccupied[currInd]) {
@@ -281,6 +319,9 @@ function checkBin(range, angle, angleBinDeltas, foundOccupied) {
     for (let k = 0; k < val.length; k++) {
         if (cumsum[k] >= BIN_THRESHOLD) {
             const class_ = getClassInList(cumconcat[k])[0]
+            if (classes && !inArray(classes, class_)) {
+                continue
+            }
             const cell = newRingGeo(angle, range - RANGE_BIN_WIDTH * k, class_)
             occupied.push(cell)
             grid_scene.add(cell)
@@ -288,6 +329,15 @@ function checkBin(range, angle, angleBinDeltas, foundOccupied) {
             return
         }
     }
+}
+
+function inArray(array, elem) {
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+        if (array[i] == elem)
+            return true;
+    }
+    return false;
 }
 
 function setOccupied(currInd, deltas, foundOccupied) {
