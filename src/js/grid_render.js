@@ -21,6 +21,7 @@ let WINDOW_LENGTH = 5
 let BIN_THRESHOLD = 3
 let GRID_DRAW_PCD = "disabled"
 let DRAW_UNKNOWN_CELLS = false
+let DRAW_CELLS = true
 
 let textContext = null
 let count = 0
@@ -131,8 +132,17 @@ function init_config(config) {
     if (config.GRID_DRAW_PCD) {
         GRID_DRAW_PCD = config.GRID_DRAW_PCD
     }
+
+    if (typeof config.DRAW_CELLS == "boolean") {
+        DRAW_CELLS = config.DRAW_CELLS
+    }  
+
     if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
         DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
+    }
+
+    if (!DRAW_CELLS) {
+        DRAW_UNKNOWN_CELLS = false
     }
 }
 
@@ -262,7 +272,7 @@ function animate_grid() {
     }
 
     for (let p of points) {
-        if (DRAW_UNKNOWN_CELLS || p.class > 0) {
+        if (DRAW_CELLS && (DRAW_UNKNOWN_CELLS || p.class > 0)) {
             increment_bin(-p.angle * 180 / PI, p.range, p)
         }
         if (p.class > 0) {
