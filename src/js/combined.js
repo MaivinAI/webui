@@ -251,10 +251,11 @@ loader.load(
             radarFpsFn();
             let filteredPoints = []
             for (let p of radar_points.points) {
-                const range = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
-                if (RANGE_BIN_LIMITS[0] <= range && range <= RANGE_BIN_LIMITS[1]) {
-                    filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point
+                const range = p.range
+                if (range < RANGE_BIN_LIMITS[0] || RANGE_BIN_LIMITS[1] < range) {
+                   continue
                 }
+                filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point
             }
             radar_points.points = filteredPoints
         }).then((pcd) => {

@@ -1,4 +1,5 @@
 import { dynamicSort } from "./sort.js";
+import SpriteText from './three-spritetext.js';
 import * as THREE from './three.js'
 export function clearThree(obj) {
     while (obj.children.length > 0) {
@@ -75,11 +76,14 @@ export function color_points_field(points, field, scene, rendered_points, height
 
 export function color_points_class(points, scene, rendered_points, height = false, label = "disabled") {
     points.forEach((point) => {
-        const geometry = new THREE.SphereGeometry(0.1)
+        let point_rad = 0.075
         let color = new THREE.Color(0xFFFFFF)
         if (point.class > 0) {
             color = mask_colors[point.class]
+            point_rad = 0.15
         }
+
+        const geometry = new THREE.SphereGeometry(point_rad)
         const material = new THREE.MeshBasicMaterial({ color });
         const sphere = new THREE.Mesh(geometry, material);
         sphere.position.x = point.y

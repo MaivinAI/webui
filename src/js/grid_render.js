@@ -21,6 +21,7 @@ let WINDOW_LENGTH = 5
 let BIN_THRESHOLD = 3
 let GRID_DRAW_PCD = "disabled"
 let DRAW_UNKNOWN_CELLS = false
+let DRAW_CELLS = true
 
 let textContext = null
 let count = 0
@@ -131,8 +132,17 @@ function init_config(config) {
     if (config.GRID_DRAW_PCD) {
         GRID_DRAW_PCD = config.GRID_DRAW_PCD
     }
+
+    if (typeof config.DRAW_CELLS == "boolean") {
+        DRAW_CELLS = config.DRAW_CELLS
+    }  
+
     if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
         DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
+    }
+
+    if (!DRAW_CELLS) {
+        DRAW_UNKNOWN_CELLS = false
     }
 }
 
@@ -243,44 +253,44 @@ function getClassInList(l) {
 
 function animate_grid() {
     let count = 0
-    if (typeof radar_points !== "undefined" && bins.length > 0) {
-        clear_bins()
-        rendered_points.forEach((cell) => {
-            clearThree(cell)
-        })
-        rendered_points.length = 0
-        let points = radar_points.points
-        if (GRID_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
-            if (GRID_DRAW_PCD == "class") {
-                color_points_class(points, grid_scene, rendered_points, false)
-            } else {
-                color_points_field(points, GRID_DRAW_PCD, grid_scene, rendered_points, false)
-            }
+    if (typeof radar_points == "undefined" || bins.length == 0) {
+        update_text(count)
+        return
+    }
+    clear_bins()
+    rendered_points.forEach((cell) => {
+        clearThree(cell)
+    })
+    rendered_points.length = 0
+    let points = radar_points.points
+    if (GRID_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
+        if (GRID_DRAW_PCD == "class") {
+            color_points_class(points, grid_scene, rendered_points, false)
+        } else {
+            color_points_field(points, GRID_DRAW_PCD, grid_scene, rendered_points, false)
         }
-
-        for (let p of points) {
-            if (DRAW_UNKNOWN_CELLS || p.class > 0) {
-                increment_bin(-p.angle * 180 / PI, p.range, p)
-            }
-            if (p.class > 0) {
-                count+=1
-            }
-        }
-        occupied.forEach((cell) => {
-            clearThree(cell)
-            grid_scene.remove(cell)
-        })
-        occupied.length = 0
-        let foundOccupied = new Array(bins.length).fill(false)
-        checkBins([0], foundOccupied, [1])
-        checkBins([-1, 0, 1], foundOccupied, [1])
-        checkBins([0], foundOccupied, null)
-        checkBins([-1, 0, 1], foundOccupied, null)
-        grid_renderer.render(grid_scene, grid_camera);
     }
 
+    for (let p of points) {
+        if (DRAW_CELLS && (DRAW_UNKNOWN_CELLS || p.class > 0)) {
+            increment_bin(-p.angle * 180 / PI, p.range, p)
+        }
+        if (p.class > 0) {
+            count+=1
+        }
+    }
+    occupied.forEach((cell) => {
+        clearThree(cell)
+        grid_scene.remove(cell)
+    })
+    occupied.length = 0
+    let foundOccupied = new Array(bins.length).fill(false)
+    checkBins([0], foundOccupied, [1])
+    checkBins([-1, 0, 1], foundOccupied, [1])
+    checkBins([0], foundOccupied, null)
+    checkBins([-1, 0, 1], foundOccupied, null)
+    grid_renderer.render(grid_scene, grid_camera);
     update_text(count)
-
 }
 
 function checkBins(angleBinDeltas, foundOccupied, classes) {
@@ -332,8 +342,8 @@ function checkBin(range, angle, angleBinDeltas, foundOccupied, classes) {
 }
 
 function inArray(array, elem) {
-    var length = array.length;
-    for (var i = 0; i < length; i++) {
+    const length = array.length;
+    for (let i = 0; i < length; i++) {
         if (array[i] == elem)
             return true;
     }
