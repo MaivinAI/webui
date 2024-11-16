@@ -376,7 +376,13 @@
                 <input type="text" id="h264_topic" name="h264_topic" placeholder="/rt/camera/h264/">
             </div>
 
-            <!-- Draw Unknown Cells Checkbox -->
+            <!-- Draw Cells Checkbox -->
+            <div class="form-group">
+                <label for="draw_cells">Draw Cells:</label>
+                <input type="checkbox" id="draw_cells" name="draw_cells">
+            </div>
+
+            <!-- Draw Unknown Cells Checkbox (When draw cells is enabled) -->
             <div class="form-group">
                 <label for="draw_unknown_cells">Draw Unknown Cells:</label>
                 <input type="checkbox" id="draw_unknown_cells" name="draw_unknown_cells">
@@ -399,6 +405,11 @@
     </main>
 
     <script>
+        document.querySelector('#draw_cells').addEventListener('change', function () {
+            const drawUnknownCells = document.querySelector('#draw_unknown_cells');
+            drawUnknownCells.disabled = !this.checked;
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
             fetch('/config/webui/details', {
                 method: 'GET',
