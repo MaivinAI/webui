@@ -437,6 +437,7 @@
                     document.getElementById('detect_topic').value = data.DETECT_TOPIC || '/rt/detect/boxes2d/';
                     document.getElementById('pcd_topic').value = data.PCD_TOPIC || '/rt/radar/targets/';
                     document.getElementById('h264_topic').value = data.H264_TOPIC || '/rt/camera/h264/';
+                    document.getElementById('draw_cells').checked = data.DRAW_CELLS === 'true' || data.DRAW_CELLS === true;
                     document.getElementById('draw_unknown_cells').checked = data.DRAW_UNKNOWN_CELLS === 'true' || data.DRAW_UNKNOWN_CELLS === true;
                     document.getElementById('draw_box').checked = data.DRAW_BOX === 'true' || data.DRAW_BOX === true;
                     document.getElementById('draw_box_text').checked = data.DRAW_BOX_TEXT === 'true' || data.DRAW_BOX_TEXT === true;
@@ -475,6 +476,7 @@
                 PCD_TOPIC: document.getElementById('pcd_topic').value,
                 H264_TOPIC: document.getElementById('h264_topic').value,
                 DEVICE: document.getElementById('device_type').checked ? 'RAIVIN' : 'MAIVIN',
+                DRAW_CELLS: document.getElementById('draw_cells').checked.toString(),
                 DRAW_UNKNOWN_CELLS: document.getElementById('draw_unknown_cells').checked.toString(),
                 DRAW_BOX: document.getElementById('draw_box').checked.toString(),
                 DRAW_BOX_TEXT: document.getElementById('draw_box_text').checked.toString(),
