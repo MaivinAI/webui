@@ -70,6 +70,7 @@ let socketUrlMask = '/rt/detect/mask/'
 let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlPcd = '/rt/radar/targets/';
 let RANGE_BIN_LIMITS = [0, 20]
+let mirror = false
 
 loader.load(
     // resource URL
@@ -82,7 +83,24 @@ loader.load(
 
         init_grid(scene, renderer, camera, config)
 
-        pcdStream(socketUrlPcd, fpsUpdate(radarPanel)).then((pcd) => {
+        let radarFpsFn = fpsUpdate(radarPanel);
+        let radar_points;
+        pcdStream(socketUrlPcd, () => {
+            radarFpsFn();
+            let filteredPoints = []
+            for (let p of radar_points.points) {
+                const range = p.range
+                if (range < RANGE_BIN_LIMITS[0] || RANGE_BIN_LIMITS[1] < range) {
+                    continue
+                }
+                if (mirror) {
+                    p.y *= -1
+                }
+                filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point
+            }
+            radar_points.points = filteredPoints
+        }).then((pcd) => {
+            radar_points = pcd;
             grid_set_radarpoints(pcd)
         })
 
@@ -117,6 +135,10 @@ function init_config(config) {
 
     if (config.PCD_TOPIC) {
         socketUrlPcd = config.PCD_TOPIC
+    }
+
+    if (typeof config.MIRROR == "boolean") {
+        mirror = config.MIRROR
     }
 }
 
