@@ -243,6 +243,12 @@ loader.load(
         let boxes;
         boxesstream(socketUrlDetect, null, () => {
             if (boxes && radar_points) {
+                if (mirror) {
+                    for (let box of boxes.msg.boxes) {
+                        box.center_x = 1.0 - box.center_x
+                    }
+                }
+
                 drawBoxesSpeedDistance(boxCanvas, boxes.msg.boxes, radar_points.points)
             }
         }).then((b) => {
