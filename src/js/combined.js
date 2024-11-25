@@ -21,8 +21,9 @@ const cameraPanel = stats.addPanel(new Stats.Panel('cameraFPS', '#fff', '#222'))
 // const renderPanel = stats.addPanel(new Stats.Panel('renderFPS', '#4ff', '#022'));
 const radarPanel = stats.addPanel(new Stats.Panel('radarFPS', '#ff4', '#220'));
 const modelPanel = stats.addPanel(new Stats.Panel('modelFPS', '#f4f', '#210'));
+stats.showPanel([])
 stats.dom.style.cssText = "position: absolute; top: 0px; right: 0px; opacity: 0.9; z-index: 10000;";
-stats.showPanel([3, 4, 5])
+
 document.querySelector('main').appendChild(stats.dom);
 
 function fpsUpdate(panel, max) {
@@ -110,7 +111,7 @@ let socketUrlMask = '/rt/detect/mask/'
 let socketUrlErrors = '/ws/dropped'
 let RANGE_BIN_LIMITS = [0, 20]
 let mirror = false
-
+let show_stats = false
 
 
 droppedframes(socketUrlErrors, playerCanvas)
@@ -189,7 +190,9 @@ loader.load(
         console.log(config)
 
         init_config(config)
-
+        if (show_stats) {
+            stats.showPanel([3, 4, 5])
+        } 
         config.GRID_DRAW_PCD = config.COMBINED_GRID_DRAW_PCD
         init_grid(grid_scene, renderer_grid, camera_grid, config)
 
@@ -325,6 +328,11 @@ function init_config(config) {
     if (typeof config.MIRROR == "boolean") {
         mirror = config.MIRROR
     }
+
+    if (typeof config.MIRROR == "boolean") {
+        show_stats = config.SHOW_STATS
+    }
+    
 }
 
 

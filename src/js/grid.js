@@ -25,7 +25,7 @@ document.querySelector('main').appendChild(renderer.domElement);
 const stats = new Stats();
 const radarPanel = stats.addPanel(new Stats.Panel('radarFPS', '#ff4', '#220'));
 stats.dom.style.cssText = "position: absolute; top: 0px; right: 0px; opacity: 0.9; z-index: 10000;";
-stats.showPanel([3])
+stats.showPanel([])
 document.querySelector('main').appendChild(stats.dom);
 
 
@@ -71,7 +71,7 @@ let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlPcd = '/rt/radar/targets/';
 let RANGE_BIN_LIMITS = [0, 20]
 let mirror = false
-
+let show_stats = false
 loader.load(
     // resource URL
     '/config/webui/details',
@@ -80,6 +80,10 @@ loader.load(
         console.log("Parsed config:", config);
 
         init_config(config)
+        
+        if (show_stats) {
+            stats.showPanel([3])
+        }
 
         init_grid(scene, renderer, camera, config)
 
@@ -139,6 +143,10 @@ function init_config(config) {
 
     if (typeof config.MIRROR == "boolean") {
         mirror = config.MIRROR
+    }
+
+    if (typeof config.MIRROR == "boolean") {
+        show_stats = config.SHOW_STATS
     }
 }
 
