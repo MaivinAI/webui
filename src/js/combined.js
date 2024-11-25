@@ -6,7 +6,7 @@ import h264Stream from './stream.js'
 import pcdStream from './pcd.js'
 import { project_points_onto_box } from './classify.js'
 import boxesstream from './boxes.js'
-import Stats from "./Stats.js"
+import Stats, { fpsUpdate } from "./Stats.js"
 import droppedframes from './droppedframes.js'
 import { parseNumbersInObject } from './parseNumbersInObject.js';
 import { OrbitControls } from './OrbitControls.js'
@@ -25,41 +25,6 @@ stats.showPanel([])
 stats.dom.style.cssText = "position: absolute; top: 0px; right: 0px; opacity: 0.9; z-index: 10000;";
 
 document.querySelector('main').appendChild(stats.dom);
-
-function fpsUpdate(panel, max) {
-    if (!max) {
-        max = 40
-    }
-    let fpsInd = 0
-    let timeBetweenUpdates = []
-    let lastUpdateTime = 0
-    let stablized = false
-    let firstUpdate = 0
-    return () => {
-        if (!lastUpdateTime) {
-            lastUpdateTime = performance.now()
-            firstUpdate = lastUpdateTime
-            return
-        }
-        const curr = performance.now()
-        if (timeBetweenUpdates.length < 10) {
-            timeBetweenUpdates.push(curr - lastUpdateTime)
-            lastUpdateTime = curr
-            return
-        }
-        timeBetweenUpdates[fpsInd] = curr - lastUpdateTime
-        fpsInd = (fpsInd + 1) % timeBetweenUpdates.length
-        if (stablized) {
-            const avg_fps = 1000 / timeBetweenUpdates.reduce((a, b) => a + b, 0) * timeBetweenUpdates.length
-            panel.update(avg_fps, max)
-        } else if (curr - firstUpdate > 2000) {
-            // has been 2s since first update
-            stablized = true
-        }
-        lastUpdateTime = curr
-    }
-}
-
 
 const grid_scene = new THREE.Scene()
 grid_scene.background = new THREE.Color(0xa0a0a0)
