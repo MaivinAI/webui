@@ -10,7 +10,7 @@ import boxesstream from './boxes.js'
 import { Line2 } from './Line2.js';
 import { LineMaterial } from './LineMaterial.js';
 import { LineGeometry } from './LineGeometry.js';
-import Stats from "./Stats.js"
+import Stats, { fpsUpdate } from "./Stats.js"
 import droppedframes from './droppedframes.js'
 import { dynamicSort } from './sort.js'
 import { mask_colors } from './utils.js'
@@ -23,40 +23,6 @@ const modelPanel = stats.addPanel(new Stats.Panel('modelFPS', '#f4f', '#210'));
 stats.dom.style.cssText = "position: absolute; top: 0px; right: 0px; opacity: 0.9; z-index: 10000;";
 stats.showPanel([3, 4])
 document.querySelector('main').appendChild(stats.dom);
-
-function fpsUpdate(panel, max) {
-    if (!max) {
-        max = 40
-    }
-    let fpsInd = 0
-    let timeBetweenUpdates = []
-    let lastUpdateTime = 0
-    let stablized = false
-    let firstUpdate = 0
-    return () => {
-        if (!lastUpdateTime) {
-            lastUpdateTime = performance.now()
-            firstUpdate = lastUpdateTime
-            return
-        }
-        const curr = performance.now()
-        if (timeBetweenUpdates.length < 10) {
-            timeBetweenUpdates.push(curr - lastUpdateTime)
-            lastUpdateTime = curr
-            return
-        }
-        timeBetweenUpdates[fpsInd] = curr - lastUpdateTime
-        fpsInd = (fpsInd + 1) % timeBetweenUpdates.length
-        if (stablized) {
-            const avg_fps = 1000 / timeBetweenUpdates.reduce((a, b) => a + b, 0) * timeBetweenUpdates.length
-            panel.update(avg_fps, max)
-        } else if (curr - firstUpdate > 2000) {
-            // has been 2s since first update
-            stablized = true
-        }
-        lastUpdateTime = curr
-    }
-}
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0xa0a0a0)
@@ -121,7 +87,6 @@ loader.load(
         const cameraUpdate = fpsUpdate(cameraPanel)
         h264Stream(socketUrlH264, 1920, 1080, 30, (timing) => {
             cameraUpdate(), resetTimeout()
-            // cameraMSPanel.update(timing.decode_time, 33) 
         }).then((tex) => {
             texture_camera = tex;
             material_proj = new ProjectedMaterial({
@@ -144,7 +109,6 @@ loader.load(
             const classes = Math.round(mask.length / height / width)
             segstream(socketUrlMask, height, width, classes, (timing) => {
                 modelFPSUpdate();
-                // maskMSPanel.update(timing.decode_time, 33) 
             }).then((texture_mask) => {
                 material_mask = new ProjectedMask({
                     camera: camera, // the camera that acts as a projector

@@ -165,7 +165,6 @@ loader.load(
         const cameraUpdate = fpsUpdate(cameraPanel)
         h264Stream(socketUrlH264, 1920, 1080, 30, (timing) => {
             cameraUpdate(); resetTimeout(); cameraNeedsUpdate = true;
-            // cameraMSPanel.update(timing.decode_time, 33) 
         }).then((tex) => {
             texture_camera = tex;
             material_proj = new ProjectedMaterial({
@@ -191,7 +190,6 @@ loader.load(
             const classes = Math.round(mask.length / height / width)
             segstream(socketUrlMask, height, width, classes, (timing) => {
                 modelFPSUpdate();
-                // maskMSPanel.update(timing.decode_time, 33) 
             }).then((texture_mask) => {
                 material_mask = new ProjectedMask({
                     camera: camera, // the camera that acts as a projector

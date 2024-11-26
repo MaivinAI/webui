@@ -31,8 +31,6 @@ document.querySelector('main').appendChild(stats.dom);
 const loader = new THREE.FileLoader();
 
 
-let socketUrlMask = '/rt/detect/mask/'
-let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlPcd = '/rt/radar/targets/';
 let RANGE_BIN_LIMITS = [0, 20]
 let mirror = false
