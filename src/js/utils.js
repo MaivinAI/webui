@@ -34,7 +34,6 @@ export function color_points_field(points, field, scene, rendered_points, height
     min_val = avg_val - maxDelta
     max_val = avg_val + maxDelta
     points.forEach((point) => {
-        console.log(`point[${field}] = ${point[field]}`)
         const geometry = new THREE.SphereGeometry(0.1)
         let color = new THREE.Color(0xFFFFFF)
         if (max_val - min_val > 0) {

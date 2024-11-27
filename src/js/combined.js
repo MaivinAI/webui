@@ -3,7 +3,7 @@ import ProjectedMaterial from './ProjectedMaterial.js'
 import ProjectedMask from './ProjectedMask.js'
 import segstream, { get_shape } from './mask.js'
 import h264Stream from './stream.js'
-import pcdStream from './pcd.js'
+import pcdStream, { preprocessPoints } from './pcd.js'
 import { project_points_onto_box } from './classify.js'
 import boxesstream from './boxes.js'
 import Stats, { fpsUpdate } from "./Stats.js"
@@ -163,7 +163,7 @@ loader.load(
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
         const cameraUpdate = fpsUpdate(cameraPanel)
-        h264Stream(socketUrlH264, 1920, 1080, 30, (timing) => {
+        h264Stream(socketUrlH264, 1920, 1080, 30, () => {
             cameraUpdate(); resetTimeout(); cameraNeedsUpdate = true;
         }).then((tex) => {
             texture_camera = tex;
@@ -188,7 +188,7 @@ loader.load(
         // const maskMSPanel = stats.addPanel(new Stats.Panel('mask decode ms', '#A2A', '#420'));
         get_shape(socketUrlMask, (height, width, length, mask) => {
             const classes = Math.round(mask.length / height / width)
-            segstream(socketUrlMask, height, width, classes, (timing) => {
+            segstream(socketUrlMask, height, width, classes, () => {
                 modelFPSUpdate();
             }).then((texture_mask) => {
                 material_mask = new ProjectedMask({
@@ -224,18 +224,7 @@ loader.load(
         let radarFpsFn = fpsUpdate(radarPanel);
         pcdStream(socketUrlPcd, () => {
             radarFpsFn();
-            let filteredPoints = []
-            for (let p of radar_points.points) {
-                const range = p.range
-                if (range < RANGE_BIN_LIMITS[0] || RANGE_BIN_LIMITS[1] < range) {
-                   continue
-                }
-                if (mirror) {
-                    p.y *= -1
-                }
-                filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point
-            }
-            radar_points.points = filteredPoints
+            radar_points.points = preprocessPoints(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1], mirror, radar_points.points)
         }).then((pcd) => {
             radar_points = pcd;
             grid_set_radarpoints(radar_points)

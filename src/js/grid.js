@@ -1,7 +1,7 @@
 import * as THREE from './three.js'
 import { OrbitControls } from './OrbitControls.js'
 import Stats, { fpsUpdate } from './Stats.js'
-import pcdStream from './pcd.js'
+import pcdStream, { preprocessPoints } from './pcd.js'
 import { parseNumbersInObject } from './parseNumbersInObject.js';
 import { grid_set_radarpoints, init_grid } from './grid_render.js'
 
@@ -54,18 +54,7 @@ loader.load(
         let radar_points;
         pcdStream(socketUrlPcd, () => {
             radarFpsFn();
-            let filteredPoints = []
-            for (let p of radar_points.points) {
-                const range = p.range
-                if (range < RANGE_BIN_LIMITS[0] || RANGE_BIN_LIMITS[1] < range) {
-                    continue
-                }
-                if (mirror) {
-                    p.y *= -1
-                }
-                filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point
-            }
-            radar_points.points = filteredPoints
+            radar_points.points = preprocessPoints(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1], mirror, radar_points.points)
         }).then((pcd) => {
             radar_points = pcd;
             grid_set_radarpoints(pcd)
@@ -88,16 +77,9 @@ function init_config(config) {
     if (config.RANGE_BIN_LIMITS_MIN) {
         RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
     }
+    
     if (config.RANGE_BIN_LIMITS_MAX) {
         RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
-    }
-
-    if (config.MASK_TOPIC) {
-        socketUrlMask = config.MASK_TOPIC
-    }
-
-    if (config.DETECT_TOPIC) {
-        socketUrlDetect = config.DETECT_TOPIC
     }
 
     if (config.PCD_TOPIC) {
