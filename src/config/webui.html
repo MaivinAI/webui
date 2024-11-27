@@ -404,6 +404,11 @@
                 <label for="show_stats">Show Stats</label>
                 <input type="checkbox" id="show_stats" name="show_stats">
             </div>
+            <!-- Show People Count Checkbox -->
+            <div class="form-group">
+                <label for="show_people_count">Show People Count</label>
+                <input type="checkbox" id="show_people_count" name="show_people_count">
+            </div>
             <button id="saveConfig">Save Configuration</button>
         </div>
     </main>
@@ -441,7 +446,7 @@
                     document.getElementById('draw_box').checked = data.DRAW_BOX === 'true' || data.DRAW_BOX === true;
                     document.getElementById('draw_box_text').checked = data.DRAW_BOX_TEXT === 'true' || data.DRAW_BOX_TEXT === true;
                     document.getElementById('show_stats').checked = data.SHOW_STATS === 'true' || data.SHOW_STATS === true;
-
+                    document.getElementById('show_people_count').checked = data.SHOW_PEOPLE_COUNT === 'true' || data.SHOW_PEOPLE_COUNT === true;
                     const deviceToggle = document.getElementById('device_type');
                     const deviceTypeText = document.getElementById('device_type_text');
                     deviceToggle.checked = data.DEVICE === 'RAIVIN';
@@ -481,6 +486,7 @@
                 DRAW_BOX: document.getElementById('draw_box').checked.toString(),
                 DRAW_BOX_TEXT: document.getElementById('draw_box_text').checked.toString(),
                 SHOW_STATS: document.getElementById('show_stats').checked.toString(),
+                SHOW_PEOPLE_COUNT: document.getElementById('show_people_count').checked.toString(),
             };
 
             fetch('/config/webui', {
