@@ -77,7 +77,7 @@ function init_config(config) {
     if (config.RANGE_BIN_LIMITS_MIN) {
         RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
     }
-    
+
     if (config.RANGE_BIN_LIMITS_MAX) {
         RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
     }
@@ -90,7 +90,7 @@ function init_config(config) {
         mirror = config.MIRROR
     }
 
-    if (typeof config.MIRROR == "boolean") {
+    if (typeof config.SHOW_STATS == "boolean") {
         show_stats = config.SHOW_STATS
     }
 }

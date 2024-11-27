@@ -281,7 +281,7 @@ function init_config(config) {
         mirror = config.MIRROR
     }
 
-    if (typeof config.MIRROR == "boolean") {
+    if (typeof config.SHOW_STATS == "boolean") {
         show_stats = config.SHOW_STATS
     }
     
