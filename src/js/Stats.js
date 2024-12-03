@@ -168,4 +168,38 @@ Stats.Panel = function (name, fg, bg) {
 
 };
 
+export function fpsUpdate(panel, max) {
+    if (!max) {
+        max = 40
+    }
+    let fpsInd = 0
+    let timeBetweenUpdates = []
+    let lastUpdateTime = 0
+    let stablized = false
+    let firstUpdate = 0
+    return () => {
+        if (!lastUpdateTime) {
+            lastUpdateTime = performance.now()
+            firstUpdate = lastUpdateTime
+            return
+        }
+        const curr = performance.now()
+        if (timeBetweenUpdates.length < 10) {
+            timeBetweenUpdates.push(curr - lastUpdateTime)
+            lastUpdateTime = curr
+            return
+        }
+        timeBetweenUpdates[fpsInd] = curr - lastUpdateTime
+        fpsInd = (fpsInd + 1) % timeBetweenUpdates.length
+        if (stablized) {
+            const avg_fps = 1000 / timeBetweenUpdates.reduce((a, b) => a + b, 0) * timeBetweenUpdates.length
+            panel.update(avg_fps, max)
+        } else if (curr - firstUpdate > 2000) {
+            // has been 2s since first update
+            stablized = true
+        }
+        lastUpdateTime = curr
+    }
+}
+
 export { Stats as default };

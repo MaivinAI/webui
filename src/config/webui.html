@@ -269,6 +269,12 @@
                 Configure the settings for the WebUI Service, including bin widths, thresholds, and topics.
             </div>
 
+            <!-- Mirror Inputs Checkbox -->
+            <div class="form-group">
+                <label for="mirror_inputs">Mirror Inputs</label>
+                <input type="checkbox" id="mirror_inputs" name="mirror_inputs">
+            </div>
+
             <!-- Angle Bin Configuration -->
             <div class="form-group">
                 <label for="angle_bin_width">Angle Bin Width:</label>
@@ -399,7 +405,11 @@
                 <label for="draw_box_text">Draw Box Text:</label>
                 <input type="checkbox" id="draw_box_text" name="draw_box_text">
             </div>
-
+            <!-- Show Stats Checkbox -->
+            <div class="form-group">
+                <label for="show_stats">Show Stats</label>
+                <input type="checkbox" id="show_stats" name="show_stats">
+            </div>
             <button id="saveConfig">Save Configuration</button>
         </div>
     </main>
@@ -419,6 +429,7 @@
             })
                 .then(response => response.json())
                 .then(data => {
+                    document.getElementById('mirror_inputs').checked = data.MIRROR === 'true' || data.MIRROR === true;
                     document.getElementById('angle_bin_width').value = data.ANGLE_BIN_WIDTH || 10;
                     document.getElementById('angle_bin_limits_min').value = data.ANGLE_BIN_LIMITS_MIN || -70;
                     document.getElementById('angle_bin_limits_max').value = data.ANGLE_BIN_LIMITS_MAX || 70;
@@ -441,6 +452,7 @@
                     document.getElementById('draw_unknown_cells').checked = data.DRAW_UNKNOWN_CELLS === 'true' || data.DRAW_UNKNOWN_CELLS === true;
                     document.getElementById('draw_box').checked = data.DRAW_BOX === 'true' || data.DRAW_BOX === true;
                     document.getElementById('draw_box_text').checked = data.DRAW_BOX_TEXT === 'true' || data.DRAW_BOX_TEXT === true;
+                    document.getElementById('show_stats').checked = data.SHOW_STATS === 'true' || data.SHOW_STATS === true;
 
                     const deviceToggle = document.getElementById('device_type');
                     const deviceTypeText = document.getElementById('device_type_text');
@@ -457,6 +469,7 @@
         document.getElementById('saveConfig').addEventListener('click', function () {
             const configData = {
                 fileName: "webui",
+                MIRROR: document.getElementById('mirror_inputs').checked.toString(),
                 ANGLE_BIN_WIDTH: document.getElementById('angle_bin_width').value,
                 ANGLE_BIN_LIMITS_MIN: document.getElementById('angle_bin_limits_min').value,
                 ANGLE_BIN_LIMITS_MAX: document.getElementById('angle_bin_limits_max').value,
@@ -480,6 +493,7 @@
                 DRAW_UNKNOWN_CELLS: document.getElementById('draw_unknown_cells').checked.toString(),
                 DRAW_BOX: document.getElementById('draw_box').checked.toString(),
                 DRAW_BOX_TEXT: document.getElementById('draw_box_text').checked.toString(),
+                SHOW_STATS: document.getElementById('show_stats').checked.toString(),
             };
 
             fetch('/config/webui', {
