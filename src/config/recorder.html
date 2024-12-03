@@ -142,6 +142,93 @@
         button:active {
             transform: scale(0.98);
         }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .loading-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        button#saveConfig {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+
+        button#saveConfig:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        button#saveConfig:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        button#saveConfig:focus {
+            outline: 2px solid #60a5fa;
+            outline-offset: 2px;
+        }
+
+        .button-container {
+            position: sticky;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background: linear-gradient(to top, white 60%, transparent);
+        }
     </style>
 </head>
 
@@ -296,14 +383,60 @@
                 </div>
             </div>
 
-            <button id="saveConfig">Save Configuration</button>
+            <div class="button-container">
+                <button id="saveConfig">
+                    Save Configuration
+                </button>
+            </div>
         </div>
     </main>
 
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div>Saving configuration...</div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            fetchConfigDetails();
-            setupSearchFunctionality();
+            // First fetch device type
+            fetch('/config/webui/details')
+                .then(response => response.json())
+                .then(data => {
+                    const deviceType = data.DEVICE;
+                    if (deviceType.toLowerCase() === 'maivin') {
+                        // List of topics to hide for maivin
+                        const topicsToHide = [
+                            '/fusion/occupancy',
+                            '/fusion/targets',
+                            '/radar/targets',
+                            '/radar/cube',
+                            '/radar/clusters',
+                            '/radar/info'
+                        ];
+
+                        // Hide and disable each topic
+                        topicsToHide.forEach(topic => {
+                            const topicElement = document.querySelector(`input[value="${topic}"]`);
+                            if (topicElement) {
+                                // Get the parent topic-item div and hide it
+                                const topicItem = topicElement.closest('.topic-item');
+                                if (topicItem) {
+                                    topicItem.style.display = 'none';
+                                }
+                                // Disable the checkbox
+                                topicElement.disabled = true;
+                                topicElement.checked = false;
+                            }
+                        });
+                    }
+                })
+                .then(() => fetchConfigDetails())
+                .catch(error => {
+                    console.error('Error fetching device type:', error);
+                    fetchConfigDetails();
+                });
         });
 
         function fetchConfigDetails() {
@@ -350,16 +483,15 @@
         }
 
         document.getElementById('saveConfig').addEventListener('click', function () {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'block';
+
             const storage = document.getElementById('storage').value;
             const compression = document.getElementById('compression').value;
             const topics = Array.from(document.querySelectorAll('input[name="topics"]:checked'))
                 .map(checkbox => checkbox.value)
                 .join(' ');
 
-            saveConfig(storage, compression, topics);
-        });
-
-        function saveConfig(storage, compression, topics) {
             fetch('/config/recorder', {
                 method: 'POST',
                 headers: {
@@ -373,14 +505,18 @@
                 })
             })
                 .then(response => {
+                    loadingOverlay.style.display = 'none';
                     if (response.ok) {
-                        alert('Configuration saved successfully');
                     } else {
                         alert('Error saving configuration');
                     }
                 })
-                .catch(error => console.error('Error saving config:', error));
-        }
+                .catch(error => {
+                    loadingOverlay.style.display = 'none';
+                    console.error('Error saving config:', error);
+                    alert('Error saving configuration');
+                });
+        });
     </script>
 </body>
 
