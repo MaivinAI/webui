@@ -1,23 +1,5 @@
 import { CdrReader } from './Cdr.js';
 
-let timeoutId;
-
-function resetTimeout() {
-    clearTimeout(timeoutId);
-    document.getElementById('timeout').innerText = '';
-    timeoutId = setTimeout(() => {
-        document.getElementById('timeout').innerText = 'Timeout: Verify if camera service is running';
-    }, 15000);
-}
-
-const box_colors = [
-    "rgb(255, 255, 255)",
-    "rgb(0 255 0)",
-    "rgb(128 128 186)",
-    "rgb(2 48 75)"
-]
-
-
 const CHARCODE_MINUS = "-".charCodeAt(0);
 const CHARCODE_DOT = ".".charCodeAt(0);
 const CHARCODE_a = "a".charCodeAt(0);
@@ -136,7 +118,7 @@ export default async function boxesstream(socketUrl, canvas, onMessage) {
     const socket = new WebSocket(socketUrl);
     socket.binaryType = "arraybuffer";
 
-    socket.onopen = function (event) {
+    socket.onopen = function () {
         console.log('WebSocket connection opened to ' + socketUrl);
     };
 
@@ -173,7 +155,7 @@ export default async function boxesstream(socketUrl, canvas, onMessage) {
         console.error(`WebSocket ${socketUrl} error: ${error}`);
     };
 
-    socket.onclose = function (event) {
+    socket.onclose = function () {
         console.log(`WebSocket ${socketUrl} connection closed`);
     };
     return boxes;
