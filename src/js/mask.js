@@ -95,22 +95,7 @@ export default async function segstream(socketUrl, height, width, classes, onMes
             return;
         }
         // let start = performance.now();
-        let n_layer_stride = height * width * 4;
-        let n_row_stride = width * 4;
-        let n_col_stride = 4;
-        let row_stride = width * classes;
-        let col_stride = classes;
-        for (let i = 0; i < height; i++) {
-            for (let j = 0; j < width; j++) {
-                for (let k = 0; k < Math.ceil(classes / 4) * 4; k++) {
-                    if (k >= classes) {
-                        new_arr[n_layer_stride * Math.floor(k / 4) + i * n_row_stride + j * n_col_stride + k % 4] = 0;
-                    } else {
-                        new_arr[n_layer_stride * Math.floor(k / 4) + (height - i) * n_row_stride + j * n_col_stride + k % 4] = mask[i * row_stride + j * col_stride + k];
-                    }
-                }
-            }
-        }
+        transpose_mask(new_arr, mask, width, height, classes)
         // let elapsed = performance.now() - start;
         // console.log("Array reshaping took ", elapsed, " ms");
 
@@ -130,4 +115,23 @@ export default async function segstream(socketUrl, height, width, classes, onMes
     };
 
     return texture_mask;
+}
+
+function transpose_mask(new_arr, mask, width, height, classes) {
+    let n_layer_stride = height * width * 4;
+    let n_row_stride = width * 4;
+    let n_col_stride = 4;
+    let row_stride = width * classes;
+    let col_stride = classes;
+    for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+            for (let k = 0; k < Math.ceil(classes / 4) * 4; k++) {
+                if (k >= classes) {
+                    new_arr[n_layer_stride * Math.floor(k / 4) + i * n_row_stride + j * n_col_stride + k % 4] = 0;
+                } else {
+                    new_arr[n_layer_stride * Math.floor(k / 4) + (height - i) * n_row_stride + j * n_col_stride + k % 4] = mask[i * row_stride + j * col_stride + k];
+                }
+            }
+        }
+    }
 }
