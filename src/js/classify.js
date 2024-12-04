@@ -30,7 +30,7 @@ loader.load(
             OCCLUSION_LIMIT_DEGREES = config.OCCLUSION_LIMIT_DEGREES;
         }
     },
-    function (xhr) { },
+    function () { },
     function (err) {
         console.error('An error happened', err);
     }

@@ -67,7 +67,7 @@ loader.load(
         orbitControls.update();
 
     },
-    function (xhr) {},
+    function () {},
     function (err) {
         console.error('An error happened', err);
     }

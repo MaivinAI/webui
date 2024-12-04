@@ -97,7 +97,6 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
     }
     ctx.font = "48px monospace";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     for (let box of boxes) {
         let text = ""
         let color_box = "white"
@@ -146,7 +145,6 @@ orbitControls.update();
 
 const loader = new THREE.FileLoader();
 
-let cameraNeedsUpdate = false;
 loader.load(
     // resource URL
     '/config/webui/details',
@@ -164,7 +162,7 @@ loader.load(
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
         const cameraUpdate = fpsUpdate(cameraPanel)
         h264Stream(socketUrlH264, 1920, 1080, 30, () => {
-            cameraUpdate(); resetTimeout(); cameraNeedsUpdate = true;
+            cameraUpdate(); resetTimeout();
         }).then((tex) => {
             texture_camera = tex;
             material_proj = new ProjectedMaterial({
@@ -230,9 +228,7 @@ loader.load(
             grid_set_radarpoints(radar_points)
         })
     },
-    function (xhr) {
-        // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-    },
+    function () { },
     function (err) {
         console.error('An error happened', err);
     }
