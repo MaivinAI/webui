@@ -2,7 +2,7 @@ import * as THREE from './three.js'
 
 // Based on https://tympanus.net/codrops/2020/01/07/playing-with-texture-projection-in-three-js/
 export default class ProjectedMask extends THREE.ShaderMaterial {
-    constructor({ camera, texture, colors, alphas, default_alpha = 0.7, ...options } = {}) {
+    constructor({ camera, texture, colors, alphas, default_alpha = 0.7, flip = false, ...options } = {}) {
         if (!texture || !texture.isTexture) {
             throw new Error('Invalid texture passed to the ProjectedMask')
         }
@@ -56,6 +56,8 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
         const modelMatrixCamera = camera.matrixWorld.clone()
 
         const projPosition = camera.position.clone()
+
+        const flip_shader = flip ? `uv.x = 1.0 - uv.x;` : ``
         super({
             ...options,
             uniforms: {
@@ -119,6 +121,7 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
                 void main() {
                     float w = max(vTexCoords.w, 0.0);
                     vec2 uv = (vTexCoords.xy / w) * 0.5 + 0.5;
+                    ${flip_shader}
                     if (!(0.0 <= uv.x && uv.x <= 1.0 && 0.0 <= uv.y && uv.y <= 1.0)) {
                         pc_fragColor = vec4(0.0,0.0,0.0,0.0);
                         return;

@@ -22,6 +22,7 @@ let BIN_THRESHOLD = 3
 let GRID_DRAW_PCD = "disabled"
 let DRAW_UNKNOWN_CELLS = false
 let DRAW_CELLS = true
+let SHOW_PEOPLE_COUNT = false
 
 let textContext = null
 let count = 0
@@ -98,7 +99,9 @@ export function init_grid(grid_scene_, grid_renderer_, grid_camera_, config) {
         myText.position.z = Math.cos(-i / 180 * PI) * (RANGE_BIN_LIMITS[1] + 0.2)
         grid_scene.add(myText)
     }
-    create_text()
+    if (SHOW_PEOPLE_COUNT) {
+        create_text()
+    }
 
     grid_renderer.setAnimationLoop(animate_grid);
 }
@@ -140,6 +143,11 @@ function init_config(config) {
     if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
         DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
     }
+
+    if (typeof config.SHOW_PEOPLE_COUNT == "boolean") {
+        SHOW_PEOPLE_COUNT = config.SHOW_PEOPLE_COUNT
+    }
+
 
     if (!DRAW_CELLS) {
         DRAW_UNKNOWN_CELLS = false

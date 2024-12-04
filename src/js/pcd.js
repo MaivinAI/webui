@@ -80,6 +80,21 @@ function pcd_to_points(radar_data) {
     return radar_points
 }
 
+export function preprocessPoints(range_min, range_max, mirror, points) {
+    let filteredPoints = []
+    for (let p of points) {
+        const range = p.range
+        if (range < range_min || range_max < range) {
+            continue
+        }
+        if (mirror) {
+            p.y *= -1
+        }
+        filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point
+    }
+    return filteredPoints
+}
+
 export default async function pcdStream(socketUrl, onMessage) {
     let radar_data = {}
     radar_data.points = []

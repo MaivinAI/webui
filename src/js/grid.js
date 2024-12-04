@@ -1,7 +1,7 @@
 import * as THREE from './three.js'
 import { OrbitControls } from './OrbitControls.js'
-import Stats from './Stats.js'
-import pcdStream from './pcd.js'
+import Stats, { fpsUpdate } from './Stats.js'
+import pcdStream, { preprocessPoints } from './pcd.js'
 import { parseNumbersInObject } from './parseNumbersInObject.js';
 import { grid_set_radarpoints, init_grid } from './grid_render.js'
 
@@ -25,52 +25,16 @@ document.querySelector('main').appendChild(renderer.domElement);
 const stats = new Stats();
 const radarPanel = stats.addPanel(new Stats.Panel('radarFPS', '#ff4', '#220'));
 stats.dom.style.cssText = "position: absolute; top: 0px; right: 0px; opacity: 0.9; z-index: 10000;";
-stats.showPanel([3])
+stats.showPanel([])
 document.querySelector('main').appendChild(stats.dom);
-
-
-function fpsUpdate(panel, max) {
-    if (!max) {
-        max = 40
-    }
-    let fpsInd = 0
-    let timeBetweenUpdates = []
-    let lastUpdateTime = 0
-    let stablized = false
-    let firstUpdate = 0
-    return () => {
-        if (!lastUpdateTime) {
-            lastUpdateTime = performance.now()
-            firstUpdate = lastUpdateTime
-            return
-        }
-        const curr = performance.now()
-        if (timeBetweenUpdates.length < 10) {
-            timeBetweenUpdates.push(curr - lastUpdateTime)
-            lastUpdateTime = curr
-            return
-        }
-        timeBetweenUpdates[fpsInd] = curr - lastUpdateTime
-        fpsInd = (fpsInd + 1) % timeBetweenUpdates.length
-        if (stablized) {
-            const avg_fps = 1000 / timeBetweenUpdates.reduce((a, b) => a + b, 0) * timeBetweenUpdates.length
-            panel.update(avg_fps, max)
-        } else if (curr - firstUpdate > 2000) {
-            // has been 2s since first update
-            stablized = true
-        }
-        lastUpdateTime = curr
-    }
-}
 
 const loader = new THREE.FileLoader();
 
 
-let socketUrlMask = '/rt/detect/mask/'
-let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlPcd = '/rt/radar/targets/';
 let RANGE_BIN_LIMITS = [0, 20]
-
+let mirror = false
+let show_stats = false
 loader.load(
     // resource URL
     '/config/webui/details',
@@ -79,10 +43,20 @@ loader.load(
         console.log("Parsed config:", config);
 
         init_config(config)
+        
+        if (show_stats) {
+            stats.showPanel([3])
+        }
 
         init_grid(scene, renderer, camera, config)
 
-        pcdStream(socketUrlPcd, fpsUpdate(radarPanel)).then((pcd) => {
+        let radarFpsFn = fpsUpdate(radarPanel);
+        let radar_points;
+        pcdStream(socketUrlPcd, () => {
+            radarFpsFn();
+            radar_points.points = preprocessPoints(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1], mirror, radar_points.points)
+        }).then((pcd) => {
+            radar_points = pcd;
             grid_set_radarpoints(pcd)
         })
 
@@ -93,7 +67,7 @@ loader.load(
         orbitControls.update();
 
     },
-    function (xhr) {},
+    function () {},
     function (err) {
         console.error('An error happened', err);
     }
@@ -103,20 +77,21 @@ function init_config(config) {
     if (config.RANGE_BIN_LIMITS_MIN) {
         RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
     }
+
     if (config.RANGE_BIN_LIMITS_MAX) {
         RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
     }
 
-    if (config.MASK_TOPIC) {
-        socketUrlMask = config.MASK_TOPIC
-    }
-
-    if (config.DETECT_TOPIC) {
-        socketUrlDetect = config.DETECT_TOPIC
-    }
-
     if (config.PCD_TOPIC) {
         socketUrlPcd = config.PCD_TOPIC
+    }
+
+    if (typeof config.MIRROR == "boolean") {
+        mirror = config.MIRROR
+    }
+
+    if (typeof config.SHOW_STATS == "boolean") {
+        show_stats = config.SHOW_STATS
     }
 }
 

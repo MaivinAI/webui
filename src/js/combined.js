@@ -3,10 +3,10 @@ import ProjectedMaterial from './ProjectedMaterial.js'
 import ProjectedMask from './ProjectedMask.js'
 import segstream, { get_shape } from './mask.js'
 import h264Stream from './stream.js'
-import pcdStream from './pcd.js'
+import pcdStream, { preprocessPoints } from './pcd.js'
 import { project_points_onto_box } from './classify.js'
 import boxesstream from './boxes.js'
-import Stats from "./Stats.js"
+import Stats, { fpsUpdate } from "./Stats.js"
 import droppedframes from './droppedframes.js'
 import { parseNumbersInObject } from './parseNumbersInObject.js';
 import { OrbitControls } from './OrbitControls.js'
@@ -21,44 +21,10 @@ const cameraPanel = stats.addPanel(new Stats.Panel('cameraFPS', '#fff', '#222'))
 // const renderPanel = stats.addPanel(new Stats.Panel('renderFPS', '#4ff', '#022'));
 const radarPanel = stats.addPanel(new Stats.Panel('radarFPS', '#ff4', '#220'));
 const modelPanel = stats.addPanel(new Stats.Panel('modelFPS', '#f4f', '#210'));
+stats.showPanel([])
 stats.dom.style.cssText = "position: absolute; top: 0px; right: 0px; opacity: 0.9; z-index: 10000;";
-stats.showPanel([3, 4, 5])
+
 document.querySelector('main').appendChild(stats.dom);
-
-function fpsUpdate(panel, max) {
-    if (!max) {
-        max = 40
-    }
-    let fpsInd = 0
-    let timeBetweenUpdates = []
-    let lastUpdateTime = 0
-    let stablized = false
-    let firstUpdate = 0
-    return () => {
-        if (!lastUpdateTime) {
-            lastUpdateTime = performance.now()
-            firstUpdate = lastUpdateTime
-            return
-        }
-        const curr = performance.now()
-        if (timeBetweenUpdates.length < 10) {
-            timeBetweenUpdates.push(curr - lastUpdateTime)
-            lastUpdateTime = curr
-            return
-        }
-        timeBetweenUpdates[fpsInd] = curr - lastUpdateTime
-        fpsInd = (fpsInd + 1) % timeBetweenUpdates.length
-        if (stablized) {
-            const avg_fps = 1000 / timeBetweenUpdates.reduce((a, b) => a + b, 0) * timeBetweenUpdates.length
-            panel.update(avg_fps, max)
-        } else if (curr - firstUpdate > 2000) {
-            // has been 2s since first update
-            stablized = true
-        }
-        lastUpdateTime = curr
-    }
-}
-
 
 const grid_scene = new THREE.Scene()
 grid_scene.background = new THREE.Color(0xa0a0a0)
@@ -109,7 +75,8 @@ let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlMask = '/rt/detect/mask/'
 let socketUrlErrors = '/ws/dropped'
 let RANGE_BIN_LIMITS = [0, 20]
-
+let mirror = false
+let show_stats = false
 
 
 droppedframes(socketUrlErrors, playerCanvas)
@@ -130,7 +97,6 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
     }
     ctx.font = "48px monospace";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     for (let box of boxes) {
         let text = ""
         let color_box = "white"
@@ -179,7 +145,6 @@ orbitControls.update();
 
 const loader = new THREE.FileLoader();
 
-let cameraNeedsUpdate = false;
 loader.load(
     // resource URL
     '/config/webui/details',
@@ -188,21 +153,23 @@ loader.load(
         console.log(config)
 
         init_config(config)
-
+        if (show_stats) {
+            stats.showPanel([3, 4, 5])
+        } 
         config.GRID_DRAW_PCD = config.COMBINED_GRID_DRAW_PCD
         init_grid(grid_scene, renderer_grid, camera_grid, config)
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
         const cameraUpdate = fpsUpdate(cameraPanel)
-        h264Stream(socketUrlH264, 1920, 1080, 30, (timing) => {
-            cameraUpdate(); resetTimeout(); cameraNeedsUpdate = true;
-            // cameraMSPanel.update(timing.decode_time, 33) 
+        h264Stream(socketUrlH264, 1920, 1080, 30, () => {
+            cameraUpdate(); resetTimeout();
         }).then((tex) => {
             texture_camera = tex;
             material_proj = new ProjectedMaterial({
                 camera: camera, // the camera that acts as a projector
                 texture: texture_camera, // the texture being projected
                 color: '#000', // the color of the object if it's not projected on
+                flip: mirror,
                 transparent: true,
             })
             const mesh_cam = new THREE.Mesh(quad, material_proj);
@@ -219,14 +186,14 @@ loader.load(
         // const maskMSPanel = stats.addPanel(new Stats.Panel('mask decode ms', '#A2A', '#420'));
         get_shape(socketUrlMask, (height, width, length, mask) => {
             const classes = Math.round(mask.length / height / width)
-            segstream(socketUrlMask, height, width, classes, (timing) => {
+            segstream(socketUrlMask, height, width, classes, () => {
                 modelFPSUpdate();
-                // maskMSPanel.update(timing.decode_time, 33) 
             }).then((texture_mask) => {
                 material_mask = new ProjectedMask({
                     camera: camera, // the camera that acts as a projector
                     texture: texture_mask, // the texture being projected
                     transparent: true,
+                    flip: mirror,
                     colors: mask_colors,
                 })
                 const mesh_mask = new THREE.Mesh(quad, material_mask);
@@ -240,6 +207,12 @@ loader.load(
         let boxes;
         boxesstream(socketUrlDetect, null, () => {
             if (boxes && radar_points) {
+                if (mirror) {
+                    for (let box of boxes.msg.boxes) {
+                        box.center_x = 1.0 - box.center_x
+                    }
+                }
+
                 drawBoxesSpeedDistance(boxCanvas, boxes.msg.boxes, radar_points.points)
             }
         }).then((b) => {
@@ -249,23 +222,13 @@ loader.load(
         let radarFpsFn = fpsUpdate(radarPanel);
         pcdStream(socketUrlPcd, () => {
             radarFpsFn();
-            let filteredPoints = []
-            for (let p of radar_points.points) {
-                const range = p.range
-                if (range < RANGE_BIN_LIMITS[0] || RANGE_BIN_LIMITS[1] < range) {
-                   continue
-                }
-                filteredPoints.push(JSON.parse(JSON.stringify(p))) // deepclone the point
-            }
-            radar_points.points = filteredPoints
+            radar_points.points = preprocessPoints(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1], mirror, radar_points.points)
         }).then((pcd) => {
             radar_points = pcd;
             grid_set_radarpoints(radar_points)
         })
     },
-    function (xhr) {
-        // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-    },
+    function () { },
     function (err) {
         console.error('An error happened', err);
     }
@@ -309,6 +272,15 @@ function init_config(config) {
     if (typeof config.DRAW_BOX_TEXT == "boolean") {
         DRAW_BOX_TEXT = config.DRAW_BOX_TEXT
     }
+
+    if (typeof config.MIRROR == "boolean") {
+        mirror = config.MIRROR
+    }
+
+    if (typeof config.SHOW_STATS == "boolean") {
+        show_stats = config.SHOW_STATS
+    }
+    
 }
 
 

@@ -6,7 +6,7 @@ import { CdrReader } from './Cdr.js';
 export async function get_shape(socketUrl, fn) {
     const socket = new WebSocket(socketUrl);
     socket.binaryType = "arraybuffer";
-    socket.onopen = function (event) {
+    socket.onopen = function () {
         console.log('WebSocket connection opened to ' + socketUrl);
     };
     let firstMsg = true
@@ -22,7 +22,7 @@ export async function get_shape(socketUrl, fn) {
         try {
             const height = reader.uint32();
             const width = reader.uint32();
-            const length = reader.uint32();
+            reader.uint32();
             const encoding = reader.string();
             if (encoding == "zstd") {
                 const d = reader.uint8Array()
@@ -33,7 +33,7 @@ export async function get_shape(socketUrl, fn) {
             }
 
             console.log("Using %dx%dx%d = %d", height, width, Math.round(mask.length / height / width), mask.length)
-            fn(height, width, length, mask)
+            fn(height, width, Math.round(mask.length / height / width), mask)
             firstMsg = false
         } catch (error) {
             console.error("Failed to deserialize image data:", error);
@@ -46,7 +46,7 @@ export async function get_shape(socketUrl, fn) {
         console.error(`WebSocket ${socketUrl} error: ${error}`);
     };
 
-    socket.onclose = function (event) {
+    socket.onclose = function () {
         console.log(`WebSocket ${socketUrl} connection closed`);
     };
 }
@@ -55,9 +55,8 @@ export default async function segstream(socketUrl, height, width, classes, onMes
 
     const socket = new WebSocket(socketUrl);
     socket.binaryType = "arraybuffer";
-    let framesProcessed = 0;
 
-    socket.onopen = function (event) {
+    socket.onopen = function () {
         console.log('WebSocket connection opened to ' + socketUrl);
     };
     let new_arr = new Uint8Array(height * width * Math.ceil(classes / 4) * 4);
@@ -75,38 +74,28 @@ export default async function segstream(socketUrl, height, width, classes, onMes
         const reader = new CdrReader(dataView);
         let mask;
         try {
-            const height = reader.uint32(); // Read height
-            const width = reader.uint32(); // Read width
-            const length = reader.uint32(); // Read length
+            const message_height = reader.uint32(); // Read height
+            const message_width = reader.uint32(); // Read width
+            reader.uint32(); // Read length
             const encoding = reader.string(); // Read encoding
-            // TODO: Error handling if the height/width don't match the expected height/width?
+
+            if (height != message_height || width != message_width) {
+                // TODO: Error handling if the height/width don't match the expected height/width?
+            }
+
             if (encoding == "zstd") {
                 const d = reader.uint8Array()
                 mask = fzstd.decompress(d);
             } else {
                 mask = reader.uint8Array();
             }
+
         } catch (error) {
             console.error("Failed to deserialize image data:", error);
             return;
         }
         // let start = performance.now();
-        let n_layer_stride = height * width * 4;
-        let n_row_stride = width * 4;
-        let n_col_stride = 4;
-        let row_stride = width * classes;
-        let col_stride = classes;
-        for (let i = 0; i < height; i++) {
-            for (let j = 0; j < width; j++) {
-                for (let k = 0; k < Math.ceil(classes / 4) * 4; k++) {
-                    if (k >= classes) {
-                        new_arr[n_layer_stride * Math.floor(k / 4) + i * n_row_stride + j * n_col_stride + k % 4] = 0;
-                    } else {
-                        new_arr[n_layer_stride * Math.floor(k / 4) + (height - i) * n_row_stride + j * n_col_stride + k % 4] = mask[i * row_stride + j * col_stride + k];
-                    }
-                }
-            }
-        }
+        transpose_mask(new_arr, mask, width, height, classes)
         // let elapsed = performance.now() - start;
         // console.log("Array reshaping took ", elapsed, " ms");
 
@@ -121,9 +110,28 @@ export default async function segstream(socketUrl, height, width, classes, onMes
         console.error(`WebSocket ${socketUrl} error: ${error}`);
     };
 
-    socket.onclose = function (event) {
+    socket.onclose = function () {
         console.log(`WebSocket ${socketUrl} connection closed`);
     };
 
     return texture_mask;
+}
+
+function transpose_mask(new_arr, mask, width, height, classes) {
+    let n_layer_stride = height * width * 4;
+    let n_row_stride = width * 4;
+    let n_col_stride = 4;
+    let row_stride = width * classes;
+    let col_stride = classes;
+    for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+            for (let k = 0; k < Math.ceil(classes / 4) * 4; k++) {
+                if (k >= classes) {
+                    new_arr[n_layer_stride * Math.floor(k / 4) + i * n_row_stride + j * n_col_stride + k % 4] = 0;
+                } else {
+                    new_arr[n_layer_stride * Math.floor(k / 4) + (height - i) * n_row_stride + j * n_col_stride + k % 4] = mask[i * row_stride + j * col_stride + k];
+                }
+            }
+        }
+    }
 }

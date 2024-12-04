@@ -30,7 +30,7 @@ loader.load(
             OCCLUSION_LIMIT_DEGREES = config.OCCLUSION_LIMIT_DEGREES;
         }
     },
-    function (xhr) { },
+    function () { },
     function (err) {
         console.error('An error happened', err);
     }
@@ -250,7 +250,8 @@ export function project_points_onto_box(points, boxes) {
             z: p.z,
             range: p.range,
             angle: p.angle,
-            speed: p.speed
+            speed: p.speed,
+            class: p.class
         }
 
         pos.applyMatrix3(cam_mtx)
@@ -269,36 +270,59 @@ export function project_points_onto_box(points, boxes) {
 
     points_cpy.sort(dynamicSortMultiple("range"))
 
-
+    let extra_points = []
     for (let p of points_cpy)  {
         if (p.class == 0) {
             continue
         }
         let i = p.i;
         let j = p.j;
+
+        let point_marked = false
         for (let box of boxes) {
             if (!point_in_box(j, i, box)) {
                 continue
             }
+            point_marked = true
             if (box.text) {
                 continue
             }
             box.text = `${p.range.toFixed(1).padStart(5, " ")}m\n${p.speed.toFixed(1).padStart(5, " ")}m/s`
+           
         }
+
+        if (point_marked) {
+           continue
+        } 
+        extra_points.push(p)
+    }
+    for (let p of extra_points) {
+        let box = {}
+        box.center_x = p.j
+        box.center_y = p.i
+        box.width = Math.atan(0.7 / p.x) / 1.43117 // maybe get this from projection
+        box.height = Math.atan(1.7 / p.x) / 1.43117 // maybe get this from projection
+        box.label = 1.0
+        box.score = 0.7
+        box.distance = p.range
+        box.speed = p.speed
+        box.track = "NA"
+        box.text = `${p.range.toFixed(1).padStart(5, " ")}m\n${p.speed.toFixed(1).padStart(5, " ")}m/s`
+        boxes.push(box)
     }
 }
 
 function point_in_box(x,y, box) {
-    if (x < box.center_x - box.width / 2 - 0.05) { // pad 0.15 left of the box
+    if (x < box.center_x - box.width / 2 - 0.1) { // pad 0.1 left of the box
         return false
     }
-    if (x > box.center_x + box.width / 2 + 0.05) { // pad 0.15 right of the box
+    if (x > box.center_x + box.width / 2 + 0.1) { // pad 0.1 right of the box
         return false
     }
-    if (y < box.center_y - box.height / 2) {
+    if (y < box.center_y - box.height / 2 - 0.1) {
         return false
     }
-    if (y > box.center_y + box.height / 2) {
+    if (y > box.center_y + box.height / 2 + 0.1) {
         return false
     }
     return true
