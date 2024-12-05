@@ -230,6 +230,94 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Save Button Container */
+        .button-container {
+            position: sticky;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background: linear-gradient(to top, white 60%, transparent);
+        }
+
+        /* Save Button Style */
+        button#saveConfig {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+
+        button#saveConfig:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        button#saveConfig:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        button#saveConfig:focus {
+            outline: 2px solid #60a5fa;
+            outline-offset: 2px;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
         }
 
         .loading-content {
@@ -262,56 +350,6 @@
                 transform: rotate(360deg);
             }
         }
-
-        /* Save Button Container */
-        .button-container {
-            position: sticky;
-            bottom: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            padding: 10px;
-            background: linear-gradient(to top, white 60%, transparent);
-        }
-
-        /* Save Button Style */
-        button#saveConfig {
-            background-color: #2563eb;
-            /* Bright blue color */
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-            width: 100%;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-            display: block;
-        }
-
-        button#saveConfig:hover {
-            background-color: #1d4ed8;
-            /* Slightly darker blue on hover */
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-        }
-
-        button#saveConfig:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        button#saveConfig:focus {
-            outline: 2px solid #60a5fa;
-            /* Light blue outline when focused */
-            outline-offset: 2px;
-        }
     </style>
 </head>
 
@@ -340,6 +378,7 @@
         </div>
     </header>
 
+    <input type="hidden" id="device_type" value="MAIVIN">
 
     <main>
         <div class="container">
@@ -484,12 +523,6 @@
                 <label for="draw_box_text">Draw Box Text:</label>
                 <input type="checkbox" id="draw_box_text" name="draw_box_text">
             </div>
-
-            <div class="button-container">
-                <button id="saveConfig">
-                    Save Configuration
-                </button>
-            </div>
             <!-- Show Stats Checkbox -->
             <div class="form-group">
                 <label for="show_stats">Show Stats</label>
@@ -500,7 +533,11 @@
                 <label for="show_people_count">Show People Count</label>
                 <input type="checkbox" id="show_people_count" name="show_people_count">
             </div>
-            <button id="saveConfig">Save Configuration</button>
+            <div class="button-container">
+                <button id="saveConfig">
+                    Save Configuration
+                </button>
+            </div>
         </div>
     </main>
 
@@ -565,7 +602,7 @@
 
         document.getElementById('saveConfig').addEventListener('click', function () {
             const loadingOverlay = document.getElementById('loadingOverlay');
-            loadingOverlay.style.display = 'block';
+            loadingOverlay.style.display = 'block';  // Show loading overlay
 
             const configData = {
                 fileName: "webui",
@@ -605,17 +642,24 @@
                 body: JSON.stringify(configData)
             })
                 .then(response => {
-                    loadingOverlay.style.display = 'none';
-                    if (response.ok) {
-                        //alert('Configuration saved successfully');
-                    } else {
-                        alert('Error saving configuration');
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+                        });
                     }
+                    return response.text();
+                })
+                .then(data => {
+                    loadingOverlay.style.display = 'none';
+                    window.location.reload();
                 })
                 .catch(error => {
                     loadingOverlay.style.display = 'none';
                     console.error('Error saving config:', error);
-                    alert('Error saving configuration');
+                    alert('Error saving configuration: ' + error.message);
+                })
+                .finally(() => {
+                    loadingOverlay.style.display = 'none';
                 });
         });
     </script>
