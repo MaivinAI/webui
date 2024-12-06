@@ -229,6 +229,44 @@
             padding: 10px;
             background: linear-gradient(to top, white 60%, transparent);
         }
+
+        .topic-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .topic-item span {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+        }
+
+        .topics-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        /* Style for the checkbox and label */
+        .toggle-switch input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .toggle-switch label {
+            display: flex;
+            align-items: center;
+            margin: 0;
+        }
     </style>
 </head>
 
@@ -400,6 +438,33 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Setup search functionality
+            const searchInput = document.getElementById('topicSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    const searchTerm = this.value.toLowerCase();
+                    const topicItems = document.querySelectorAll('.topic-item');
+
+                    topicItems.forEach(item => {
+                        // Reset display to 'flex' if search is empty
+                        if (searchTerm === '') {
+                            // Only show if it's not a RAIVIN topic on MAIVIN device
+                            if (!item.hasAttribute('data-hidden-by-device')) {
+                                item.style.display = 'flex';
+                            }
+                        } else {
+                            const topicText = item.querySelector('span').textContent.toLowerCase();
+                            // Only show if it matches search and isn't hidden by device type
+                            if (topicText.includes(searchTerm) && !item.hasAttribute('data-hidden-by-device')) {
+                                item.style.display = 'flex';
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        }
+                    });
+                });
+            }
+
             // First fetch device type
             fetch('/config/webui/details')
                 .then(response => response.json())
@@ -424,6 +489,8 @@
                                 const topicItem = topicElement.closest('.topic-item');
                                 if (topicItem) {
                                     topicItem.style.display = 'none';
+                                    // Mark this item as hidden by device type
+                                    topicItem.setAttribute('data-hidden-by-device', 'true');
                                 }
                                 // Disable the checkbox
                                 topicElement.disabled = true;
@@ -469,17 +536,6 @@
             if (checkbox) {
                 checkbox.checked = true;
             }
-        }
-
-        function setupSearchFunctionality() {
-            document.getElementById('topicSearch').addEventListener('input', function () {
-                const searchTerm = this.value.toLowerCase();
-                const topicItems = document.querySelectorAll('.topic-item');
-                topicItems.forEach(item => {
-                    const topicText = item.querySelector('span').textContent.toLowerCase();
-                    item.style.display = topicText.includes(searchTerm) ? 'flex' : 'none';
-                });
-            });
         }
 
         document.getElementById('saveConfig').addEventListener('click', function () {
