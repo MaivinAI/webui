@@ -33,7 +33,7 @@ function uuid_to_color(id) {
     return `rgb(${((hexcode >> 24) & 0xff)} ${((hexcode >> 16) & 0xff)} ${((hexcode >> 8) & 0xff)})`
 }
 
-function drawBoxes(canvas, message) {
+function drawBoxes(drawBoxSettings, message) {
     if (!message) {
         return;
     }
@@ -44,6 +44,7 @@ function drawBoxes(canvas, message) {
         return;
     }
 
+    const canvas = drawBoxSettings.canvas;
     const ctx = canvas.getContext("2d");
     if (ctx == null) {
         return
@@ -63,14 +64,19 @@ function drawBoxes(canvas, message) {
         } else {
             text = box.label;
         }
-        ctx.beginPath();
-        ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
-        ctx.strokeStyle = color_box;
-        ctx.lineWidth = 4;
-        ctx.stroke();
+        if (drawBoxSettings.drawBox) {
+            ctx.beginPath();
+            ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
+            ctx.strokeStyle = color_box;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
 
-        ctx.fillStyle = color_text;
-        ctx.fillText(text, (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height)
+        if (drawBoxSettings.drawBoxText) {
+            ctx.fillStyle = color_text;
+            ctx.fillText(text, (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height)
+        }
+        
     }
 }
 
@@ -110,7 +116,7 @@ function parseDetectBoxes2D(reader) {
     return detectBox2D
 }
 
-export default async function boxesstream(socketUrl, canvas, onMessage) {
+export default async function boxesstream(socketUrl, drawBoxSettings, onMessage) {
     const boxes = {}
     boxes.msg = {}
     boxes.msg.boxes = []
@@ -137,8 +143,8 @@ export default async function boxesstream(socketUrl, canvas, onMessage) {
             for (let i = 0; i < arrlen; i++) {
                 boxmsg.boxes.push(parseDetectBoxes2D(reader))
             }
-            if (canvas) {
-                drawBoxes(canvas, boxmsg)
+            if (drawBoxSettings) {
+                drawBoxes(drawBoxSettings, boxmsg)
             }
             boxes.msg = boxmsg
         } catch (error) {
