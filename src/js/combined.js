@@ -81,7 +81,7 @@ let show_stats = false
 
 droppedframes(socketUrlErrors, playerCanvas)
 
-function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
+function drawBoxesSpeedDistance(canvas, boxes, radar_points, drawBoxSettings) {
 
     if (!boxes) {
         return
@@ -102,15 +102,19 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
         let color_box = "white"
         let color_text = "red"
 
-        if (DRAW_BOX) {
+        let x = box.center_x;
+        if (drawBoxSettings.mirror) {
+            x = 1.0 - x
+        }
+        if (drawBoxSettings.drawBox) {
             ctx.beginPath();
-            ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
+            ctx.rect((x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
             ctx.strokeStyle = color_box;
             ctx.lineWidth = 4;
             ctx.stroke();
         }
 
-        if (DRAW_BOX_TEXT && box.text) {
+        if (drawBoxSettings.drawBoxText && box.text) {
             text = box.text
             let lines = text.split('\n');
             let lineheight = 40;
@@ -118,8 +122,8 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points) {
             ctx.fillStyle = color_text;
             ctx.lineWidth = 1;
             for (let i = 0; i < lines.length; i++) {
-                ctx.fillText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
-                ctx.strokeText(lines[i], (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+                ctx.fillText(lines[i], (x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+                ctx.strokeText(lines[i], (x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
             }
         }
     }
@@ -205,15 +209,14 @@ loader.load(
             })
         })
         let boxes;
+        let drawBoxSettings = {
+            drawBox: DRAW_BOX,
+            drawBoxText: DRAW_BOX_TEXT,
+            mirror: mirror,
+        }
         boxesstream(socketUrlDetect, null, () => {
             if (boxes && radar_points) {
-                if (mirror) {
-                    for (let box of boxes.msg.boxes) {
-                        box.center_x = 1.0 - box.center_x
-                    }
-                }
-
-                drawBoxesSpeedDistance(boxCanvas, boxes.msg.boxes, radar_points.points)
+                drawBoxesSpeedDistance(boxCanvas, boxes.msg.boxes, radar_points.points, drawBoxSettings)
             }
         }).then((b) => {
             boxes = b

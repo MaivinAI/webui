@@ -49,6 +49,7 @@ function drawBoxes(drawBoxSettings, message) {
     if (ctx == null) {
         return
     }
+
     ctx.font = "48px monospace";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -64,9 +65,15 @@ function drawBoxes(drawBoxSettings, message) {
         } else {
             text = box.label;
         }
+
+        let x = box.center_x;
+        if (drawBoxSettings.mirror) {
+            x = 1.0 - x;
+        }
+
         if (drawBoxSettings.drawBox) {
             ctx.beginPath();
-            ctx.rect((box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
+            ctx.rect((x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
             ctx.strokeStyle = color_box;
             ctx.lineWidth = 4;
             ctx.stroke();
@@ -74,7 +81,7 @@ function drawBoxes(drawBoxSettings, message) {
 
         if (drawBoxSettings.drawBoxText) {
             ctx.fillStyle = color_text;
-            ctx.fillText(text, (box.center_x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height)
+            ctx.fillText(text, (x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height)
         }
         
     }
@@ -127,6 +134,8 @@ export default async function boxesstream(socketUrl, drawBoxSettings, onMessage)
     socket.onopen = function () {
         console.log('WebSocket connection opened to ' + socketUrl);
     };
+
+
 
     socket.onmessage = (event) => {
         const arrayBuffer = event.data;

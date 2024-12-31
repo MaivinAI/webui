@@ -145,6 +145,7 @@ loader.load(
             canvas: boxCanvas,
             drawBox: DRAW_BOX,
             drawBoxText: DRAW_BOX_TEXT,
+            mirror: mirror,
         }
         boxesstream(socketUrlDetect, drawBoxSettings).then()
     },
