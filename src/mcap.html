@@ -240,6 +240,7 @@
     <script>
         let socket = null;
         let pollingInterval = 5000;
+        let currentRecordingFile = null;
 
         function connectWebSocket() {
             socket = new WebSocket('/mcap/');
@@ -284,6 +285,12 @@
                         document.getElementById('directoryPath').textContent = `Directory: ${data.dir_name}`;
 
                         const files = data.files || [];
+                        files.sort((a, b) => new Date(b.created) - new Date(a.created));
+
+                        if (document.getElementById('recordingToggle').checked && files.length > 0) {
+                            currentRecordingFile = files[0].name;
+                        }
+
                         files.forEach((file) => {
                             const row = createTableRow(file, data.dir_name);
                             fileTableBody.appendChild(row);
@@ -340,6 +347,11 @@
         }
 
         function deleteFile(fileName, directory) {
+            if (fileName === currentRecordingFile) {
+                alert('Cannot delete file while it is being recorded');
+                return;
+            }
+
             const confirmDelete = confirm(`Are you sure you want to delete: ${fileName}?`);
             const params = {
                 directory: directory,
@@ -463,6 +475,8 @@
                 })
                 .catch(error => {
                     console.error('Error checking recording status:', error);
+                    currentRecordingFile = null;
+                    updateRecordingUI(false);
                 });
         }
 
@@ -471,11 +485,10 @@
             const recordingIndicator = document.getElementById('recordingIndicator');
 
             toggle.checked = isRecording;
-            // Removed the status text update for Start/Stop
-            // statusText.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
 
             if (recordingIndicator) {
-                recordingIndicator.textContent = isRecording ? 'Recording in progress' : '';
+                recordingIndicator.textContent = isRecording ?
+                    `Recording in progress: ${currentRecordingFile || 'Starting...'}` : '';
                 recordingIndicator.style.color = isRecording ? '#e74c3c' : 'inherit';
             }
         }
@@ -514,6 +527,7 @@
                 })
                 .then(text => {
                     console.log('Recording stopped:', text);
+                    currentRecordingFile = null;
                     updateRecordingUI(false);
                     startPolling();
                 })
@@ -533,16 +547,22 @@
 
         function createTableRow(file, directoryName) {
             const row = document.createElement('tr');
+            const isRecording = currentRecordingFile === file.name;
+
             row.innerHTML = `
-                <td class="px-4 py-2">${file.name}</td>
+                <td class="px-4 py-2">${file.name}${isRecording ? ' (Recording)' : ''}</td>
                 <td class="px-4 py-2">${file.size}</td>
                 <td class="px-4 py-2">${file.created}</td>
                 <td class="px-4 py-2">${file.average_video_length.toFixed(2)}</td>
                 <td class="px-4 py-2">
                     <button class="btn btn-primary mr-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full" onclick='showModal(${JSON.stringify(file.topics)})'>Details</button>
-                    <button class="btn btn-danger mr-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full" onclick="deleteFile('${file.name}', '${directoryName}')">Delete</button>
+                    <button class="btn btn-danger mr-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full" 
+                        onclick="deleteFile('${file.name}', '${directoryName}')"
+                        ${isRecording ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                        Delete
+                    </button>
                     <button class="btn btn-success bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full" onclick="getUploadCredentials('${file.name}', '${directoryName}')">Upload</button>
-                    <a class="btn btn-info bg-blue-300 hover:bg-blue-400 text-white font-bold py-2 px-4 rounded-full"href="/download/${directoryName}/${file.name}">Download</a>
+                    <a class="btn btn-info bg-blue-300 hover:bg-blue-400 text-white font-bold py-2 px-4 rounded-full" href="/download/${directoryName}/${file.name}">Download</a>
                 </td>
             `;
             return row;

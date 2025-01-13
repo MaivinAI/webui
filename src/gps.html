@@ -26,6 +26,11 @@
             height: 100vh;
             flex: 1;
             z-index: 1;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
         #gps-data {
@@ -85,6 +90,14 @@
         .navbar-end .btn-circle.btn-lg:hover svg {
             color: #e2e8f0;
         }
+
+        .leaflet-control-container .leaflet-top {
+            top: 10px;
+        }
+
+        .leaflet-control-zoom {
+            z-index: 1000;
+        }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 </head>
@@ -140,7 +153,9 @@
         let timeoutId;
 
         function initMap() {
-            map = L.map('map');
+            map = L.map('map', {
+                zoomControl: true
+            });
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19

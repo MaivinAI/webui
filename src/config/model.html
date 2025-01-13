@@ -33,13 +33,10 @@
         }
 
         main {
-            flex: 1;
             padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            background-color: #ffffff;
+            height: calc(100vh - 64px);
             overflow-y: auto;
+            background-color: #ffffff;
         }
 
         .container {
@@ -49,8 +46,7 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             background-color: #ffffff;
-            max-height: 90vh;
-            margin-top: 20px;
+            margin: 0 auto;
         }
 
         h2 {
@@ -198,6 +194,7 @@
             justify-content: center;
             padding: 10px;
             background: linear-gradient(to top, white 60%, transparent);
+            z-index: 10;
         }
 
         /* Save Button Style */
@@ -412,24 +409,29 @@
 
             const configData = {
                 fileName: "model",
-                MODEL: document.getElementById('model').value,
-                DECODER_MODEL: document.getElementById('decoder_model').value,
-                VISUALIZATION: document.getElementById('visualization').value,
-                LABELS: document.getElementById('labels').value,
-                THRESHOLD: document.getElementById('threshold').value,
-                IOU: document.getElementById('iou').value,
-                MAX_BOXES: document.getElementById('max_boxes').value,
-                LABEL_OFFSET: document.getElementById('label_offset').value,
-                ENGINE: document.getElementById('engine').value,
-                TRACK: document.getElementById('track').value,
-                TRACK_EXTRA_LIFESPAN: document.getElementById('trackExtraLifespan').value,
-                TRACK_HIGH_CONF: document.getElementById('track_high_conf').value,
-                TRACK_IOU: document.getElementById('track_iou').value,
-                TRACK_UPDATE: document.getElementById('track_update').value,
-                MASK_COMPRESSION: document.getElementById('mask_compression').value,
-                VIV_VX_ENABLE_CACHE_GRAPH_BINARY: document.getElementById('viv_vx_enable_cache').value,
-                VIV_VX_CACHE_BINARY_GRAPH_DIR: document.getElementById('viv_vx_cache_dir').value
+                MODEL: document.getElementById('model')?.value,
+                VISUALIZATION: document.getElementById('visualization')?.value,
+                LABELS: document.getElementById('labels')?.value,
+                THRESHOLD: document.getElementById('threshold')?.value,
+                IOU: document.getElementById('iou')?.value,
+                MAX_BOXES: document.getElementById('max_boxes')?.value,
+                LABEL_OFFSET: document.getElementById('label_offset')?.value,
+                ENGINE: document.getElementById('engine')?.value,
+                TRACK: document.getElementById('track')?.value,
+                TRACK_EXTRA_LIFESPAN: document.getElementById('trackExtraLifespan')?.value,
+                TRACK_HIGH_CONF: document.getElementById('track_high_conf')?.value,
+                TRACK_IOU: document.getElementById('track_iou')?.value,
+                TRACK_UPDATE: document.getElementById('track_update')?.value,
+                MASK_COMPRESSION: document.getElementById('mask_compression')?.value,
+                VIV_VX_ENABLE_CACHE_GRAPH_BINARY: document.getElementById('viv_vx_enable_cache')?.value,
+                VIV_VX_CACHE_BINARY_GRAPH_DIR: document.getElementById('viv_vx_cache_dir')?.value
             };
+
+            Object.keys(configData).forEach(key => {
+                if (configData[key] === undefined) {
+                    delete configData[key];
+                }
+            });
 
             fetch('/config/model', {
                 method: 'POST',
@@ -440,9 +442,8 @@
             })
                 .then(response => {
                     loadingOverlay.style.display = 'none';
-                    if (response.ok) {
-                    } else {
-                        alert('Error saving configuration');
+                    if (!response.ok) {
+                        throw new Error('Failed to save configuration');
                     }
                 })
                 .catch(error => {
@@ -453,7 +454,12 @@
         };
 
         function setInputValue(elementId, value, defaultValue) {
-            document.getElementById(elementId).value = value || defaultValue;
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.value = value ?? defaultValue;
+            } else {
+                console.warn(`Element with id '${elementId}' not found`);
+            }
         }
     </script>
 </body>

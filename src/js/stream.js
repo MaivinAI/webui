@@ -1,25 +1,41 @@
-
 import * as THREE from './three.js';
 import { CdrReader } from './Cdr.js';
 export default async function h264stream(socketUrl, width, height, fps, onMessage) {
 
     const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
     canvas.hidden = false;
     const ctx = canvas.getContext("2d");
+
+    canvas.width = width || 1920;
+    canvas.height = height || 1080;
 
     const texture_canvas = new THREE.CanvasTexture(canvas);
     texture_canvas.needsUpdate = false
     let start = performance.now()
     let h264decoder = new VideoDecoder({
         output: (videoFrame) => {
-            ctx.drawImage(videoFrame, 0, 0);
-            if (onMessage) {
-                timing.decode_time = performance.now() - start
-                onMessage(timing)
+            const width = videoFrame.displayWidth || videoFrame.codedWidth || 0;
+            const height = videoFrame.displayHeight || videoFrame.codedHeight || 0;
+
+
+            if (width > 0 && height > 0) {
+                if (canvas.width !== width || canvas.height !== height) {
+                    canvas.width = width;
+                    canvas.height = height;
+                    console.log('Canvas resized to:', width, height);
+                }
+                ctx.drawImage(videoFrame, 0, 0);
+
+                texture_canvas.dispose();
+                texture_canvas.needsUpdate = true;
+
+                if (onMessage) {
+                    timing.decode_time = performance.now() - start;
+                    onMessage(timing);
+                }
+            } else {
+                console.warn('Invalid video frame dimensions:', width, height);
             }
-            texture_canvas.needsUpdate = true;
             videoFrame.close()
         },
         error: e => console.error(e)
@@ -56,7 +72,6 @@ export default async function h264stream(socketUrl, width, height, fps, onMessag
                 console.error("Failed to deserialize image data:", error);
                 return;
             }
-            // console.log(image_data)
             const chunk = new EncodedVideoChunk({
                 type: "key",
                 timestamp: framesProcessed * (1000 / fps),
@@ -67,12 +82,26 @@ export default async function h264stream(socketUrl, width, height, fps, onMessag
                 console.error("decoder state:", h264decoder.state);
                 h264decoder = new VideoDecoder({
                     output: (videoFrame) => {
-                        ctx.drawImage(videoFrame, 0, 0);
-                        if (onMessage) {
-                            timing.decode_time = performance.now() - start
-                            onMessage(timing)
+                        const width = videoFrame.displayWidth || videoFrame.codedWidth || 0;
+                        const height = videoFrame.displayHeight || videoFrame.codedHeight || 0;
+
+                        if (width > 0 && height > 0) {
+                            if (canvas.width !== width || canvas.height !== height) {
+                                canvas.width = width;
+                                canvas.height = height;
+                            }
+                            ctx.drawImage(videoFrame, 0, 0);
+
+                            texture_canvas.dispose();
+                            texture_canvas.needsUpdate = true;
+
+                            if (onMessage) {
+                                timing.decode_time = performance.now() - start;
+                                onMessage(timing);
+                            }
+                        } else {
+                            console.warn('Invalid video frame dimensions:', width, height);
                         }
-                        texture_canvas.needsUpdate = true;
                         videoFrame.close()
                     },
                     error: e => console.error(e)
