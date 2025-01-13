@@ -124,9 +124,7 @@ loader.load(
 
         get_shape(socketUrlMask, (height, width, length, mask) => {
             const classes = Math.round(mask.length / height / width)
-            segstream(socketUrlMask, height, width, classes, () => {
-                modelFPSUpdate();
-            }).then((texture_mask) => {
+            segstream(socketUrlMask, height, width, classes, modelFPSUpdate).then((texture_mask) => {
                 material_mask = new ProjectedMask({
                     camera: camera, // the camera that acts as a projector
                     texture: texture_mask, // the texture being projected
