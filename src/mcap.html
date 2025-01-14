@@ -256,12 +256,12 @@
 
                 fileTableBody.innerHTML = '';
 
-                checkRecordingStatus()
+                checkRecordingStatus();
 
                 try {
                     const data = JSON.parse(responseText);
                     if (data.error) {
-                        document.getElementById('directoryPath').textContent = `Directory: ${data.dir_name}`;
+                        document.getElementById('directoryPath').textContent = 'Directory Not Defined';
                         console.error('Error:', data.error);
                         const errorRow = document.createElement('tr');
                         const errorCell = document.createElement('td');
@@ -494,6 +494,15 @@
         }
 
         function startRecording() {
+            const directoryPathText = document.getElementById('directoryPath').textContent;
+            if (directoryPathText.includes('Directory Not Defined')) {
+                const proceed = confirm('No directory is currently defined. A new directory will be created for recordings. Do you want to continue?');
+                if (!proceed) {
+                    document.getElementById('recordingToggle').checked = false;
+                    return;
+                }
+            }
+
             fetch('/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

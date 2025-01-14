@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCAP Recorder Configuration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="../css/styles.css" rel="stylesheet">
     <link href="../css/full.css" rel="stylesheet" type="text/css" />
     <script src="../js/tailwind.js"></script>
@@ -267,6 +270,130 @@
             align-items: center;
             margin: 0;
         }
+
+        .storage-options {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .storage-btn {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            background-color: white;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .info-icon {
+            cursor: pointer;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 8px;
+            transition: color 0.3s ease;
+            width: 20px;
+            height: 20px;
+        }
+
+        .storage-btn:hover {
+            background-color: #f7fafc;
+            transform: translateY(-2px);
+        }
+
+        .storage-btn.selected {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+            color: #2563eb;
+        }
+
+        .storage-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .storage-btn:disabled:hover {
+            background-color: white;
+            transform: none;
+        }
+
+        .storage-btn:hover .info-icon {
+            color: #2563eb;
+        }
+
+        .storage-btn.selected .info-icon {
+            color: #2563eb;
+        }
+
+        .storage-btn:disabled .info-icon {
+            color: #9ca3af;
+        }
+
+        .storage-info-dialog {
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .storage-info-dialog::backdrop {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .dialog-content {
+            padding: 20px;
+            min-width: 300px;
+        }
+
+        .dialog-content h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: #2563eb;
+            font-size: 1.2rem;
+        }
+
+        .storage-info-item {
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .storage-info-label {
+            color: #4b5563;
+            font-weight: 500;
+        }
+
+        .storage-info-value {
+            color: #1f2937;
+        }
+
+        .dialog-close-btn {
+            margin-top: 16px;
+            padding: 8px 16px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .dialog-close-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .info-icon {
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -277,7 +404,7 @@
                     alt=""></a>
         </div>
         <div class="navbar-center">
-            <span class="text-xl">MCAP Configuration</span>
+            <span class="text-xl">MCAP Configuration <i class="fa-solid fa-gear"></i></span>
         </div>
         <div class="navbar-end">
             <ul class="menu menu-horizontal px-1">
@@ -299,8 +426,26 @@
             <h2>MCAP Recorder Configuration</h2>
 
             <div class="form-group">
-                <label for="storage">Storage Location:</label>
-                <input type="text" id="storage" name="storage" placeholder="/home/torizon/recordings">
+                <label>Storage Location:</label>
+                <div class="storage-options">
+                    <button type="button" class="storage-btn selected" data-path="/home/torizon/recordings">
+                        Internal Storage
+                        <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                            height="16">
+                            <path fill="currentColor"
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                        </svg>
+                    </button>
+                    <button type="button" class="storage-btn" data-path="/media/DATA">
+                        External Storage
+                        <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                            height="16">
+                            <path fill="currentColor"
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                        </svg>
+                    </button>
+                </div>
+                <input type="hidden" id="storage" name="storage" value="/home/torizon/recordings">
             </div>
 
             <div class="form-group">
@@ -443,35 +588,17 @@
         </div>
     </div>
 
+    <dialog id="storageInfoDialog" class="storage-info-dialog">
+        <div class="dialog-content">
+            <h3>Storage Information</h3>
+            <div id="storageInfoContent"></div>
+            <button onclick="document.getElementById('storageInfoDialog').close()"
+                class="dialog-close-btn">Close</button>
+        </div>
+    </dialog>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Setup search functionality
-            const searchInput = document.getElementById('topicSearch');
-            if (searchInput) {
-                searchInput.addEventListener('input', function () {
-                    const searchTerm = this.value.toLowerCase();
-                    const topicItems = document.querySelectorAll('.topic-item');
-
-                    topicItems.forEach(item => {
-                        // Reset display to 'flex' if search is empty
-                        if (searchTerm === '') {
-                            // Only show if it's not a RAIVIN topic on MAIVIN device
-                            if (!item.hasAttribute('data-hidden-by-device')) {
-                                item.style.display = 'flex';
-                            }
-                        } else {
-                            const topicText = item.querySelector('span').textContent.toLowerCase();
-                            // Only show if it matches search and isn't hidden by device type
-                            if (topicText.includes(searchTerm) && !item.hasAttribute('data-hidden-by-device')) {
-                                item.style.display = 'flex';
-                            } else {
-                                item.style.display = 'none';
-                            }
-                        }
-                    });
-                });
-            }
-
             // First fetch device type
             fetch('/config/webui/details')
                 .then(response => response.json())
@@ -506,12 +633,124 @@
                         });
                     }
                 })
+                .then(() => {
+                    return fetch('/check-storage')
+                        .then(response => response.json())
+                        .then(data => {
+                            const externalStorageBtn = document.querySelector('.storage-btn[data-path="/media/DATA"]');
+                            const internalStorageBtn = document.querySelector('.storage-btn[data-path="/home/torizon/recordings"]');
+
+                            if (externalStorageBtn && internalStorageBtn) {
+                                externalStorageBtn.dataset.path = data.external.path;
+                                internalStorageBtn.dataset.path = data.internal.path;
+
+                                if (data.internal && data.internal.available_space) {
+                                    addStorageInfo(internalStorageBtn, data.internal);
+                                }
+                                if (data.external && data.external.available_space) {
+                                    addStorageInfo(externalStorageBtn, data.external);
+                                }
+
+                                const external_available = data.sd_card_present &&
+                                    data.sd_card_mounted &&
+                                    data.sd_card_formatted;
+
+                                if (!external_available) {
+                                    externalStorageBtn.disabled = true;
+                                    externalStorageBtn.style.opacity = '0.5';
+                                    externalStorageBtn.style.cursor = 'not-allowed';
+
+                                    let errorMessage = 'External storage not available: ';
+                                    if (!data.sd_card_present) errorMessage += 'SD card not present';
+                                    else if (!data.sd_card_mounted) errorMessage += 'SD card not mounted';
+                                    else if (!data.sd_card_formatted) errorMessage += 'SD card not formatted';
+                                    externalStorageBtn.title = errorMessage;
+
+                                    if (externalStorageBtn.classList.contains('selected')) {
+                                        externalStorageBtn.classList.remove('selected');
+                                        internalStorageBtn.classList.add('selected');
+                                        document.getElementById('storage').value = data.internal.path;
+                                    }
+                                }
+                            }
+                        });
+                })
                 .then(() => fetchConfigDetails())
                 .catch(error => {
-                    console.error('Error fetching device type:', error);
+                    console.error('Error in initialization:', error);
                     fetchConfigDetails();
                 });
         });
+
+        function addStorageInfo(button, storageData) {
+            if (!button || !storageData || !storageData.available_space || !storageData.total_space) {
+                console.warn('Missing required data for storage info');
+                return;
+            }
+
+            const infoIcon = button.querySelector('.info-icon');
+            if (!infoIcon) {
+                console.warn('Info icon not found in button');
+                return;
+            }
+
+            const usedSpace = {
+                value: (storageData.total_space.value - storageData.available_space.value).toFixed(2),
+                unit: storageData.total_space.unit
+            };
+
+            const usedPercentage = ((usedSpace.value / storageData.total_space.value) * 100).toFixed(2);
+
+            button.title = storageData.path;
+            infoIcon.setAttribute('data-tooltip', 'Click for storage details');
+
+            infoIcon.addEventListener('mouseover', function (e) {
+                this.title = this.getAttribute('data-tooltip');
+                button.title = '';
+            });
+
+            infoIcon.addEventListener('mouseout', function (e) {
+                this.title = '';
+                button.title = storageData.path;
+            });
+
+            infoIcon.onclick = function (e) {
+                e.stopPropagation();
+                showStorageDialog({
+                    available: `${storageData.available_space.value.toFixed(2)} ${storageData.available_space.unit}`,
+                    used: `${usedSpace.value} ${usedSpace.unit}`,
+                    usedPercentage: `${usedPercentage}%`,
+                    total: `${storageData.total_space.value.toFixed(2)} ${storageData.total_space.unit}`,
+                    path: storageData.path
+                });
+            };
+        }
+
+        function showStorageDialog(info) {
+            const dialog = document.getElementById('storageInfoDialog');
+            const content = document.getElementById('storageInfoContent');
+
+            content.innerHTML = `
+                <div class="storage-info-item">
+                    <span class="storage-info-label">Available Space:</span>
+                    <span class="storage-info-value">${info.available}</span>
+                </div>
+                <div class="storage-info-item">
+                    <span class="storage-info-label">Used Space:</span>
+                    <span class="storage-info-value">${info.used} (${info.usedPercentage})</span>
+                </div>
+                <div class="storage-info-item">
+                    <span class="storage-info-label">Total Space:</span>
+                    <span class="storage-info-value">${info.total}</span>
+                </div>
+                <div class="storage-info-item">
+                    <span class="storage-info-label">Path:</span>
+                    <span class="storage-info-value">${info.path}</span>
+                </div>
+            `;
+
+            dialog.showModal();
+        }
 
         function fetchConfigDetails() {
             fetch(`/config/recorder/details`, {
@@ -532,7 +771,17 @@
         }
 
         function updateConfigFields(data) {
-            document.getElementById('storage').value = data.STORAGE || '';
+            const storagePath = data.STORAGE || '';
+            document.getElementById('storage').value = storagePath;
+
+            const storageButtons = document.querySelectorAll('.storage-btn');
+            storageButtons.forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.dataset.path === storagePath) {
+                    btn.classList.add('selected');
+                }
+            });
+
             document.getElementById('compression').value = data.COMPRESSION || '';
             const topics = Array.isArray(data.TOPICS) ? data.TOPICS : (data.TOPICS || '').split(' ');
             topics.forEach(checkTopic);
@@ -579,6 +828,59 @@
                     console.error('Error saving config:', error);
                     alert('Error saving configuration');
                 });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const storageButtons = document.querySelectorAll('.storage-btn');
+            const storageInput = document.getElementById('storage');
+
+            storageButtons.forEach(btn => {
+                if (btn.dataset.path === storageInput.value) {
+                    btn.classList.add('selected');
+                }
+            });
+            storageButtons.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    storageButtons.forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    storageInput.value = this.dataset.path;
+                });
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('topicSearch');
+            const topicsContainer = document.getElementById('topicsContainer');
+
+            searchInput.addEventListener('input', function (e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const topicItems = topicsContainer.getElementsByClassName('topic-item');
+
+                Array.from(topicItems).forEach(item => {
+                    const topicText = item.querySelector('span').textContent.toLowerCase();
+                    const shouldShow = topicText.includes(searchTerm);
+
+                    // Don't hide items that are hidden by device type
+                    if (item.getAttribute('data-hidden-by-device') === 'true') {
+                        return;
+                    }
+
+                    item.style.display = shouldShow ? '' : 'none';
+                });
+            });
+
+            // Clear search when input is cleared
+            searchInput.addEventListener('search', function () {
+                if (this.value === '') {
+                    Array.from(topicsContainer.getElementsByClassName('topic-item')).forEach(item => {
+                        // Don't show items that are hidden by device type
+                        if (item.getAttribute('data-hidden-by-device') === 'true') {
+                            return;
+                        }
+                        item.style.display = '';
+                    });
+                }
+            });
         });
     </script>
 </body>
