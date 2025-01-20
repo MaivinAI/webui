@@ -144,6 +144,17 @@
         </div>
         <div class="navbar-end">
             <div class="flex items-center gap-4">
+                <!-- Add the recorder indicator -->
+                <div id="recorderIndicator" class="hidden relative group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="8" />
+                    </svg>
+                    <!-- Tooltip -->
+                    <div
+                        class="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                        Recording
+                    </div>
+                </div>
                 <!-- Mode Indicator with Tooltip -->
                 <div class="relative group" id="statusContainer">
                     <div class="flex items-center gap-2">
@@ -442,6 +453,48 @@
             statusCheckInterval = setInterval(checkReplayStatus, 5000);
         });
 
+        window.addEventListener('beforeunload', () => {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+        });
+
+        // Add the checkRecorderStatus function
+        async function checkRecorderStatus() {
+            try {
+                const response = await fetch('/recorder-status');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const statusText = await response.text();
+                const isRecording = statusText.trim() === "Recorder is running";
+
+                const recorderIndicator = document.getElementById('recorderIndicator');
+
+                if (isRecording) {
+                    recorderIndicator.classList.remove('hidden');
+                    recorderIndicator.className = "text-red-600 animate-pulse relative group";
+                } else {
+                    recorderIndicator.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Error checking recorder status:', error);
+                const recorderIndicator = document.getElementById('recorderIndicator');
+                recorderIndicator.classList.add('hidden');
+            }
+        }
+
+        // Update the window load event listener to include recorder status check
+        window.addEventListener('load', async () => {
+            await checkReplayStatus();
+            await checkRecorderStatus();
+            statusCheckInterval = setInterval(async () => {
+                await checkReplayStatus();
+                await checkRecorderStatus();
+            }, 5000);
+        });
+
+        // Add cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (statusCheckInterval) {
                 clearInterval(statusCheckInterval);
