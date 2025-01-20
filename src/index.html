@@ -412,9 +412,9 @@
                 }, {});
 
                 const isCameraDown = !statusMap['camera'] || statusMap['camera'] !== 'running';
-                const isRadarDown = !statusMap['radarpub'] || statusMap['radarpub'] !== 'running';
-                const isDegraded = (isRaivin && isRadarDown) || isCameraDown;
-                const isCritical = isCameraDown && isRadarDown;
+                const isradarpubDown = !statusMap['radarpub'] || statusMap['radarpub'] !== 'running';
+                const isDegraded = (isRaivin && isradarpubDown) || isCameraDown;
+                const isCritical = isCameraDown && (isRaivin && isradarpubDown);
 
                 const replayResponse = await fetch('/replay-status');
                 if (!replayResponse.ok) {

@@ -541,7 +541,7 @@
         let currentRecordingFile = null;
         let currentPlayingFile = null;
         let isPlaying = false;
-        let statusCheckInterval;
+        let statusCheckInterval = 1000; // 1 second
         const REPLAY_STATUS_INTERVAL = 1000;
         let deviceName = null;
 
@@ -759,7 +759,7 @@
                 const isCameraDown = !statusMap['camera'] || statusMap['camera'] !== 'running';
                 const isradarpubDown = !statusMap['radarpub'] || statusMap['radarpub'] !== 'running';
                 const isDegraded = (isRaivin && isradarpubDown) || isCameraDown;
-                const isCritical = isCameraDown && isradarpubDown;
+                const isCritical = isCameraDown && (isRaivin && isradarpubDown);
 
                 // Check replay status
                 const replayResponse = await fetch('/replay-status');
@@ -1501,24 +1501,38 @@
                     return response.text();
                 })
                 .then(statusText => {
-                    isPlaying = statusText.trim() === "Replay is running";
-                    document.getElementById('liveToggle').checked = !isPlaying;
+                    const status = statusText.trim();
+                    isPlaying = status === "Replay is running";
+
+                    // Update status display - fix selector to match the actual element
+                    const statusElement = document.querySelector('[data-status]');
+                    if (statusElement) {
+                        statusElement.textContent = isPlaying ? "Playing" : "Live";
+                    }
+
+                    // Force live toggle to match actual state
+                    const liveToggle = document.getElementById('liveToggle');
+                    if (liveToggle) {
+                        liveToggle.checked = !isPlaying;
+                    }
+
+                    // Debug logging
+                    console.log('Status update:', {
+                        status: status,
+                        isPlaying: isPlaying,
+                        statusElementFound: !!statusElement,
+                        liveToggleFound: !!liveToggle,
+                        liveToggleState: liveToggle ? liveToggle.checked : 'not found'
+                    });
 
                     if (isPlaying) {
                         return fetch('/config/replay/details')
-                            .then(response => {
-                                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-                                return response.json();
-                            })
+                            .then(response => response.json())
                             .then(config => {
                                 if (config.MCAP) {
-                                    const mcapPath = config.MCAP;
-                                    currentPlayingFile = mcapPath.split('/').pop();
-                                    listMcapFiles();
-                                } else {
-                                    currentPlayingFile = null;
-                                    listMcapFiles();
+                                    currentPlayingFile = config.MCAP.split('/').pop();
                                 }
+                                listMcapFiles();
                             });
                     } else {
                         currentPlayingFile = null;
@@ -1527,9 +1541,14 @@
                 })
                 .catch(error => {
                     console.error('Error checking playback status:', error);
-                    isPlaying = false;
-                    currentPlayingFile = null;
-                    listMcapFiles();
+                    const statusElement = document.querySelector('[data-status]');
+                    if (statusElement) {
+                        statusElement.textContent = "Error";
+                    }
+                    const liveToggle = document.getElementById('liveToggle');
+                    if (liveToggle) {
+                        liveToggle.checked = true;
+                    }
                 });
         }
 
@@ -1574,8 +1593,8 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             connectWebSocket();
-            checkReplayStatus();
-            statusCheckInterval = setInterval(checkReplayStatus, REPLAY_STATUS_INTERVAL);
+            checkPlaybackStatus();
+            statusCheckInterval = setInterval(checkPlaybackStatus, REPLAY_STATUS_INTERVAL);
         });
 
         window.addEventListener('beforeunload', () => {
@@ -1675,6 +1694,30 @@
             dialog.style.display = 'none';
             dialog.classList.add('hidden');
         };
+
+        function playMcap(filename) {
+            fetch('/replay/play', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ filename: filename })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                    // Update live toggle immediately after successful play request
+                    const liveToggle = document.getElementById('liveToggle');
+                    if (liveToggle) {
+                        liveToggle.checked = false;
+                    }
+                    return response.text();
+                })
+                .catch(error => {
+                    console.error('Error playing MCAP:', error);
+                });
+        }
     </script>
 </body>
 

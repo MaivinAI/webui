@@ -404,7 +404,7 @@
                 const isCameraDown = !statusMap['camera'] || statusMap['camera'] !== 'running';
                 const isradarpubDown = !statusMap['radarpub'] || statusMap['radarpub'] !== 'running';
                 const isDegraded = (isRaivin && isradarpubDown) || isCameraDown;
-                const isCritical = isCameraDown && isradarpubDown;
+                const isCritical = isCameraDown && (isRaivin && isradarpubDown);
 
                 // Check replay status
                 const replayResponse = await fetch('/replay-status');
