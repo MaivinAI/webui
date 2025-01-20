@@ -317,15 +317,15 @@
         </div>
         <div class="navbar-end">
             <ul class="menu menu-horizontal px-1">
-                </li>
-                <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="w-8 h-8">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </a>
+            </ul>li>
+            <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </a></li>
             </ul>
         </div>
     </header>
@@ -333,12 +333,22 @@
         <div class="card">
             <h2 class="text-2xl font-bold mb-4">Recording Controls</h2>
             <div class="recording-controls">
-                <div class="flex items-center">
-                    <span id="recordingStatus" class="font-bold mr-2">Recording</span> <!-- Updated text position -->
-                    <label class="switch mr-4">
-                        <input type="checkbox" id="recordingToggle">
-                        <span class="slider"></span>
-                    </label>
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center">
+                        <span id="recordingStatus" class="font-bold mr-2">Recording</span>
+                        <label class="switch mr-4">
+                            <input type="checkbox" id="recordingToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center">
+                        <span class="font-bold mr-2">Live Feed</span>
+                        <label class="switch mr-4">
+                            <input type="checkbox" id="liveToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="recording-indicator" id="recordingIndicator"></div>
             </div>
@@ -370,12 +380,156 @@
         <div id="modalDetails"></div>
     </dialog>
 
+    <dialog id="loadingDialog" class="modal">
+        <div class="modal-box flex flex-col items-center p-6 bg-white rounded-lg shadow-xl">
+            <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
+            <p class="text-lg font-semibold text-gray-700">Switching to Live Mode...</p>
+            <p class="text-sm text-gray-500">Please wait while the system transitions.</p>
+        </div>
+    </dialog>
+
     <script>
         let socket = null;
         let pollingInterval = 5000;
         let currentRecordingFile = null;
         let currentPlayingFile = null;
         let isPlaying = false;
+        let statusCheckInterval;
+        const REPLAY_STATUS_INTERVAL = 1000;
+        let deviceName = null;
+
+        async function fetchDeviceName() {
+            try {
+                const response = await fetch('/config/webui/details');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                deviceName = data.DEVICE;
+                console.log('Device name:', deviceName);
+            } catch (error) {
+                console.error('Error fetching device name:', error);
+            }
+        }
+
+        function showLoading() {
+            const loadingDialog = document.getElementById('loadingDialog');
+            loadingDialog.showModal();
+        }
+
+        function hideLoading() {
+            const loadingDialog = document.getElementById('loadingDialog');
+            loadingDialog.close();
+        }
+
+        async function handleLiveToggle(event) {
+            const isLive = event.target.checked;
+
+            // If trying to switch from live to replay mode (isLive becomes false)
+            if (!isLive) {
+                event.target.checked = true; // Keep the toggle in live mode
+                alert('Please select an MCAP file from below to enter replay mode');
+                return;
+            }
+
+            if (!deviceName) {
+                console.error('Device name not available');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/live-run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        target: isLive ? deviceName.toLowerCase() : 'replay',
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 5000));
+
+                const transitionCheck = setInterval(async () => {
+                    try {
+                        const statusResponse = await fetch('/replay-status');
+                        const statusText = await statusResponse.text();
+                        const currentStatus = statusText.trim() === "Replay is running";
+
+                        if (currentStatus !== isLive) {  // System has finished transitioning
+                            clearInterval(transitionCheck);
+                            hideLoading();
+                        }
+                    } catch (error) {
+                        console.error('Error checking status during transition:', error);
+                    }
+                }, 1000);
+
+                setTimeout(() => {
+                    clearInterval(transitionCheck);
+                    hideLoading();
+                }, 30000);
+
+            } catch (error) {
+                console.error('Error switching mode:', error);
+                event.target.checked = !isLive;
+                hideLoading();
+                alert('Error switching modes. Please try again.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchDeviceName();
+            connectWebSocket();
+            checkReplayStatus();
+            statusCheckInterval = setInterval(checkReplayStatus, REPLAY_STATUS_INTERVAL);
+
+            const liveToggle = document.getElementById('liveToggle');
+            if (liveToggle) {
+                liveToggle.addEventListener('change', handleLiveToggle);
+            }
+        });
+
+        async function checkReplayStatus() {
+            try {
+                const response = await fetch('/replay-status');
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                const statusText = await response.text();
+                isPlaying = statusText.trim() === "Replay is running";
+
+                const liveToggle = document.getElementById('liveToggle');
+                if (liveToggle.checked === isPlaying) {
+                    liveToggle.checked = !isPlaying;
+                }
+
+                if (isPlaying) {
+                    const configResponse = await fetch('/config/replay/details');
+                    if (configResponse.ok) {
+                        const config = await configResponse.json();
+                        if (config.MCAP) {
+                            currentPlayingFile = config.MCAP.split('/').pop();
+                            listMcapFiles();
+                        }
+                    }
+                } else {
+                    currentPlayingFile = null;
+                    listMcapFiles();
+                }
+            } catch (error) {
+                console.error('Error checking replay status:', error);
+                isPlaying = false;
+                currentPlayingFile = null;
+                listMcapFiles();
+            }
+        }
 
         function connectWebSocket() {
             socket = new WebSocket('/mcap/');
@@ -800,8 +954,6 @@
                     </div>
                 </div>
             `;
-
-            // Add click handlers for the buttons
             const fusionBtns = content.querySelectorAll('.fusion-btn');
             const modelBtns = content.querySelectorAll('.model-btn');
 
@@ -853,9 +1005,6 @@
             if (modelIsLive) ignoreTopics.push("/model/*");
             config.IGNORE_TOPICS = ignoreTopics.join(" ");
 
-            console.log("Sending config:", config); // Debug log
-
-            // Send configuration update
             fetch('/config/replay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -895,7 +1044,6 @@
 
         function togglePlayMcap(fileName, directory, options = null) {
             if (isPlaying && currentPlayingFile === fileName) {
-                // First clear the configuration
                 fetch('/config/replay', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -910,7 +1058,6 @@
                         return response.text();
                     })
                     .then(() => {
-                        // Then stop the fusion service
                         return fetch('/replay-end', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -927,12 +1074,11 @@
                         listMcapFiles();
                     })
                     .catch(error => {
-                        console.error('Error stopping fusion:', error);
-                        alert(`Error stopping fusion: ${error.message}`);
+                        console.error('Error stopping replay:', error);
+                        alert(`Error stopping replay: ${error.message}`);
                     });
             } else if (!isPlaying) {
                 if (!options) {
-                    // Find the file details from the table
                     const fileRows = document.querySelectorAll('#fileTableBody tr');
                     let fileDetails = null;
 
@@ -986,7 +1132,6 @@
             const tbody = document.getElementById('fileTableBody');
             tbody.innerHTML = '';
 
-            // Sort files to put playing file first
             const sortedFiles = [...files].sort((a, b) => {
                 if (a.name === currentPlayingFile) return -1;
                 if (b.name === currentPlayingFile) return 1;
@@ -1004,7 +1149,6 @@
             const isRecording = currentRecordingFile === file.name;
             const isCurrentlyPlaying = file.name === currentPlayingFile;
 
-            // Base button style
             const buttonBase = "w-10 h-10 inline-flex items-center justify-center rounded-full transition-all duration-200";
             const buttonStyles = {
                 play: `${buttonBase} ${isCurrentlyPlaying ? 'bg-[#dc3545] hover:bg-red-600' : 'bg-[#4285f4] hover:bg-blue-600'} text-white`,
@@ -1085,6 +1229,7 @@
                 })
                 .then(statusText => {
                     isPlaying = statusText.trim() === "Replay is running";
+                    document.getElementById('liveToggle').checked = !isPlaying;
 
                     if (isPlaying) {
                         return fetch('/config/replay/details')
@@ -1096,7 +1241,6 @@
                                 if (config.MCAP) {
                                     const mcapPath = config.MCAP;
                                     currentPlayingFile = mcapPath.split('/').pop();
-                                    console.log("Set current playing file to:", currentPlayingFile); // Debug log
                                     listMcapFiles();
                                 } else {
                                     currentPlayingFile = null;
@@ -1116,7 +1260,56 @@
                 });
         }
 
-        connectWebSocket();
+        document.getElementById('liveToggle').addEventListener('change', function () {
+            if (this.checked) {
+                fetch('/config/replay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: "replay",
+                        MCAP: "",
+                        IGNORE_TOPICS: ""
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                        return response.text();
+                    })
+                    .then(() => {
+                        return fetch('/replay-end', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ file: currentPlayingFile, directory: "" })
+                        });
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                        return response.text();
+                    })
+                    .then(() => {
+                        isPlaying = false;
+                        currentPlayingFile = null;
+                        listMcapFiles();
+                    })
+                    .catch(error => {
+                        console.error('Error switching to live feed:', error);
+                        alert(`Error switching to live feed: ${error.message}`);
+                        this.checked = false;
+                    });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+            checkReplayStatus();
+            statusCheckInterval = setInterval(checkReplayStatus, REPLAY_STATUS_INTERVAL);
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+        });
     </script>
 </body>
 
