@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <p id="timeout" style="color: red;"></p>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Au-Zone demo</title>
+    <link href="./css/styles.css" rel="stylesheet">
+    <link href="./css/full.css" rel="stylesheet" type="text/css" />
+
+    <script src="./js/tailwind.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+        }
+
+        main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        #container {
+            margin: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: center;
+            overflow: hidden;
+            background-color: black;
+        }
+
+        #test {
+            width: 100%;
+            height: 100%;
+            /* height:width ratio = 9/16 = .5625  */
+            max-height: 100%;
+            max-width: 100%;
+            /* 16/9 = 1.778 */
+            margin: auto;
+            position: relative;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #player_div {
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            max-width: 100%;
+            flex: 1 20 80%;
+            display: flex;
+            align-items: middle;
+            background-color: #a0a0a0;
+        }
+
+        #player {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            position: relative;
+            bottom: 0px;
+        }
+
+        #boxes {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        #toggleButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+        }
+
+        .navbar-end .btn-circle svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .navbar-end .btn-circle:hover svg {
+            color: #e2e8f0;
+        }
+
+        .navbar-end .menu {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-end .btn-circle.btn-lg {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .navbar-end .btn-circle.btn-lg svg {
+            margin-top: -5px;
+            width: 25px;
+            height: 25px;
+            color: white;
+        }
+
+        .navbar-end .btn-circle.btn-lg:hover svg {
+            color: #e2e8f0;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="assets/auzoneLogo.svg"
+                    alt=""></a>
+        </div>
+        <div class="navbar-center">
+            <span class="text-xl">Camera</span>
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                </li>
+                <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-8 h-8">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </a>
+            </ul>
+        </div>
+    </header>
+    <main id="container">
+        <div id="test">
+            <div id="player_div">
+                <canvas id="player"></canvas>
+                <canvas id="boxes"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import h264stream from './js/streamH264.js';
+
+        const canvas = document.getElementById('player');
+        h264stream('/rt/camera/h264/', 1920, 1080, 30, canvas);
+    </script>
+</body>
+
+</html>

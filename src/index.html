@@ -142,6 +142,91 @@
         .navbar-end .btn-circle.btn-lg:hover svg {
             color: #e2e8f0;
         }
+
+        #modeIndicator {
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        #serviceStatusTooltip {
+            transition: all 0.2s ease;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        #serviceStatusContent {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E0 #EDF2F7;
+        }
+
+        #serviceStatusContent::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #serviceStatusContent::-webkit-scrollbar-track {
+            background: #EDF2F7;
+            border-radius: 3px;
+        }
+
+        #serviceStatusContent::-webkit-scrollbar-thumb {
+            background-color: #CBD5E0;
+            border-radius: 3px;
+        }
+
+        .service-status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        #statusContainer:hover #serviceStatusTooltip {
+            display: block;
+        }
+
+        #modeIndicator button {
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        #modeIndicator:hover button {
+            opacity: 1;
+        }
+
+        #modeIndicator svg {
+            stroke: currentColor;
+        }
+
+        #serviceDialog {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        #serviceDialogContent {
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E0 #EDF2F7;
+        }
+
+        #serviceDialogContent::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #serviceDialogContent::-webkit-scrollbar-track {
+            background: #EDF2F7;
+            border-radius: 3px;
+        }
+
+        #serviceDialogContent::-webkit-scrollbar-thumb {
+            background-color: #CBD5E0;
+            border-radius: 3px;
+        }
     </style>
 </head>
 
@@ -149,23 +234,114 @@
     <header class="navbar bg-base-100">
         <div class="navbar-start">
             <a href="/" class="btn btn-ghost text-xl">
-                <img class="header__logo me-2" src="assets/auzoneLogo.svg" alt="" width="200" height="100">
+                <img class="header__logo me-2" src="assets/auzoneLogo.svg" alt="">
             </a>
         </div>
-        <div class="navbar-center"></div>
+        <div class="navbar-center">
+            <span class="text-xl">Select Visualization</span>
+        </div>
         <div class="navbar-end">
-            <ul class="menu menu-horizontal px-1 items-center">
-                <li>
-                    <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                            stroke="currentColor" class="w-8 h-8">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                    </a>
-                </li>
-            </ul>
+            <div class="flex items-center gap-4">
+                <!-- Mode Indicator with Tooltip -->
+                <div class="relative group" id="statusContainer">
+                    <div class="flex items-center gap-2">
+                        <div id="modeIndicator"
+                            class="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                            <span id="modeText"></span>
+                            <!-- Add info icon with tooltip -->
+                            <div class="relative">
+                                <button onclick="showServiceStatus()" class="ml-1 p-1 hover:bg-opacity-80 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                                    </svg>
+                                </button>
+                                <!-- Hover Tooltip -->
+                                <div class="absolute right-0 mt-2 hidden group-hover:block z-50">
+                                    <div class="bg-white rounded-lg shadow-lg border border-gray-200 p-4 w-64">
+                                        <div class="text-sm">
+                                            <div class="font-medium text-gray-900 mb-2">Quick Status</div>
+                                            <div class="space-y-2" id="quickStatusContent">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-gray-600">Camera</span>
+                                                    <span class="flex items-center">
+                                                        <span class="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                                                        Active
+                                                    </span>
+                                                </div>
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-gray-600">IMU</span>
+                                                    <span class="flex items-center">
+                                                        <span class="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                                                        Active
+                                                    </span>
+                                                </div>
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-gray-600">GPS</span>
+                                                    <span class="flex items-center">
+                                                        <span class="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                                                        Active
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3 text-xs text-gray-500 border-t pt-2">
+                                                Click for detailed status
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Dialog -->
+                <div id="serviceStatusDialog"
+                    class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+                    <div class="bg-white rounded-xl shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-gray-100">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    <h3 class="text-xl font-semibold text-gray-800">System Status</h3>
+                                </div>
+                                <button onclick="hideServiceStatus()"
+                                    class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="serviceStatusContent" class="space-y-3 overflow-y-auto max-h-[60vh]">
+                                <!-- Status items will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Button -->
+                <ul class="menu menu-horizontal px-1">
+                    <li>
+                        <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-8 h-8">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </header>
     <main>
@@ -235,7 +411,186 @@
                 (isRaivin ? raivinOnlyCards : maivinOnlyCards);
         }
 
-        window.addEventListener('load', fetchConfigAndUpdateDeviceName);
+        async function checkReplayStatus() {
+            try {
+                const response = await fetch('/replay-status');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const statusText = await response.text();
+                const isReplay = statusText.trim() === "Replay is running";
+
+                const modeIndicator = document.getElementById('modeIndicator');
+                const modeText = document.getElementById('modeText');
+
+                if (isReplay) {
+                    modeText.textContent = "Replay Mode";
+                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-2";
+                } else {
+                    modeText.textContent = "Live Mode";
+                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 flex items-center gap-2";
+                }
+            } catch (error) {
+                console.error('Error checking replay status:', error);
+                const modeIndicator = document.getElementById('modeIndicator');
+                const modeText = document.getElementById('modeText');
+                modeText.textContent = "Status Unknown";
+                modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2";
+            }
+        }
+
+        let statusCheckInterval;
+
+        window.addEventListener('load', async () => {
+            await fetchConfigAndUpdateDeviceName();
+            await checkReplayStatus();
+
+            statusCheckInterval = setInterval(checkReplayStatus, 5000);
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+        });
+
+        let isTooltipVisible = false;
+
+        window.showServiceStatus = async function () {
+            const dialog = document.getElementById('serviceStatusDialog');
+            const content = document.getElementById('serviceStatusContent');
+
+            // Show dialog
+            dialog.classList.remove('hidden');
+
+            try {
+                const services = [
+                    "camera",
+                    "imu",
+                    "navsat",
+                    "recorder",
+                    "fusion",
+                    "radar",
+                    "model"
+                ];
+
+                const response = await fetch('/config/service/status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        services: services
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const serviceStatuses = await response.json();
+                content.innerHTML = ''; // Clear existing content
+
+                // Create status items for each service
+                serviceStatuses.forEach(({ service, status, enabled }) => {
+                    const isRunning = status === 'running';
+                    const isEnabled = enabled === 'enabled';
+
+                    const statusColor = isRunning ? 'bg-green-500' : 'bg-red-500';
+                    const enabledColor = isEnabled ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600';
+
+                    const serviceName = service
+                        .replace('.service', '')
+                        .split('-')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+
+                    content.innerHTML += `
+                        <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-sm font-medium text-gray-900">${serviceName}</span>
+                                <span class="text-xs px-2 py-0.5 rounded-full ${enabledColor} inline-flex items-center w-fit">
+                                    ${isEnabled ? 'Enabled' : 'Disabled'}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium ${isRunning ? 'text-green-600' : 'text-red-600'}">
+                                    ${isRunning ? 'Running' : 'Stopped'}
+                                </span>
+                                <div class="w-2 h-2 rounded-full ${statusColor}"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error fetching service status:', error);
+                content.innerHTML = `
+                    <div class="flex items-center gap-2 p-3 text-red-800 bg-red-50 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="text-sm font-medium">Error loading service status</span>
+                    </div>
+                `;
+            }
+        }
+
+        window.hideServiceStatus = function () {
+            const dialog = document.getElementById('serviceStatusDialog');
+            dialog.classList.add('hidden');
+        }
+
+        // Close dialog when clicking outside
+        document.getElementById('serviceStatusDialog').addEventListener('click', function (event) {
+            if (event.target === this) {
+                hideServiceStatus();
+            }
+        });
+
+        async function updateQuickStatus() {
+            try {
+                const services = ["camera", "imu", "navsat"];
+                const response = await fetch('/config/service/status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ services })
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const serviceStatuses = await response.json();
+                const quickStatusContent = document.getElementById('quickStatusContent');
+                quickStatusContent.innerHTML = '';
+
+                serviceStatuses.forEach(({ service, status }) => {
+                    const isRunning = status === 'running';
+                    const serviceName = service
+                        .replace('.service', '')
+                        .split('-')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+
+                    quickStatusContent.innerHTML += `
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">${serviceName}</span>
+                            <span class="flex items-center">
+                                <span class="h-2 w-2 rounded-full ${isRunning ? 'bg-green-500' : 'bg-red-500'} mr-2"></span>
+                                ${isRunning ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error updating quick status:', error);
+            }
+        }
+
+        // Update quick status on load and every 10 seconds
+        window.addEventListener('load', () => {
+            updateQuickStatus();
+            setInterval(updateQuickStatus, 10000);
+        });
     </script>
 </body>
 

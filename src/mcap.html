@@ -8,6 +8,7 @@
     <title>MCAP Recorder</title>
     <link href="./css/styles.css" rel="stylesheet">
     <link href="./css/full.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <script src="./js/tailwind.js"></script>
     <style>
@@ -167,6 +168,141 @@
         .navbar-end .btn-circle.btn-lg:hover svg {
             color: #e2e8f0;
         }
+
+        .modal-box {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 28rem;
+            margin: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+            margin: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e2e8f0;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input:checked+.slider {
+            background-color: #3b82f6;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        .btn {
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            color: #4B5563;
+        }
+
+        .btn-ghost:hover {
+            background-color: #F3F4F6;
+        }
+
+        .btn-primary {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1E88E5;
+        }
+
+        dialog::backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-box {
+            animation: modal-pop 0.2s ease-out;
+        }
+
+        @keyframes modal-pop {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            margin-bottom: 5px;
+            z-index: 10;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            transform: none;
+            box-shadow: none;
+        }
     </style>
 </head>
 
@@ -181,15 +317,15 @@
         </div>
         <div class="navbar-end">
             <ul class="menu menu-horizontal px-1">
-                </li>
-                <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="w-8 h-8">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </a>
+            </ul>li>
+            <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </a></li>
             </ul>
         </div>
     </header>
@@ -197,12 +333,22 @@
         <div class="card">
             <h2 class="text-2xl font-bold mb-4">Recording Controls</h2>
             <div class="recording-controls">
-                <div class="flex items-center">
-                    <span id="recordingStatus" class="font-bold mr-2">Recording</span> <!-- Updated text position -->
-                    <label class="switch mr-4">
-                        <input type="checkbox" id="recordingToggle">
-                        <span class="slider"></span>
-                    </label>
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center">
+                        <span id="recordingStatus" class="font-bold mr-2">Recording</span>
+                        <label class="switch mr-4">
+                            <input type="checkbox" id="recordingToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center">
+                        <span class="font-bold mr-2">Live Feed</span>
+                        <label class="switch mr-4">
+                            <input type="checkbox" id="liveToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="recording-indicator" id="recordingIndicator"></div>
             </div>
@@ -226,14 +372,19 @@
         </div>
     </main>
 
-    <dialog id="myModal" class="modal">
-        <div class="modal-box p-6 bg-white rounded-lg shadow-xl max-w-3xl">
-            <h3 class="text-2xl font-bold mb-6 text-gray-800">File Details</h3>
-            <div id="modalDetails" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            <form method="dialog" class="mt-8 text-right">
-                <button
-                    class="btn btn-primary bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Close</button>
-            </form>
+    <dialog id="playOptionsModal" class="rounded-lg shadow-lg">
+        <div id="playModalContent"></div>
+    </dialog>
+
+    <dialog id="myModal" class="bg-white rounded-lg shadow-lg p-6 w-[600px]">
+        <div id="modalDetails"></div>
+    </dialog>
+
+    <dialog id="loadingDialog" class="modal">
+        <div class="modal-box flex flex-col items-center p-6 bg-white rounded-lg shadow-xl">
+            <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
+            <p class="text-lg font-semibold text-gray-700">Switching to Live Mode...</p>
+            <p class="text-sm text-gray-500">Please wait while the system transitions.</p>
         </div>
     </dialog>
 
@@ -241,12 +392,151 @@
         let socket = null;
         let pollingInterval = 5000;
         let currentRecordingFile = null;
+        let currentPlayingFile = null;
+        let isPlaying = false;
+        let statusCheckInterval;
+        const REPLAY_STATUS_INTERVAL = 1000;
+        let deviceName = null;
+
+        async function fetchDeviceName() {
+            try {
+                const response = await fetch('/config/webui/details');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                deviceName = data.DEVICE;
+                console.log('Device name:', deviceName);
+            } catch (error) {
+                console.error('Error fetching device name:', error);
+            }
+        }
+
+        function showLoading() {
+            const loadingDialog = document.getElementById('loadingDialog');
+            loadingDialog.showModal();
+        }
+
+        function hideLoading() {
+            const loadingDialog = document.getElementById('loadingDialog');
+            loadingDialog.close();
+        }
+
+        async function handleLiveToggle(event) {
+            const isLive = event.target.checked;
+
+            // If trying to switch from live to replay mode (isLive becomes false)
+            if (!isLive) {
+                event.target.checked = true; // Keep the toggle in live mode
+                alert('Please select an MCAP file from below to enter replay mode');
+                return;
+            }
+
+            if (!deviceName) {
+                console.error('Device name not available');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/live-run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        target: isLive ? deviceName.toLowerCase() : 'replay',
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 5000));
+
+                const transitionCheck = setInterval(async () => {
+                    try {
+                        const statusResponse = await fetch('/replay-status');
+                        const statusText = await statusResponse.text();
+                        const currentStatus = statusText.trim() === "Replay is running";
+
+                        if (currentStatus !== isLive) {  // System has finished transitioning
+                            clearInterval(transitionCheck);
+                            hideLoading();
+                        }
+                    } catch (error) {
+                        console.error('Error checking status during transition:', error);
+                    }
+                }, 1000);
+
+                setTimeout(() => {
+                    clearInterval(transitionCheck);
+                    hideLoading();
+                }, 30000);
+
+            } catch (error) {
+                console.error('Error switching mode:', error);
+                event.target.checked = !isLive;
+                hideLoading();
+                alert('Error switching modes. Please try again.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchDeviceName();
+            connectWebSocket();
+            checkReplayStatus();
+            statusCheckInterval = setInterval(checkReplayStatus, REPLAY_STATUS_INTERVAL);
+
+            const liveToggle = document.getElementById('liveToggle');
+            if (liveToggle) {
+                liveToggle.addEventListener('change', handleLiveToggle);
+            }
+        });
+
+        async function checkReplayStatus() {
+            try {
+                const response = await fetch('/replay-status');
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                const statusText = await response.text();
+                isPlaying = statusText.trim() === "Replay is running";
+
+                const liveToggle = document.getElementById('liveToggle');
+                if (liveToggle.checked === isPlaying) {
+                    liveToggle.checked = !isPlaying;
+                }
+
+                if (isPlaying) {
+                    const configResponse = await fetch('/config/replay/details');
+                    if (configResponse.ok) {
+                        const config = await configResponse.json();
+                        if (config.MCAP) {
+                            currentPlayingFile = config.MCAP.split('/').pop();
+                            listMcapFiles();
+                        }
+                    }
+                } else {
+                    currentPlayingFile = null;
+                    listMcapFiles();
+                }
+            } catch (error) {
+                console.error('Error checking replay status:', error);
+                isPlaying = false;
+                currentPlayingFile = null;
+                listMcapFiles();
+            }
+        }
 
         function connectWebSocket() {
             socket = new WebSocket('/mcap/');
 
             socket.onopen = () => {
                 console.log('WebSocket connection established');
+                checkPlaybackStatus();
                 listMcapFiles();
             };
 
@@ -326,24 +616,42 @@
             const modal = document.getElementById('myModal');
             const modalDetails = document.getElementById('modalDetails');
 
-            modalDetails.innerHTML = '';
+            if (!modal || !modalDetails) {
+                console.error('Modal elements not found');
+                return;
+            }
 
-            Object.entries(topics).forEach(([topic, details]) => {
-                const detailCard = document.createElement('div');
-                detailCard.className = 'bg-gray-100 p-4 rounded-lg shadow';
-                detailCard.innerHTML = `
-                    <h4 class="text-lg font-semibold mb-2 text-gray-800">${topic}</h4>
-                    <div class="grid grid-cols-2 gap-2 text-sm">
-                        <div class="text-gray-600">FPS:</div>
-                        <div class="font-medium">${details.average_fps.toFixed(2)}</div>
-                        <div class="text-gray-600">Frames:</div>
-                        <div class="font-medium">${details.message_count.toLocaleString()}</div>
-                    </div>
-                `;
-                modalDetails.appendChild(detailCard);
-            });
+            modalDetails.innerHTML = `
+                <div class="mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">File Details</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    ${Object.entries(topics).map(([topic, details]) => `
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="font-medium text-gray-800 mb-2">${topic}</div>
+                            <div class="grid grid-cols-[80px,1fr] gap-y-2">
+                                <span class="text-gray-600">FPS:</span>
+                                <span class="text-gray-800">${details.average_fps.toFixed(2)}</span>
+                                <span class="text-gray-600">Frames:</span>
+                                <span class="text-gray-800">${details.message_count}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="closeModal()" 
+                        class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600">
+                        CLOSE
+                    </button>
+                </div>
+            `;
 
             modal.showModal();
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('myModal');
+            if (modal) modal.close();
         }
 
         function deleteFile(fileName, directory) {
@@ -542,33 +850,466 @@
             setInterval(() => {
                 listMcapFiles();
                 checkRecordingStatus();
+                checkPlaybackStatus();
             }, pollingInterval);
+        }
+
+        function formatDuration(seconds) {
+            if (seconds < 60) {
+                return `${seconds.toFixed(2)}s`;
+            } else {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes}m ${remainingSeconds.toFixed(1)}s`;
+            }
+        }
+
+        function showPlayDialog(fileName, directory, fileDetails) {
+            const modal = document.getElementById('playOptionsModal');
+            const content = document.getElementById('playModalContent');
+
+            // Check if modal elements exist
+            if (!modal || !content) {
+                console.error('Modal elements not found. Make sure playOptionsModal and playModalContent exist in HTML');
+                return;
+            }
+
+            content.innerHTML = '';
+            modal.dataset.fileName = fileName;
+            modal.dataset.directory = directory;
+
+            const formattedDuration = formatDuration(fileDetails.average_video_length);
+
+            content.innerHTML = `
+                <div class="bg-white p-8 rounded-xl max-w-md w-full">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800">Play Options</h2>
+                        <button onclick="closePlayDialog()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">File Name:</span>
+                                <span class="text-sm font-medium text-gray-900 truncate ml-4 max-w-[200px]">${fileName}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">Size:</span>
+                                <span class="text-sm font-medium text-gray-900">${fileDetails.size} MB</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">Length:</span>
+                                <span class="text-sm font-medium text-gray-900">${formattedDuration}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-700">Fusion</label>
+                            <div class="inline-flex w-full rounded-lg shadow-sm" role="group">
+                                <button type="button" 
+                                    class="fusion-btn flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#4285f4] rounded-l-lg active hover:bg-blue-600 transition-colors" 
+                                    data-value="live">
+                                    Live
+                                </button>
+                                <button type="button" 
+                                    class="fusion-btn flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-r-lg hover:bg-gray-200 transition-colors" 
+                                    data-value="mcap">
+                                    MCAP
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-700">Model</label>
+                            <div class="inline-flex w-full rounded-lg shadow-sm" role="group">
+                                <button type="button" 
+                                    class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#4285f4] rounded-l-lg active hover:bg-blue-600 transition-colors" 
+                                    data-value="live">
+                                    Live
+                                </button>
+                                <button type="button" 
+                                    class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-r-lg hover:bg-gray-200 transition-colors" 
+                                    data-value="mcap">
+                                    MCAP
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-end space-x-3">
+                        <button onclick="closePlayDialog()" 
+                            class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            Cancel
+                        </button>
+                        <button onclick="startPlayback()" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-[#4285f4] rounded-lg hover:bg-blue-600 transition-colors">
+                            Start
+                        </button>
+                    </div>
+                </div>
+            `;
+            const fusionBtns = content.querySelectorAll('.fusion-btn');
+            const modelBtns = content.querySelectorAll('.model-btn');
+
+            function setupButtonGroup(buttons) {
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        buttons.forEach(b => {
+                            b.classList.remove('active', 'bg-[#4285f4]', 'text-white');
+                            b.classList.add('bg-gray-100', 'text-gray-600');
+                        });
+                        this.classList.remove('bg-gray-100', 'text-gray-600');
+                        this.classList.add('active', 'bg-[#4285f4]', 'text-white');
+                    });
+                });
+            }
+
+            setupButtonGroup(fusionBtns);
+            setupButtonGroup(modelBtns);
+
+            modal.showModal();
+        }
+
+        function updateToggleLabel(label, isChecked) {
+            label.textContent = isChecked ? 'MCAP' : 'Live';
+            label.className = `text-sm font-medium ${isChecked ? 'text-blue-600' : 'text-gray-600'}`;
+        }
+
+        function closePlayDialog() {
+            const modal = document.getElementById('playOptionsModal');
+            modal.close();
+        }
+
+        function startPlayback() {
+            const modal = document.getElementById('playOptionsModal');
+            const fileName = modal.dataset.fileName;
+            const directory = modal.dataset.directory;
+
+            const fusionIsLive = modal.querySelector('.fusion-btn[data-value="live"]').classList.contains('active');
+            const modelIsLive = modal.querySelector('.model-btn[data-value="live"]').classList.contains('active');
+
+            const config = {
+                fileName: "replay",
+                MCAP: `${directory}/${fileName}`,
+                IGNORE_TOPICS: ""
+            };
+
+            let ignoreTopics = [];
+            if (fusionIsLive) ignoreTopics.push("/fusion/*");
+            if (modelIsLive) ignoreTopics.push("/model/*");
+            config.IGNORE_TOPICS = ignoreTopics.join(" ");
+
+            fetch('/config/replay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                    return response.text();
+                })
+                .then(() => {
+                    return fetch('/replay', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            file: fileName,
+                            directory: directory,
+                            dataSource: fusionIsLive ? 'live' : 'mcap',
+                            model: modelIsLive ? 'live' : 'mcap'
+                        })
+                    });
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                    return response.text();
+                })
+                .then(() => {
+                    isPlaying = true;
+                    currentPlayingFile = fileName;
+                    modal.close();
+                    listMcapFiles();
+                })
+                .catch(error => {
+                    console.error('Error starting playback:', error);
+                    alert(`Error starting playback: ${error.message}`);
+                });
+        }
+
+        function togglePlayMcap(fileName, directory, options = null) {
+            if (isPlaying && currentPlayingFile === fileName) {
+                fetch('/config/replay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: "replay",
+                        MCAP: "",
+                        IGNORE_TOPICS: ""
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                        return response.text();
+                    })
+                    .then(() => {
+                        return fetch('/replay-end', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ file: fileName, directory: directory })
+                        });
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                        return response.text();
+                    })
+                    .then(() => {
+                        isPlaying = false;
+                        currentPlayingFile = null;
+                        listMcapFiles();
+                    })
+                    .catch(error => {
+                        console.error('Error stopping replay:', error);
+                        alert(`Error stopping replay: ${error.message}`);
+                    });
+            } else if (!isPlaying) {
+                if (!options) {
+                    const fileRows = document.querySelectorAll('#fileTableBody tr');
+                    let fileDetails = null;
+
+                    for (const row of fileRows) {
+                        const cells = row.getElementsByTagName('td');
+                        if (cells[0].textContent.includes(fileName)) {
+                            fileDetails = {
+                                size: cells[1].textContent,
+                                average_video_length: parseFloat(cells[3].textContent)
+                            };
+                            break;
+                        }
+                    }
+
+                    if (fileDetails) {
+                        showPlayDialog(fileName, directory, fileDetails);
+                    } else {
+                        console.error('Could not find file details in table');
+                        alert('Error: Could not find file details');
+                    }
+                    return;
+                }
+
+                fetch('/start-replay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file: fileName,
+                        directory: directory,
+                        dataSource: options.dataSource,
+                        model: options.model
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                        return response.text();
+                    })
+                    .then(() => {
+                        isPlaying = true;
+                        currentPlayingFile = fileName;
+                        listMcapFiles();
+                    })
+                    .catch(error => {
+                        console.error('Error starting fusion:', error);
+                        alert(`Error starting fusion: ${error.message}`);
+                    });
+            }
+        }
+
+        function createTableBody(files, directoryName) {
+            const tbody = document.getElementById('fileTableBody');
+            tbody.innerHTML = '';
+
+            const sortedFiles = [...files].sort((a, b) => {
+                if (a.name === currentPlayingFile) return -1;
+                if (b.name === currentPlayingFile) return 1;
+                return new Date(b.created) - new Date(a.created);
+            });
+
+            sortedFiles.forEach(file => {
+                const row = createTableRow(file, directoryName);
+                tbody.appendChild(row);
+            });
         }
 
         function createTableRow(file, directoryName) {
             const row = document.createElement('tr');
             const isRecording = currentRecordingFile === file.name;
+            const isCurrentlyPlaying = file.name === currentPlayingFile;
+
+            const buttonBase = "w-10 h-10 inline-flex items-center justify-center rounded-full transition-all duration-200";
+            const buttonStyles = {
+                play: `${buttonBase} ${isCurrentlyPlaying ? 'bg-[#dc3545] hover:bg-red-600' : 'bg-[#4285f4] hover:bg-blue-600'} text-white`,
+                info: `${buttonBase} bg-[#4285f4] text-white hover:bg-blue-600 mr-2`,
+                upload: `${buttonBase} bg-gray-400 text-white opacity-50 cursor-not-allowed mr-2`,
+                download: `${buttonBase} bg-[#34a853] text-white hover:bg-[#2d9248] mr-2`,
+                delete: `${buttonBase} bg-[#dc3545] text-white hover:bg-red-600 mr-2`
+            };
 
             row.innerHTML = `
-                <td class="px-4 py-2">${file.name}${isRecording ? ' (Recording)' : ''}</td>
-                <td class="px-4 py-2">${file.size}</td>
-                <td class="px-4 py-2">${file.created}</td>
-                <td class="px-4 py-2">${file.average_video_length.toFixed(2)}</td>
-                <td class="px-4 py-2">
-                    <button class="btn btn-primary mr-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full" onclick='showModal(${JSON.stringify(file.topics)})'>Details</button>
-                    <button class="btn btn-danger mr-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full" 
-                        onclick="deleteFile('${file.name}', '${directoryName}')"
-                        ${isRecording ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
-                        Delete
+                <td class="px-4 py-3">
+                    <div class="flex items-center">
+                        <button class="${buttonStyles.play} mr-3"
+                            onclick="togglePlayMcap('${file.name}', '${directoryName}')"
+                            ${isRecording || (isPlaying && !isCurrentlyPlaying) ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}
+                            title="${isCurrentlyPlaying ? 'Stop' : 'Play'}">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                ${isCurrentlyPlaying ?
+                    '<path d="M8 6h8c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z"/>' :
+                    '<path d="M8 6.82v10.36c0 .79.87 1.27 1.54.84l8.14-5.18c.62-.39.62-1.29 0-1.69L9.54 5.98C8.87 5.55 8 6.03 8 6.82z"/>'
+                }
+                            </svg>
+                        </button>
+                        <span class="${isCurrentlyPlaying ? 'text-[#4285f4] font-medium' : ''}">${file.name}</span>
+                        ${isCurrentlyPlaying ? '<span class="ml-2 text-[#4285f4]">(Now Playing)</span>' : ''}
+                    </div>
+                </td>
+                <td class="px-4 py-3">${file.size}</td>
+                <td class="px-4 py-3">${file.created}</td>
+                <td class="px-4 py-3">${file.average_video_length.toFixed(2)}</td>
+                <td class="px-4 py-3">
+                    <button class="${buttonStyles.info}"
+                        onclick='showModal(${JSON.stringify(file.topics)})'
+                        title="Details">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
                     </button>
-                    <button class="btn btn-success bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full" onclick="getUploadCredentials('${file.name}', '${directoryName}')">Upload</button>
-                    <a class="btn btn-info bg-blue-300 hover:bg-blue-400 text-white font-bold py-2 px-4 rounded-full" href="/download/${directoryName}/${file.name}">Download</a>
+                    
+                    <button class="${buttonStyles.upload}"
+                        title="Upload: Available soon"  
+                        disabled
+                    >
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                        </svg>
+                    </button>
+                    
+                    <a class="${buttonStyles.download}"
+                        href="/download/${directoryName}/${file.name}"
+                        title="Download">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                    </a>
+
+                    <button class="${buttonStyles.delete}"
+                        onclick="deleteFile('${file.name}', '${directoryName}')"
+                        ${isRecording || isCurrentlyPlaying ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}
+                        title="Delete">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                    </button>
                 </td>
             `;
+
             return row;
         }
 
-        connectWebSocket();
+        function checkPlaybackStatus() {
+            fetch('/replay-status')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(statusText => {
+                    isPlaying = statusText.trim() === "Replay is running";
+                    document.getElementById('liveToggle').checked = !isPlaying;
+
+                    if (isPlaying) {
+                        return fetch('/config/replay/details')
+                            .then(response => {
+                                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                                return response.json();
+                            })
+                            .then(config => {
+                                if (config.MCAP) {
+                                    const mcapPath = config.MCAP;
+                                    currentPlayingFile = mcapPath.split('/').pop();
+                                    listMcapFiles();
+                                } else {
+                                    currentPlayingFile = null;
+                                    listMcapFiles();
+                                }
+                            });
+                    } else {
+                        currentPlayingFile = null;
+                        listMcapFiles();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking playback status:', error);
+                    isPlaying = false;
+                    currentPlayingFile = null;
+                    listMcapFiles();
+                });
+        }
+
+        document.getElementById('liveToggle').addEventListener('change', function () {
+            if (this.checked) {
+                fetch('/config/replay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: "replay",
+                        MCAP: "",
+                        IGNORE_TOPICS: ""
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                        return response.text();
+                    })
+                    .then(() => {
+                        return fetch('/replay-end', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ file: currentPlayingFile, directory: "" })
+                        });
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                        return response.text();
+                    })
+                    .then(() => {
+                        isPlaying = false;
+                        currentPlayingFile = null;
+                        listMcapFiles();
+                    })
+                    .catch(error => {
+                        console.error('Error switching to live feed:', error);
+                        alert(`Error switching to live feed: ${error.message}`);
+                        this.checked = false;
+                    });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+            checkReplayStatus();
+            statusCheckInterval = setInterval(checkReplayStatus, REPLAY_STATUS_INTERVAL);
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+        });
     </script>
 </body>
 
