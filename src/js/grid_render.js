@@ -272,8 +272,8 @@ function animate_grid() {
     rendered_points.length = 0
     let points = radar_points.points
     if (GRID_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
-        if (GRID_DRAW_PCD == "class") {
-            color_points_class(points, grid_scene, rendered_points, false)
+        if (GRID_DRAW_PCD.endsWith("class")) {
+            color_points_class(points, GRID_DRAW_PCD, grid_scene, rendered_points, false)
         } else {
             color_points_field(points, GRID_DRAW_PCD, grid_scene, rendered_points, false)
         }

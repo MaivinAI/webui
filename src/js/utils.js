@@ -73,12 +73,13 @@ export function color_points_field(points, field, scene, rendered_points, height
     })
 }
 
-export function color_points_class(points, scene, rendered_points, height = false, label = "disabled") {
+export function color_points_class(points, field, scene, rendered_points, height = false, label = "disabled") {
+    combined_classes(points)
     points.forEach((point) => {
         let point_rad = 0.075
         let color = new THREE.Color(0xFFFFFF)
-        if (point.class > 0) {
-            color = mask_colors[point.class]
+        if (point[field] > 0) {
+            color = mask_colors[point[field]]
             point_rad = 0.15
         }
 
@@ -109,6 +110,19 @@ export function color_points_class(points, scene, rendered_points, height = fals
     })
 }
 
+
+function combined_classes(points) {
+    for (let p of points) {
+        let combined_class = 0
+        for (const prop of p) {
+            if (!prop.endsWith("class")) {
+                continue
+            }
+            combined_class = Math.max(combined_class, p[prop])
+        }
+        p["combined_class"] = combined_class
+    }
+}
 
 export const mask_colors = [
     new THREE.Color(1.0, 1.0, 1.0),
