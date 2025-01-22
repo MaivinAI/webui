@@ -260,13 +260,11 @@
                 const loadingSpinner = modeIndicator.querySelector('svg.animate-spin');
                 if (loadingSpinner) loadingSpinner.remove();
 
-                if (isCritical) {
-                    const mode = isReplay ? "Replay" : "Live";
-                    modeText.textContent = `${mode} Mode (Critical)`;
+                if (!isReplay && isCritical) {
+                    modeText.textContent = `Live Mode (Critical)`;
                     modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
-                } else if (isDegraded) {
-                    const mode = isReplay ? "Replay" : "Live";
-                    modeText.textContent = `${mode} Mode (Degraded)`;
+                } else if (!isReplay && isDegraded) {
+                    modeText.textContent = `Live Mode (Degraded)`;
                     modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 flex items-center gap-2";
                 } else if (isReplay) {
                     modeText.textContent = "Replay Mode";
