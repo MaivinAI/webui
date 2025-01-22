@@ -111,10 +111,13 @@ export function color_points_class(points, field, scene, rendered_points, height
 }
 
 
+// Adds a "combined_class" property into each point inside points
+// The "combined_class" is the highest class among all properties that
+// end with "class"
 function combined_classes(points) {
     for (let p of points) {
         let combined_class = 0
-        for (const prop of p) {
+        for (const prop in p) {
             if (!prop.endsWith("class")) {
                 continue
             }

@@ -21,7 +21,7 @@ let WINDOW_LENGTH = 5
 let BIN_THRESHOLD = 3
 let GRID_DRAW_PCD = "disabled"
 let DRAW_UNKNOWN_CELLS = false
-let DRAW_CELLS = true
+let DRAW_CELLS = "disabled"
 let SHOW_PEOPLE_COUNT = false
 
 let textContext = null
@@ -136,7 +136,7 @@ function init_config(config) {
         GRID_DRAW_PCD = config.GRID_DRAW_PCD
     }
 
-    if (typeof config.DRAW_CELLS == "boolean") {
+    if (config.DRAW_CELLS) {
         DRAW_CELLS = config.DRAW_CELLS
     }  
 
@@ -149,7 +149,7 @@ function init_config(config) {
     }
 
 
-    if (!DRAW_CELLS) {
+    if (!DRAW_CELLS || DRAW_CELLS == "disabled") {
         DRAW_UNKNOWN_CELLS = false
     }
 }
@@ -235,10 +235,10 @@ function getCountInBin(angle, range, angleBinOffset, rangeBinOffset) {
 function getClassInList(l) {
     const classes = {}
     l.forEach((point) => {
-        if (isFinite(classes[point.class])) {
-            classes[point.class] += 1
+        if (isFinite(classes[point[DRAW_CELLS]])) {
+            classes[point[DRAW_CELLS]] += 1
         } else {
-            classes[point.class] = 1
+            classes[point[DRAW_CELLS]] = 1
         }
     })
     if (classes[0] == l.length) {
@@ -254,6 +254,7 @@ function getClassInList(l) {
             max_class_val = classes[cl]
         }
     }
+    console.log([max_class, max_class_val])
     return [max_class, max_class_val]
 }
 
@@ -280,10 +281,10 @@ function animate_grid() {
     }
 
     for (let p of points) {
-        if (DRAW_CELLS && (DRAW_UNKNOWN_CELLS || p.class > 0)) {
+        if (DRAW_CELLS != "disabled" && (DRAW_UNKNOWN_CELLS || p[DRAW_CELLS] > 0)) {
             increment_bin(-p.angle * 180 / PI, p.range, p)
         }
-        if (p.class > 0) {
+        if (p[DRAW_CELLS] > 0) {
             count+=1
         }
     }

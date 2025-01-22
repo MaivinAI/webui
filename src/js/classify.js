@@ -272,7 +272,7 @@ export function project_points_onto_box(points, boxes) {
 
     let extra_points = []
     for (let p of points_cpy)  {
-        if (p.class == 0) {
+        if (!p.class) {
             continue
         }
         let i = p.i;
