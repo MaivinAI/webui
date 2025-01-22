@@ -280,47 +280,57 @@
                     return acc;
                 }, {});
 
-                const isCameraDown = !statusMap['camera'] || statusMap['camera'] !== 'running';
-                const isradarpubDown = !statusMap['radarpub'] || statusMap['radarpub'] !== 'running';
-                const isDegraded = (isRaivin && isradarpubDown) || isCameraDown;
-                const isCritical = isCameraDown && (isRaivin && isradarpubDown);
-
                 // Check replay status
                 const replayResponse = await fetch('/replay-status');
-                if (!replayResponse.ok) {
-                    throw new Error(`HTTP error! status: ${replayResponse.status}`);
-                }
+                if (!replayResponse.ok) throw new Error(`HTTP error! status: ${replayResponse.status}`);
                 const statusText = await replayResponse.text();
                 const isReplay = statusText.trim() === "Replay is running";
 
                 const modeIndicator = document.getElementById('modeIndicator');
                 const modeText = document.getElementById('modeText');
                 const loadingSpinner = modeIndicator.querySelector('svg.animate-spin');
-                if (loadingSpinner) {
-                    loadingSpinner.remove();
+                if (loadingSpinner) loadingSpinner.remove();
+
+                if (isReplay) {
+                    const isCameraActive = statusMap['camera'] === 'running';
+                    const allServicesActive = services.every(service => statusMap[service] === 'running');
+
+                    if (allServicesActive) {
+                        modeText.textContent = "Replay Mode (Critical)";
+                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
+                    } else if (isCameraActive) {
+                        modeText.textContent = "Replay Mode (Degraded)";
+                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 flex items-center gap-2";
+                    } else {
+                        modeText.textContent = "Replay Mode";
+                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-2";
+                    }
+                } else {
+                    const isCameraDown = !statusMap['camera'] || statusMap['camera'] !== 'running';
+                    const isradarpubDown = !statusMap['radarpub'] || statusMap['radarpub'] !== 'running';
+                    const isDegraded = (isRaivin && isradarpubDown) || isCameraDown;
+                    const isCritical = isCameraDown && (isRaivin && isradarpubDown);
+
+                    if (isCritical) {
+                        modeText.textContent = "Live Mode (Critical)";
+                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
+                    } else if (isDegraded) {
+                        modeText.textContent = "Live Mode (Degraded)";
+                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 flex items-center gap-2";
+                    } else {
+                        modeText.textContent = "Live Mode";
+                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 flex items-center gap-2";
+                    }
                 }
 
-                if (!isReplay && isCritical) {
-                    modeText.textContent = `Live Mode (Critical)`;
-                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
-                } else if (!isReplay && isDegraded) {
-                    modeText.textContent = `Live Mode (Degraded)`;
-                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 flex items-center gap-2";
-                } else if (isReplay) {
-                    modeText.textContent = "Replay Mode";
-                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-2";
-                } else {
-                    modeText.textContent = "Live Mode";
-                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 flex items-center gap-2";
-                }
+                // Update quick status
+                await updateQuickStatus();
             } catch (error) {
                 console.error('Error checking replay status:', error);
                 const modeIndicator = document.getElementById('modeIndicator');
                 const modeText = document.getElementById('modeText');
                 const loadingSpinner = modeIndicator.querySelector('svg.animate-spin');
-                if (loadingSpinner) {
-                    loadingSpinner.remove();
-                }
+                if (loadingSpinner) loadingSpinner.remove();
                 modeText.textContent = "Status Unknown";
                 modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2";
             }
