@@ -725,12 +725,31 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await fetchDeviceName();
             connectWebSocket();
-            checkReplayStatus();
+
+            // Check recording status immediately and set proper UI state
+            const recordingToggle = document.getElementById('recordingToggle');
+            try {
+                const response = await fetch('/recorder-status');
+                if (response.ok) {
+                    const statusText = await response.text();
+                    const isRecording = statusText.trim() === "Recorder is running";
+
+                    if (isRecording) {
+                        recordingToggle.checked = true;
+                        currentRecordingFile = null; // Force "starting" state until we confirm the file
+                        updateRecordingUI(true, true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking initial recording status:', error);
+            }
+
+            checkPlaybackStatus();
             await updateQuickStatus();
             statusCheckInterval = setInterval(async () => {
-                await checkReplayStatus();
-                await updateQuickStatus();
-            }, 5000);
+                checkPlaybackStatus();
+                checkRecorderStatus();
+            }, REPLAY_STATUS_INTERVAL);
         });
 
         async function checkReplayStatus() {
@@ -865,10 +884,6 @@
                         const files = data.files || [];
                         files.sort((a, b) => new Date(b.created) - new Date(a.created));
 
-                        if (document.getElementById('recordingToggle').checked && files.length > 0) {
-                            currentRecordingFile = files[0].name;
-                        }
-
                         files.forEach((file) => {
                             const row = createTableRow(file, data.dir_name);
                             fileTableBody.appendChild(row);
@@ -910,29 +925,29 @@
             }
 
             modalDetails.innerHTML = `
-                <div class="mb-4">
-                    <h3 class="text-xl font-semibold text-gray-800">File Details</h3>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    ${Object.entries(topics).map(([topic, details]) => `
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <div class="font-medium text-gray-800 mb-2">${topic}</div>
-                            <div class="grid grid-cols-[80px,1fr] gap-y-2">
-                                <span class="text-gray-600">FPS:</span>
-                                <span class="text-gray-800">${details.average_fps.toFixed(2)}</span>
-                                <span class="text-gray-600">Frames:</span>
-                                <span class="text-gray-800">${details.message_count}</span>
-                            </div>
+            <div class="mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">File Details</h3>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                ${Object.entries(topics).map(([topic, details]) => `
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="font-medium text-gray-800 mb-2">${topic}</div>
+                        <div class="grid grid-cols-[80px,1fr] gap-y-2">
+                            <span class="text-gray-600">FPS:</span>
+                            <span class="text-gray-800">${details.average_fps.toFixed(2)}</span>
+                            <span class="text-gray-600">Frames:</span>
+                            <span class="text-gray-800">${details.message_count}</span>
                         </div>
-                    `).join('')}
-                </div>
-                <div class="flex justify-end mt-6">
-                    <button onclick="closeModal()" 
-                        class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600">
-                        CLOSE
-                    </button>
-                </div>
-            `;
+                    </div>
+                `).join('')}
+            </div>
+            <div class="flex justify-end mt-6">
+                <button onclick="closeModal()" 
+                    class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600">
+                    CLOSE
+                </button>
+            </div>
+        `;
 
             modal.showModal();
         }
@@ -1057,35 +1072,84 @@
             }
         });
 
-        function checkRecordingStatus() {
-            fetch('/recorder-status')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error ${response.status}`);
+        async function checkRecordingStatus() {
+            try {
+                const response = await fetch('/recorder-status');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const statusText = await response.text();
+                const isRecording = statusText.trim() === "Recorder is running";
+
+                // If recording is active, fetch the current recording file name
+                if (isRecording) {
+                    try {
+                        const fileResponse = await fetch('/current-recording');
+                        if (fileResponse.ok) {
+                            const data = await fileResponse.json();
+                            if (data.status === "recording" && data.filename) {
+                                const previousFile = currentRecordingFile;
+                                currentRecordingFile = data.filename;
+                                updateRecordingUI(true, false);
+
+                                // If the file name has changed, trigger a file list refresh
+                                if (previousFile !== currentRecordingFile) {
+                                    listMcapFiles();
+                                }
+                            } else {
+                                updateRecordingUI(true, true);  // Still starting up
+                            }
+                        } else {
+                            throw new Error('Failed to fetch current recording status');
+                        }
+                    } catch (error) {
+                        console.error('Error fetching current recording file:', error);
+                        updateRecordingUI(true, true);  // Assume still starting up on error
                     }
-                    return response.text();
-                })
-                .then(statusText => {
-                    const isRecording = statusText.trim() === "Recorder is running";
-                    updateRecordingUI(isRecording);
-                })
-                .catch(error => {
-                    console.error('Error checking recording status:', error);
+                } else {
+                    const recorderIndicator = document.getElementById('recorderIndicator');
+                    recorderIndicator.classList.add('hidden');
                     currentRecordingFile = null;
                     updateRecordingUI(false);
-                });
+                }
+
+                const recorderIndicator = document.getElementById('recorderIndicator');
+                if (isRecording) {
+                    recorderIndicator.classList.remove('hidden');
+                    recorderIndicator.className = "text-red-600 animate-pulse relative group";
+                } else {
+                    recorderIndicator.classList.add('hidden');
+                    currentRecordingFile = null;
+                    updateRecordingUI(false);
+                }
+            } catch (error) {
+                console.error('Error checking recorder status:', error);
+                const recorderIndicator = document.getElementById('recorderIndicator');
+                recorderIndicator.classList.add('hidden');
+                currentRecordingFile = null;
+                updateRecordingUI(false);
+            }
         }
 
-        function updateRecordingUI(isRecording) {
+        function updateRecordingUI(isRecording, isStarting = false) {
             const toggle = document.getElementById('recordingToggle');
             const recordingIndicator = document.getElementById('recordingIndicator');
 
             toggle.checked = isRecording;
 
             if (recordingIndicator) {
-                recordingIndicator.textContent = isRecording ?
-                    `Recording in progress: ${currentRecordingFile || 'Starting...'}` : '';
-                recordingIndicator.style.color = isRecording ? '#e74c3c' : 'inherit';
+                if (isRecording) {
+                    if (isStarting || !currentRecordingFile) {
+                        recordingIndicator.textContent = 'Starting recording...';
+                        recordingIndicator.style.color = '#f39c12'; // Orange color for starting state
+                    } else {
+                        recordingIndicator.textContent = `Recording in progress: ${currentRecordingFile}`;
+                        recordingIndicator.style.color = '#e74c3c'; // Red color for active recording
+                    }
+                } else {
+                    recordingIndicator.textContent = '';
+                    recordingIndicator.style.color = 'inherit';
+                }
             }
         }
 
@@ -1101,7 +1165,9 @@
                 })
                 .then(text => {
                     console.log('Recording started:', text);
-                    updateRecordingUI(true);
+                    // Set currentRecordingFile to null to indicate recording is starting
+                    currentRecordingFile = null;
+                    updateRecordingUI(true, true);  // Added 'starting' parameter
                     startPolling();
                 })
                 .catch(error => {
@@ -1172,81 +1238,81 @@
             const formattedDuration = formatDuration(fileDetails.average_video_length);
 
             content.innerHTML = `
-                <div class="bg-white p-8 rounded-xl max-w-md w-full">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-semibold text-gray-800">Play Options</h2>
-                        <button onclick="closePlayDialog()" class="text-gray-400 hover:text-gray-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                    
-                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-500">File Name:</span>
-                                <span class="text-sm font-medium text-gray-900 truncate ml-4 max-w-[200px]">${fileName}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-500">Size:</span>
-                                <span class="text-sm font-medium text-gray-900">${fileDetails.size} MB</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-500">Length:</span>
-                                <span class="text-sm font-medium text-gray-900">${formattedDuration}</span>
-                            </div>
+            <div class="bg-white p-8 rounded-xl max-w-md w-full">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800">Play Options</h2>
+                    <button onclick="closePlayDialog()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-500">File Name:</span>
+                            <span class="text-sm font-medium text-gray-900 truncate ml-4 max-w-[200px]">${fileName}</span>
                         </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-500">Size:</span>
+                            <span class="text-sm font-medium text-gray-900">${fileDetails.size} MB</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-500">Length:</span>
+                            <span class="text-sm font-medium text-gray-900">${formattedDuration}</span>
+                        </div>
+                    </div>
 
-                        <div class="space-y-6">
-                            ${!isMaivin ? `
-                                <div class="space-y-2">
-                                    <label class="text-sm font-medium text-gray-700">Fusion</label>
-                                    <div class="inline-flex w-full rounded-lg shadow-sm" role="group">
-                                        <button type="button" 
-                                            class="fusion-btn flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#4285f4] rounded-l-lg active hover:bg-blue-600 transition-colors" 
-                                            data-value="live">
-                                            Live
-                                        </button>
-                                        <button type="button" 
-                                            class="fusion-btn flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-r-lg hover:bg-gray-200 transition-colors" 
-                                            data-value="mcap">
-                                            MCAP
-                                        </button>
-                                    </div>
-                                </div>
-                            ` : ''}
-
+                    <div class="space-y-6">
+                        ${!isMaivin ? `
                             <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-700">Model</label>
+                                <label class="text-sm font-medium text-gray-700">Fusion</label>
                                 <div class="inline-flex w-full rounded-lg shadow-sm" role="group">
                                     <button type="button" 
-                                        class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#4285f4] rounded-l-lg active hover:bg-blue-600 transition-colors" 
+                                        class="fusion-btn flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#4285f4] rounded-l-lg active hover:bg-blue-600" 
                                         data-value="live">
                                         Live
                                     </button>
                                     <button type="button" 
-                                        class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-r-lg hover:bg-gray-200 transition-colors" 
+                                        class="fusion-btn flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-r-lg hover:bg-gray-200 transition-colors" 
                                         data-value="mcap">
                                         MCAP
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        ` : ''}
 
-                        <div class="mt-8 flex justify-end space-x-3">
-                            <button onclick="closePlayDialog()" 
-                                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                                Cancel
-                            </button>
-                            <button onclick="startPlayback()" 
-                                class="px-4 py-2 text-sm font-medium text-white bg-[#4285f4] rounded-lg hover:bg-blue-600 transition-colors">
-                                Start
-                            </button>
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-700">Model</label>
+                            <div class="inline-flex w-full rounded-lg shadow-sm" role="group">
+                                <button type="button" 
+                                    class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#4285f4] rounded-l-lg active hover:bg-blue-600 transition-colors" 
+                                    data-value="live">
+                                    Live
+                                </button>
+                                <button type="button" 
+                                    class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-r-lg hover:bg-gray-200 transition-colors" 
+                                    data-value="mcap">
+                                    MCAP
+                                </button>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="mt-8 flex justify-end space-x-3">
+                        <button onclick="closePlayDialog()" 
+                            class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            Cancel
+                        </button>
+                        <button onclick="startPlayback()" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-[#4285f4] rounded-lg hover:bg-blue-600 transition-colors">
+                            Start
+                        </button>
+                    </div>
                 </div>
-            `;
+            </div>
+        `;
             const fusionBtns = content.querySelectorAll('.fusion-btn');
             const modelBtns = content.querySelectorAll('.model-btn');
 
@@ -1445,6 +1511,7 @@
             const row = document.createElement('tr');
             const isRecording = currentRecordingFile === file.name;
             const isCurrentlyPlaying = file.name === currentPlayingFile;
+            const recordingStarting = document.getElementById('recordingToggle').checked && !currentRecordingFile;
 
             const buttonBase = "w-10 h-10 inline-flex items-center justify-center rounded-full transition-all duration-200";
             const buttonStyles = {
@@ -1456,62 +1523,63 @@
             };
 
             row.innerHTML = `
-                <td class="px-4 py-3">
-                    <div class="flex items-center">
-                        <button class="${buttonStyles.play} mr-3"
-                            onclick="togglePlayMcap('${file.name}', '${directoryName}')"
-                            ${isRecording || (isPlaying && !isCurrentlyPlaying) ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}
-                            title="${isCurrentlyPlaying ? 'Stop' : 'Play'}">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                ${isCurrentlyPlaying ?
+            <td class="px-4 py-3">
+                <div class="flex items-center">
+                    <button class="${buttonStyles.play} mr-3"
+                        onclick="togglePlayMcap('${file.name}', '${directoryName}')"
+                        ${isRecording || recordingStarting || (isPlaying && !isCurrentlyPlaying) ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}
+                        title="${isCurrentlyPlaying ? 'Stop' : 'Play'}">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            ${isCurrentlyPlaying ?
                     '<path d="M8 6h8c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z"/>' :
                     '<path d="M8 6.82v10.36c0 .79.87 1.27 1.54.84l8.14-5.18c.62-.39.62-1.29 0-1.69L9.54 5.98C8.87 5.55 8 6.03 8 6.82z"/>'
                 }
-                            </svg>
-                        </button>
-                        <span class="${isCurrentlyPlaying ? 'text-[#4285f4] font-medium' : ''}">${file.name}</span>
-                        ${isCurrentlyPlaying ? '<span class="ml-2 text-[#4285f4]">(Now Playing)</span>' : ''}
-                    </div>
-                </td>
-                <td class="px-4 py-3">${file.size}</td>
-                <td class="px-4 py-3">${file.created}</td>
-                <td class="px-4 py-3">${file.average_video_length.toFixed(2)}</td>
-                <td class="px-4 py-3">
-                    <button class="${buttonStyles.info}"
-                        onclick='showModal(${JSON.stringify(file.topics)})'
-                        title="Details">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                         </svg>
                     </button>
-                    
-                    <button class="${buttonStyles.upload}"
-                        title="Upload: Available soon"  
-                        disabled
-                    >
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
-                        </svg>
-                    </button>
-                    
-                    <a class="${buttonStyles.download}"
-                        href="/download/${directoryName}/${file.name}"
-                        title="Download">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                        </svg>
-                    </a>
+                    <span class="${isCurrentlyPlaying ? 'text-[#4285f4] font-medium' : ''}">${file.name}</span>
+                    ${isCurrentlyPlaying ? '<span class="ml-2 text-[#4285f4]">(Now Playing)</span>' : ''}
+                    ${isRecording ? '<span class="ml-2 text-[#e74c3c]">(Recording)</span>' : ''}
+                </div>
+            </td>
+            <td class="px-4 py-3">${file.size}</td>
+            <td class="px-4 py-3">${file.created}</td>
+            <td class="px-4 py-3">${file.average_video_length.toFixed(2)}</td>
+            <td class="px-4 py-3">
+                <button class="${buttonStyles.info}"
+                    onclick='showModal(${JSON.stringify(file.topics)})'
+                    title="Details">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                    </svg>
+                </button>
+                
+                <button class="${buttonStyles.upload}"
+                    title="Upload: Available soon"  
+                    disabled
+                >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                    </svg>
+                </button>
+                
+                <a class="${buttonStyles.download}"
+                    href="/download/${directoryName}/${file.name}"
+                    title="Download">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                </a>
 
-                    <button class="${buttonStyles.delete}"
-                        onclick="deleteFile('${file.name}', '${directoryName}')"
-                        ${isRecording || isCurrentlyPlaying ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}
-                        title="Delete">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                        </svg>
-                    </button>
-                </td>
-            `;
+                <button class="${buttonStyles.delete}"
+                    onclick="deleteFile('${file.name}', '${directoryName}')"
+                    ${isRecording || isCurrentlyPlaying ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}
+                    title="Delete">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </button>
+            </td>
+        `;
 
             return row;
         }
@@ -1599,13 +1667,13 @@
             // Show loading state first
             dialog.style.display = 'flex';
             content.innerHTML = `
-                <div class="flex items-center justify-center p-4">
-                    <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>
-            `;
+            <div class="flex items-center justify-center p-4">
+                <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+        `;
             dialog.classList.remove('hidden');
 
             try {
@@ -1648,33 +1716,33 @@
                         .join(' ');
 
                     content.innerHTML += `
-                        <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                            <div class="flex flex-col gap-1">
-                                <span class="text-sm font-medium text-gray-900">${serviceName}</span>
-                                <span class="text-xs px-2 py-0.5 rounded-full ${enabledColor} inline-flex items-center w-fit">
-                                    ${isEnabled ? 'Enabled' : 'Disabled'}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm font-medium ${isRunning ? 'text-green-600' : 'text-red-600'}">
-                                    ${isRunning ? 'Running' : 'Stopped'}
-                                </span>
-                                <div class="w-2 h-2 rounded-full ${statusColor}"></div>
-                            </div>
+                    <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-sm font-medium text-gray-900">${serviceName}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full ${enabledColor} inline-flex items-center w-fit">
+                                ${isEnabled ? 'Enabled' : 'Disabled'}
+                            </span>
                         </div>
-                    `;
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium ${isRunning ? 'text-green-600' : 'text-red-600'}">
+                                ${isRunning ? 'Running' : 'Stopped'}
+                            </span>
+                            <div class="w-2 h-2 rounded-full ${statusColor}"></div>
+                        </div>
+                    </div>
+                `;
                 });
             } catch (error) {
                 console.error('Error fetching service status:', error);
                 content.innerHTML = `
-                    <div class="flex items-center gap-2 p-3 text-red-800 bg-red-50 rounded-lg">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span class="text-sm font-medium">Error loading service status</span>
-                    </div>
-                `;
+                <div class="flex items-center gap-2 p-3 text-red-800 bg-red-50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-sm font-medium">Error loading service status</span>
+                </div>
+            `;
             }
         };
 
