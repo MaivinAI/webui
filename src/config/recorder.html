@@ -766,16 +766,29 @@
                 .then(data => {
                     const deviceType = data.DEVICE;
                     if (deviceType.toLowerCase() === 'maivin') {
-                        // Handle MAIVIN specific topics
-                        const topicsToHide = [
-                            '/fusion/occupancy',
-                            '/fusion/targets',
-                            '/radar/targets',
-                            '/radar/cube',
-                            '/radar/clusters',
-                            '/radar/info'
-                        ];
-                        hideAndDisableTopics(topicsToHide);
+                        // Hide entire Radar and Fusion sections
+                        const radarGroup = document.querySelector('.topic-group:has(#topic_radar_parent)');
+                        const fusionParent = document.querySelector('.topic-item:has(#topic_fusion_parent)');
+
+                        if (radarGroup) {
+                            radarGroup.style.display = 'none';
+                        }
+
+                        if (fusionParent) {
+                            fusionParent.style.display = 'none';
+                        }
+
+                        // Update the all models parent checkbox behavior since fusion is hidden
+                        const allModelsParent = document.getElementById('topic_all_models_parent');
+                        const modelParent = document.getElementById('topic_model_parent');
+
+                        // Modify the updateAllModelsParent function for MAIVIN
+                        window.updateAllModelsParent = function () {
+                            if (allModelsParent && modelParent) {
+                                // For MAIVIN, all models parent matches model parent state
+                                allModelsParent.checked = modelParent.checked;
+                            }
+                        };
                     }
                 })
                 .then(() => fetchConfigDetails())
