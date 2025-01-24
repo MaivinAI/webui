@@ -255,7 +255,11 @@
             color: #111827;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+        }
+
+        .topic-group-header .checkbox-wrapper {
+            margin-right: 8px;
         }
 
         .topic-group-header .icon {
@@ -335,6 +339,7 @@
             background-color: #f3f4f6;
             border-color: #e5e7eb;
             cursor: not-allowed;
+            opacity: 0.5;
         }
 
         .checkbox-wrapper input[type="checkbox"]:disabled:checked {
@@ -342,34 +347,13 @@
             border-color: #9ca3af;
         }
 
-        .search-container {
-            margin-bottom: 16px;
-            position: relative;
+        .topic-item input[type="checkbox"]:not(:disabled) {
+            cursor: pointer;
+            opacity: 1;
         }
 
-        .search-container input {
-            width: 100%;
-            padding: 10px 16px 10px 40px;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .search-container input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9ca3af;
-            width: 16px;
-            height: 16px;
+        .topic-item input[type="checkbox"]:not(:disabled)+span {
+            color: #374151;
         }
 
         /* Topic tree lines */
@@ -472,6 +456,32 @@
         .topic-item:hover input[type="range"]:not(:disabled)::-webkit-slider-thumb {
             transform: scale(1.1);
         }
+
+        /* Add these CSS rules to the existing <style> section */
+        .topic-group-header input[type="checkbox"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .topic-group-header.disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Update the existing checkbox-wrapper input styles */
+        .checkbox-wrapper input[type="checkbox"]:disabled {
+            background-color: #f3f4f6;
+            border-color: #e5e7eb;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:disabled:checked {
+            background-color: #9ca3af;
+            border-color: #9ca3af;
+        }
     </style>
 </head>
 
@@ -517,190 +527,123 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <div class="search-container">
-                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <input type="text" id="topicSearch" placeholder="Search topics...">
+            <div class="topics-container">
+                <!-- Localization Group -->
+                <div class="topic-group">
+                    <div class="topic-group-header">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="topic_localization" name="topics" disabled
+                                title="Localization topics are automatically configured on the device settings">
+                        </label>
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Localization Topics
+                    </div>
                 </div>
 
-                <div class="topics-container">
-                    <!-- IMU Group -->
-                    <div class="topic-group">
-                        <div class="topic-group-header">
-                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m0-16l-4 4m4-4l4 4M4 12h16m-16 0l4-4m-4 4l4 4M12 12l3 3m-3-3l-3 3m3-3l3-3m-3 3l-3-3" />
-                            </svg>
-                            IMU Topics
-                        </div>
-                        <div class="topic-list">
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_imu" name="topics" value="/imu" disabled>
-                                </label>
-                                <span>/imu</span>
-                            </div>
-                        </div>
+                <!-- Camera Group -->
+                <div class="topic-group">
+                    <div class="topic-group-header">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="topic_camera_parent" name="topics" disabled
+                                title="Camera topics are automatically configured based on device settings">
+                        </label>
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Camera Topics
                     </div>
+                    <!-- Hidden camera checkboxes -->
+                    <input type="checkbox" id="topic_camera_info" name="topics" value="/camera/info"
+                        style="display: none;">
+                    <input type="checkbox" id="topic_camera_h264" name="topics" value="/camera/h264"
+                        style="display: none;">
+                    <input type="checkbox" id="topic_camera_jpeg" name="topics" value="/camera/jpeg"
+                        style="display: none;">
+                </div>
 
-                    <!-- GPS Group -->
-                    <div class="topic-group">
-                        <div class="topic-group-header">
-                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            GPS Topics
-                        </div>
-                        <div class="topic-list">
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_gps" name="topics" value="/gps" disabled>
-                                </label>
-                                <span>/gps</span>
-                            </div>
-                        </div>
+                <!-- Radar Group -->
+                <div class="topic-group">
+                    <div class="topic-group-header">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="topic_radar_parent" name="topics">
+                        </label>
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 13v-1m4 1v-3m4 3V8M12 21a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Radar Topics
                     </div>
-
-                    <!-- Radar Group -->
-                    <div class="topic-group">
-                        <div class="topic-group-header">
-                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 13v-1m4 1v-3m4 3V8M12 21a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Radar Topics
-                        </div>
-                        <div class="topic-list">
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_radar" name="topics" value="/radar/targets"
-                                        disabled>
-                                </label>
-                                <span>/radar/targets</span>
-                            </div>
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_radarcube" name="topics" value="/radar/cube">
-                                </label>
-                                <span>/radar/cube</span>
-                                <div class="fps-slider">
-                                    <input type="range" id="cube_fps" min="1" max="18" value="18" step="1" disabled>
-                                    <span id="fps_value" class="fps-label">18 FPS</span>
-                                </div>
-                            </div>
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_radarclusters" name="topics"
-                                        value="/radar/clusters">
-                                </label>
-                                <span>/radar/clusters</span>
-                            </div>
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_radar_info" name="topics" value="/radar/info">
-                                </label>
-                                <span>/radar/info</span>
+                    <div class="topic-list">
+                        <div class="topic-item">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="topic_radarcube" name="topics" value="/radar/cube" disabled
+                                    title="Radar cube topic is automatically configured based on device settings">
+                            </label>
+                            <span>/radar/cube</span>
+                            <div class="fps-slider">
+                                <input type="range" id="cube_fps" min="1" max="18" value="18" step="1" disabled
+                                    title="Enable radar cube topic to adjust FPS"
+                                    oninput="document.getElementById('fps_value').textContent = this.value + ' FPS'">
+                                <span id="fps_value" class="fps-label">18 FPS</span>
                             </div>
                         </div>
+                        <!-- Hidden checkboxes for other radar topics -->
+                        <input type="checkbox" id="topic_radarclusters" name="topics" value="/radar/clusters"
+                            style="display: none;">
+                        <input type="checkbox" id="topic_radartargets" name="topics" value="/radar/targets"
+                            style="display: none;">
+                        <input type="checkbox" id="topic_radarinfo" name="topics" value="/radar/info"
+                            style="display: none;">
                     </div>
+                </div>
 
-                    <!-- Camera Group -->
-                    <div class="topic-group">
-                        <div class="topic-group-header">
-                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                            Camera Topics
-                        </div>
-                        <div class="topic-list">
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_camera_info" name="topics" value="/camera/info"
-                                        disabled>
-                                </label>
-                                <span>/camera/info</span>
-                            </div>
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_camera_h264" name="topics" value="/camera/h264"
-                                        disabled>
-                                </label>
-                                <span>/camera/h264</span>
-                            </div>
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_camera_jpeg" name="topics" value="/camera/jpeg">
-                                </label>
-                                <span>/camera/jpeg</span>
-                            </div>
-                        </div>
+                <!-- Model Group -->
+                <div class="topic-group">
+                    <div class="topic-group-header">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="topic_all_models_parent" name="topics"
+                                title="Select all model topics">
+                        </label>
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                        </svg>
+                        Model Topics
                     </div>
+                    <div class="topic-list">
+                        <!-- Model Parent -->
+                        <div class="topic-item">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="topic_model_parent" name="topics">
+                            </label>
+                            <span>/model</span>
+                        </div>
+                        <!-- Hidden Model Children -->
+                        <input type="checkbox" id="topic_model_info" name="topics" value="/model/info"
+                            style="display: none;">
+                        <input type="checkbox" id="topic_model_boxes2d" name="topics" value="/model/boxes2d"
+                            style="display: none;">
+                        <input type="checkbox" id="topic_model_mask" name="topics" value="/model/mask_compressed"
+                            style="display: none;">
 
-                    <!-- Model Group -->
-                    <div class="topic-group">
-                        <div class="topic-group-header">
-                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                            </svg>
-                            Model Topics
+                        <!-- Fusion Parent -->
+                        <div class="topic-item">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="topic_fusion_parent" name="topics">
+                            </label>
+                            <span>/fusion</span>
                         </div>
-                        <div class="topic-list">
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_model_info" name="topics" value="/model/info">
-                                </label>
-                                <span>/model/info</span>
-                            </div>
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_model_boxes2d" name="topics"
-                                        value="/model/boxes2d">
-                                </label>
-                                <span>/model/boxes2d</span>
-                            </div>
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_model_mask" name="topics"
-                                        value="/model/mask_compressed">
-                                </label>
-                                <span>/model/mask_compressed</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Fusion Group -->
-                    <div class="topic-group">
-                        <div class="topic-group-header">
-                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            Fusion Topics
-                        </div>
-                        <div class="topic-list">
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_fusion_targets" name="topics"
-                                        value="/fusion/targets">
-                                </label>
-                                <span>/fusion/targets</span>
-                            </div>
-                            <div class="topic-item">
-                                <label class="checkbox-wrapper">
-                                    <input type="checkbox" id="topic_fusion_occupancy" name="topics"
-                                        value="/fusion/occupancy">
-                                </label>
-                                <span>/fusion/occupancy</span>
-                            </div>
-                        </div>
+                        <!-- Hidden Fusion Children -->
+                        <input type="checkbox" id="topic_fusion_targets" name="topics" value="/fusion/targets"
+                            style="display: none;">
+                        <input type="checkbox" id="topic_fusion_occupancy" name="topics" value="/fusion/occupancy"
+                            style="display: none;">
                     </div>
                 </div>
             </div>
@@ -721,16 +664,25 @@
     </div>
 
     <script>
-        // Declare variables in global scope
-        let cameraCheckboxes;
-        let parentCameraCheckbox;
-        let radarCheckboxes;
-        let parentRadarCheckbox;
-        let modelCheckboxes;
-        let parentModelCheckbox;
-        let fusionCheckboxes;
-        let parentFusionCheckbox;
-        let existingTopics = [];
+        // Define all available UI topics at the start
+        const allUiTopics = [
+            '/imu',
+            '/gps',
+            '/radar/cube',
+            '/radar/clusters',
+            '/radar/targets',
+            '/radar/info',
+            '/camera/info',
+            '/camera/h264',
+            '/camera/jpeg',
+            '/model/info',
+            '/model/boxes2d',
+            '/model/mask_compressed',
+            '/fusion/targets',
+            '/fusion/occupancy'
+        ];
+
+        let existingTopics = []; // Store existing topics globally
 
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize variables
@@ -807,30 +759,6 @@
                 });
             }
 
-            // Setup search functionality
-            const searchInput = document.getElementById('topicSearch');
-            if (searchInput) {
-                searchInput.addEventListener('input', function () {
-                    const searchTerm = this.value.toLowerCase();
-                    const topicItems = document.querySelectorAll('.topic-item');
-
-                    topicItems.forEach(item => {
-                        if (searchTerm === '') {
-                            if (!item.hasAttribute('data-hidden-by-device')) {
-                                item.style.display = 'flex';
-                            }
-                        } else {
-                            const topicText = item.querySelector('span').textContent.toLowerCase();
-                            if (topicText.includes(searchTerm) && !item.hasAttribute('data-hidden-by-device')) {
-                                item.style.display = 'flex';
-                            } else {
-                                item.style.display = 'none';
-                            }
-                        }
-                    });
-                });
-            }
-
             // First fetch device type, then config
             fetch('/config/webui/details')
                 .then(response => response.json())
@@ -865,19 +793,19 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    // Store existing topics when config is fetched
                     existingTopics = Array.isArray(data.TOPICS) ? data.TOPICS : (data.TOPICS || '').split(' ');
 
-                    // Set cube FPS slider value from config
+                    const localizationCheckbox = document.getElementById('topic_localization');
+                    localizationCheckbox.checked = existingTopics.includes('/imu') || existingTopics.includes('/gps');
+
                     const fpsSlider = document.getElementById('cube_fps');
                     const fpsValue = document.getElementById('fps_value');
                     const cubeCheckbox = document.getElementById('topic_radarcube');
 
-                    // Check if cube topic exists in the config
-                    if (existingTopics.includes('/radar/cube')) {
-                        cubeCheckbox.checked = true;
-                        fpsSlider.disabled = false;
-                    }
+                    // Initialize both radar and camera states
+                    initializeRadarState();
+                    initializeCameraState();
+                    initializeModelState();
 
                     if (data.CUBE_FPS) {
                         fpsSlider.value = data.CUBE_FPS;
@@ -947,19 +875,19 @@
             const compression = document.getElementById('compression').value;
             const cubeFps = document.getElementById('cube_fps').value;
 
-            // Get all available UI topics (both checked and unchecked)
-            const allUiTopics = Array.from(document.querySelectorAll('input[name="topics"]'))
-                .map(checkbox => checkbox.value);
-
-            // Get selected topics from UI
+            // Only collect topics from checkboxes that have a value attribute
             const selectedTopics = Array.from(document.querySelectorAll('input[name="topics"]:checked'))
+                .filter(checkbox => checkbox.hasAttribute('value'))
                 .map(checkbox => checkbox.value);
 
-            // Keep only manually added topics that aren't in the UI
+            // Keep IMU and GPS if they exist in existingTopics
+            const localizationTopics = ['/imu', '/gps'].filter(topic => existingTopics.includes(topic));
+
+            // Keep manually added topics that aren't in the UI
             const manualTopics = existingTopics.filter(topic => !allUiTopics.includes(topic));
 
-            // Combine manual topics with selected UI topics
-            const allTopics = [...new Set([...manualTopics, ...selectedTopics])].join(' ');
+            // Combine all topics: manual topics, localization topics, and selected UI topics
+            const allTopics = [...new Set([...manualTopics, ...localizationTopics, ...selectedTopics])].join(' ');
 
             fetch('/config/recorder', {
                 method: 'POST',
@@ -987,20 +915,191 @@
                 });
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
+        // Initial setup function
+        function initializeRadarState() {
+            const radarParent = document.getElementById('topic_radar_parent');
             const cubeCheckbox = document.getElementById('topic_radarcube');
+            const clustersCheckbox = document.getElementById('topic_radarclusters');
+            const targetsCheckbox = document.getElementById('topic_radartargets');
+            const infoCheckbox = document.getElementById('topic_radarinfo');
             const fpsSlider = document.getElementById('cube_fps');
-            const fpsValue = document.getElementById('fps_value');
 
-            // Enable/disable slider based on checkbox
-            cubeCheckbox.addEventListener('change', function () {
-                fpsSlider.disabled = !this.checked;
-            });
+            // If any of the radar topics exist, check the parent
+            if (existingTopics.includes('/radar/clusters') ||
+                existingTopics.includes('/radar/targets') ||
+                existingTopics.includes('/radar/info') ||
+                existingTopics.includes('/radar/cube')) {
 
-            // Update the value display
-            fpsSlider.addEventListener('input', function () {
-                fpsValue.textContent = this.value + ' FPS';
+                radarParent.checked = true;
+                clustersCheckbox.checked = true;
+                targetsCheckbox.checked = true;
+                infoCheckbox.checked = true;
+
+                // Enable cube checkbox when parent is checked
+                cubeCheckbox.disabled = false;
+                cubeCheckbox.closest('.topic-item').classList.remove('disabled');
+
+                // If cube was previously selected, check it and enable slider
+                if (existingTopics.includes('/radar/cube')) {
+                    cubeCheckbox.checked = true;
+                    fpsSlider.disabled = false;
+                }
+            }
+        }
+
+        // Update the radar parent checkbox event listener
+        document.getElementById('topic_radar_parent').addEventListener('change', function () {
+            const isChecked = this.checked;
+            const cubeCheckbox = document.getElementById('topic_radarcube');
+            const clustersCheckbox = document.getElementById('topic_radarclusters');
+            const targetsCheckbox = document.getElementById('topic_radartargets');
+            const infoCheckbox = document.getElementById('topic_radarinfo');
+            const fpsSlider = document.getElementById('cube_fps');
+
+            // Enable/disable cube checkbox based on parent
+            cubeCheckbox.disabled = !isChecked;
+            cubeCheckbox.closest('.topic-item').classList.toggle('disabled', !isChecked);
+
+            // Set hidden radar topics based on parent
+            clustersCheckbox.checked = isChecked;
+            targetsCheckbox.checked = isChecked;
+            infoCheckbox.checked = isChecked;
+
+            // If parent is unchecked, uncheck cube and disable slider
+            if (!isChecked) {
+                cubeCheckbox.checked = false;
+                fpsSlider.disabled = true;
+            }
+        });
+
+        // Enable/disable FPS slider based on cube checkbox
+        document.getElementById('topic_radarcube').addEventListener('change', function () {
+            document.getElementById('cube_fps').disabled = !this.checked;
+        });
+
+        function initializeCameraState() {
+            const cameraTopics = ['/camera/info', '/camera/h264', '/camera/jpeg'];
+            const cameraParent = document.getElementById('topic_camera_parent');
+
+            // Check if any camera topics exist in the config
+            const hasCameraTopics = cameraTopics.some(topic => existingTopics.includes(topic));
+
+            if (hasCameraTopics) {
+                cameraParent.checked = true;
+                // Check all individual camera topics that exist in config
+                cameraTopics.forEach(topic => {
+                    const checkbox = document.querySelector(`input[value="${topic}"]`);
+                    if (checkbox && existingTopics.includes(topic)) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+        }
+
+        // Update the camera parent checkbox event listener
+        document.getElementById('topic_camera_parent').addEventListener('change', function () {
+            const isChecked = this.checked;
+            const cameraCheckboxes = document.querySelectorAll('input[id^="topic_camera_"]:not([id="topic_camera_parent"])');
+
+            cameraCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
             });
+        });
+
+        // Add these event listeners after your existing ones
+        document.getElementById('topic_model_parent').addEventListener('change', function () {
+            const isChecked = this.checked;
+            const modelChildren = [
+                'topic_model_info',
+                'topic_model_boxes2d',
+                'topic_model_mask'
+            ];
+
+            modelChildren.forEach(childId => {
+                const checkbox = document.getElementById(childId);
+                checkbox.disabled = !isChecked;
+                if (!isChecked) {
+                    checkbox.checked = false;
+                }
+            });
+        });
+
+        document.getElementById('topic_fusion_parent').addEventListener('change', function () {
+            const isChecked = this.checked;
+            const fusionChildren = [
+                'topic_fusion_targets',
+                'topic_fusion_occupancy'
+            ];
+
+            fusionChildren.forEach(childId => {
+                const checkbox = document.getElementById(childId);
+                checkbox.disabled = !isChecked;
+                if (!isChecked) {
+                    checkbox.checked = false;
+                }
+            });
+        });
+
+        // Update the initialization function to handle model and fusion topics
+        function initializeModelState() {
+            const modelTopics = ['/model/info', '/model/boxes2d', '/model/mask_compressed'];
+            const fusionTopics = ['/fusion/targets', '/fusion/occupancy'];
+
+            const hasModelTopics = modelTopics.some(topic => existingTopics.includes(topic));
+            const hasFusionTopics = fusionTopics.some(topic => existingTopics.includes(topic));
+
+            const modelParent = document.getElementById('topic_model_parent');
+            const fusionParent = document.getElementById('topic_fusion_parent');
+            const allModelsParent = document.getElementById('topic_all_models_parent');
+
+            if (hasModelTopics) {
+                modelParent.checked = true;
+                modelParent.dispatchEvent(new Event('change'));
+            }
+
+            if (hasFusionTopics) {
+                fusionParent.checked = true;
+                fusionParent.dispatchEvent(new Event('change'));
+            }
+
+            // Update the all models parent checkbox
+            allModelsParent.checked = modelParent.checked && fusionParent.checked;
+        }
+
+        // Add this to your existing JavaScript
+        document.getElementById('topic_all_models_parent').addEventListener('change', function () {
+            const isChecked = this.checked;
+            const modelParent = document.getElementById('topic_model_parent');
+            const fusionParent = document.getElementById('topic_fusion_parent');
+
+            modelParent.checked = isChecked;
+            fusionParent.checked = isChecked;
+
+            // Trigger their change events to handle their children
+            modelParent.dispatchEvent(new Event('change'));
+            fusionParent.dispatchEvent(new Event('change'));
+        });
+
+        // Update the model and fusion change listeners to check the parent
+        function updateAllModelsParent() {
+            const modelParent = document.getElementById('topic_model_parent');
+            const fusionParent = document.getElementById('topic_fusion_parent');
+            const allModelsParent = document.getElementById('topic_all_models_parent');
+
+            // Parent is checked only if both model and fusion are checked
+            allModelsParent.checked = modelParent.checked && fusionParent.checked;
+        }
+
+        // Add to existing model parent listener
+        document.getElementById('topic_model_parent').addEventListener('change', function () {
+            // ... existing code ...
+            updateAllModelsParent();
+        });
+
+        // Add to existing fusion parent listener
+        document.getElementById('topic_fusion_parent').addEventListener('change', function () {
+            // ... existing code ...
+            updateAllModelsParent();
         });
     </script>
 </body>
