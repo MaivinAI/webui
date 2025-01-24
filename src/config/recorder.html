@@ -230,56 +230,247 @@
             background: linear-gradient(to top, white 60%, transparent);
         }
 
+        /* Modern Tree-View Topic Selection */
+        .topics-container {
+            max-height: 500px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0;
+        }
+
+        .topic-group {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .topic-group:last-child {
+            border-bottom: none;
+        }
+
+        .topic-group-header {
+            padding: 16px 20px;
+            background: #f9fafb;
+            font-weight: 600;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topic-group-header .icon {
+            color: #6b7280;
+            width: 18px;
+            height: 18px;
+        }
+
+        .topic-list {
+            padding: 8px 0;
+        }
+
         .topic-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
+            padding: 8px 20px 8px 48px;
+            position: relative;
+            transition: background-color 0.15s;
+        }
+
+        .topic-item:hover {
+            background-color: #f3f4f6;
         }
 
         .topic-item span {
-            flex-grow: 1;
-            margin-right: 10px;
+            flex: 1;
+            font-size: 14px;
+            color: #374151;
+            font-family: 'Roboto Mono', monospace;
         }
 
-        .toggle-switch {
+        .topic-item.disabled span {
+            color: #9ca3af;
+        }
+
+        .checkbox-wrapper {
             display: flex;
             align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
         }
 
-        .topics-container {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
+        .checkbox-wrapper input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #d1d5db;
             border-radius: 4px;
-            padding: 10px;
-            margin-top: 10px;
-        }
-
-        /* Style for the checkbox and label */
-        .toggle-switch input[type="checkbox"] {
-            margin-right: 8px;
-        }
-
-        .toggle-switch label {
-            display: flex;
-            align-items: center;
+            background-color: white;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
             margin: 0;
         }
 
-        .parent-topic {
-            background-color: #f8f9fa;
-            font-weight: bold;
+        .checkbox-wrapper input[type="checkbox"]:checked {
+            background-color: #2563eb;
+            border-color: #2563eb;
         }
 
-        .child-topic .indent {
-            padding-left: 20px;
+        .checkbox-wrapper input[type="checkbox"]:checked::after {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 1px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
         }
 
-        .topic-item.child-topic {
-            border-left: 2px solid #eee;
-            margin-left: 10px;
+        .checkbox-wrapper input[type="checkbox"]:disabled {
+            background-color: #f3f4f6;
+            border-color: #e5e7eb;
+            cursor: not-allowed;
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:disabled:checked {
+            background-color: #9ca3af;
+            border-color: #9ca3af;
+        }
+
+        .search-container {
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-container input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Topic tree lines */
+        .topic-item::before {
+            content: '';
+            position: absolute;
+            left: 28px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e5e7eb;
+        }
+
+        .topic-item::after {
+            content: '';
+            position: absolute;
+            left: 28px;
+            top: 50%;
+            width: 12px;
+            height: 2px;
+            background: #e5e7eb;
+        }
+
+        .topic-item:last-child::before {
+            height: 50%;
+        }
+
+        /* Topic count badge */
+        .topic-count {
+            background-color: #e2e8f0;
+            color: #64748b;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Status indicators */
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            display: inline-block;
+        }
+
+        .status-active {
+            background-color: #10b981;
+        }
+
+        .status-disabled {
+            background-color: #94a3b8;
+        }
+
+        .fps-slider {
+            display: flex;
+            margin-left: 20px;
+            align-items: center;
+            flex: 1;
+            gap: 12px;
+        }
+
+        .fps-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+            min-width: 60px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 120px;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]:disabled {
+            background: #f3f4f6;
+        }
+
+        input[type="range"]:disabled::-webkit-slider-thumb {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+
+        .topic-item:hover input[type="range"]:not(:disabled)::-webkit-slider-thumb {
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -327,138 +518,189 @@
             </div>
 
             <div class="form-group">
-                <label for="topicSearch">Search Topics:</label>
-                <input type="text" class="search-bar" id="topicSearch" placeholder="Search topics...">
-            </div>
+                <div class="search-container">
+                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="text" id="topicSearch" placeholder="Search topics...">
+                </div>
 
-            <div class="form-group">
-                <label>Topics to Record:</label>
-                <div class="topics-container" id="topicsContainer">
-                    <div class="topic-item">
-                        <span>/imu</span>
-                        <label class="toggle-switch" for="topic_imu">
-                            <input type="checkbox" id="topic_imu" name="topics" value="/imu" disabled>
-                            <span class="slider"></span>
-                        </label>
+                <div class="topics-container">
+                    <!-- IMU Group -->
+                    <div class="topic-group">
+                        <div class="topic-group-header">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m0-16l-4 4m4-4l4 4M4 12h16m-16 0l4-4m-4 4l4 4M12 12l3 3m-3-3l-3 3m3-3l3-3m-3 3l-3-3" />
+                            </svg>
+                            IMU Topics
+                        </div>
+                        <div class="topic-list">
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_imu" name="topics" value="/imu" disabled>
+                                </label>
+                                <span>/imu</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="topic-item">
-                        <span>/gps</span>
-                        <label class="toggle-switch" for="topic_gps">
-                            <input type="checkbox" id="topic_gps" name="topics" value="/gps" disabled>
-                            <span class="slider"></span>
-                        </label>
+
+                    <!-- GPS Group -->
+                    <div class="topic-group">
+                        <div class="topic-group-header">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            GPS Topics
+                        </div>
+                        <div class="topic-list">
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_gps" name="topics" value="/gps" disabled>
+                                </label>
+                                <span>/gps</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="topic-item parent-topic">
-                        <span>/radar</span>
-                        <label class="toggle-switch" for="topic_radar_parent">
-                            <input type="checkbox" id="topic_radar_parent" disabled>
-                            <span class="slider"></span>
-                        </label>
+
+                    <!-- Radar Group -->
+                    <div class="topic-group">
+                        <div class="topic-group-header">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 13v-1m4 1v-3m4 3V8M12 21a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Radar Topics
+                        </div>
+                        <div class="topic-list">
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_radar" name="topics" value="/radar/targets"
+                                        disabled>
+                                </label>
+                                <span>/radar/targets</span>
+                            </div>
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_radarcube" name="topics" value="/radar/cube">
+                                </label>
+                                <span>/radar/cube</span>
+                                <div class="fps-slider">
+                                    <input type="range" id="cube_fps" min="1" max="18" value="18" step="1" disabled>
+                                    <span id="fps_value" class="fps-label">18 FPS</span>
+                                </div>
+                            </div>
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_radarclusters" name="topics"
+                                        value="/radar/clusters">
+                                </label>
+                                <span>/radar/clusters</span>
+                            </div>
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_radar_info" name="topics" value="/radar/info">
+                                </label>
+                                <span>/radar/info</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/radar/targets</span>
-                        <label class="toggle-switch" for="topic_radar">
-                            <input type="checkbox" id="topic_radar" name="topics" value="/radar/targets" disabled>
-                            <span class="slider"></span>
-                        </label>
+
+                    <!-- Camera Group -->
+                    <div class="topic-group">
+                        <div class="topic-group-header">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Camera Topics
+                        </div>
+                        <div class="topic-list">
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_camera_info" name="topics" value="/camera/info"
+                                        disabled>
+                                </label>
+                                <span>/camera/info</span>
+                            </div>
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_camera_h264" name="topics" value="/camera/h264"
+                                        disabled>
+                                </label>
+                                <span>/camera/h264</span>
+                            </div>
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_camera_jpeg" name="topics" value="/camera/jpeg">
+                                </label>
+                                <span>/camera/jpeg</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/radar/cube</span>
-                        <label class="toggle-switch" for="topic_radarcube">
-                            <input type="checkbox" id="topic_radarcube" name="topics" value="/radar/cube">
-                            <span class="slider"></span>
-                        </label>
+
+                    <!-- Model Group -->
+                    <div class="topic-group">
+                        <div class="topic-group-header">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                            </svg>
+                            Model Topics
+                        </div>
+                        <div class="topic-list">
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_model_info" name="topics" value="/model/info">
+                                </label>
+                                <span>/model/info</span>
+                            </div>
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_model_boxes2d" name="topics"
+                                        value="/model/boxes2d">
+                                </label>
+                                <span>/model/boxes2d</span>
+                            </div>
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_model_mask" name="topics"
+                                        value="/model/mask_compressed">
+                                </label>
+                                <span>/model/mask_compressed</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/radar/clusters</span>
-                        <label class="toggle-switch" for="topic_radarclusters">
-                            <input type="checkbox" id="topic_radarclusters" name="topics" value="/radar/clusters">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/radar/info</span>
-                        <label class="toggle-switch" for="topic_radar_info">
-                            <input type="checkbox" id="topic_radar_info" name="topics" value="/radar/info">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item parent-topic">
-                        <span>/camera</span>
-                        <label class="toggle-switch" for="topic_camera">
-                            <input type="checkbox" id="topic_camera" disabled>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/camera/info</span>
-                        <label class="toggle-switch" for="topic_camera_info">
-                            <input type="checkbox" id="topic_camera_info" name="topics" value="/camera/info" disabled>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/camera/h264</span>
-                        <label class="toggle-switch" for="topic_camera_h264">
-                            <input type="checkbox" id="topic_camera_h264" name="topics" value="/camera/h264" disabled>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/camera/jpeg</span>
-                        <label class="toggle-switch" for="topic_camera_jpeg">
-                            <input type="checkbox" id="topic_camera_jpeg" name="topics" value="/camera/jpeg">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item parent-topic">
-                        <span>/model</span>
-                        <label class="toggle-switch" for="topic_model_parent">
-                            <input type="checkbox" id="topic_model_parent">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/model/info</span>
-                        <label class="toggle-switch" for="topic_model_info">
-                            <input type="checkbox" id="topic_model_info" name="topics" value="/model/info">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/model/boxes2d</span>
-                        <label class="toggle-switch" for="topic_model_boxes2d">
-                            <input type="checkbox" id="topic_model_boxes2d" name="topics" value="/model/boxes2d">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/model/mask_compressed</span>
-                        <label class="toggle-switch" for="topic_model_mask">
-                            <input type="checkbox" id="topic_model_mask" name="topics" value="/model/mask_compressed">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item parent-topic">
-                        <span>/fusion</span>
-                        <label class="toggle-switch" for="topic_fusion_parent">
-                            <input type="checkbox" id="topic_fusion_parent">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/fusion/targets</span>
-                        <label class="toggle-switch" for="topic_fusion_targets">
-                            <input type="checkbox" id="topic_fusion_targets" name="topics" value="/fusion/targets">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="topic-item child-topic">
-                        <span class="indent">/fusion/occupancy</span>
-                        <label class="toggle-switch" for="topic_fusion_occupancy">
-                            <input type="checkbox" id="topic_fusion_occupancy" name="topics" value="/fusion/occupancy">
-                            <span class="slider"></span>
-                        </label>
+
+                    <!-- Fusion Group -->
+                    <div class="topic-group">
+                        <div class="topic-group-header">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Fusion Topics
+                        </div>
+                        <div class="topic-list">
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_fusion_targets" name="topics"
+                                        value="/fusion/targets">
+                                </label>
+                                <span>/fusion/targets</span>
+                            </div>
+                            <div class="topic-item">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" id="topic_fusion_occupancy" name="topics"
+                                        value="/fusion/occupancy">
+                                </label>
+                                <span>/fusion/occupancy</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -479,7 +721,7 @@
     </div>
 
     <script>
-        // Update the variable declarations at the top
+        // Declare variables in global scope
         let cameraCheckboxes;
         let parentCameraCheckbox;
         let radarCheckboxes;
@@ -488,81 +730,82 @@
         let parentModelCheckbox;
         let fusionCheckboxes;
         let parentFusionCheckbox;
+        let existingTopics = [];
 
         document.addEventListener('DOMContentLoaded', function () {
-            // Initialize existing variables
+            // Initialize variables
             cameraCheckboxes = document.querySelectorAll('input[id^="topic_camera_"]');
             parentCameraCheckbox = document.getElementById('topic_camera');
             radarCheckboxes = document.querySelectorAll('input[id^="topic_radar"]');
             parentRadarCheckbox = document.getElementById('topic_radar_parent');
             modelCheckboxes = document.querySelectorAll('input[id^="topic_model_"]:not([id="topic_model_parent"])');
             parentModelCheckbox = document.getElementById('topic_model_parent');
-
-            // Initialize fusion variables
             fusionCheckboxes = document.querySelectorAll('input[id^="topic_fusion_"]:not([id="topic_fusion_parent"])');
             parentFusionCheckbox = document.getElementById('topic_fusion_parent');
 
             // Camera checkbox handler
-            cameraCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function () {
-                    const anyChecked = Array.from(cameraCheckboxes).some(cb => cb.checked);
-                    parentCameraCheckbox.checked = anyChecked;
+            if (parentCameraCheckbox && cameraCheckboxes.length > 0) {
+                cameraCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function () {
+                        const anyChecked = Array.from(cameraCheckboxes).some(cb => cb.checked);
+                        parentCameraCheckbox.checked = anyChecked;
+                    });
                 });
-            });
+            }
 
             // Radar checkbox handler
-            radarCheckboxes.forEach(checkbox => {
-                if (checkbox.id !== 'topic_radar_parent') {  // Exclude the parent checkbox
-                    checkbox.addEventListener('change', function () {
-                        const anyChecked = Array.from(radarCheckboxes)
-                            .filter(cb => cb.id !== 'topic_radar_parent')
-                            .some(cb => cb.checked);
-                        parentRadarCheckbox.checked = anyChecked;
-                    });
-                }
-            });
+            if (parentRadarCheckbox && radarCheckboxes.length > 0) {
+                radarCheckboxes.forEach(checkbox => {
+                    if (checkbox.id !== 'topic_radar_parent') {
+                        checkbox.addEventListener('change', function () {
+                            const anyChecked = Array.from(radarCheckboxes)
+                                .filter(cb => cb.id !== 'topic_radar_parent')
+                                .some(cb => cb.checked);
+                            parentRadarCheckbox.checked = anyChecked;
+                        });
+                    }
+                });
+            }
 
             // Model checkbox handler
-            parentModelCheckbox.addEventListener('change', function () {
-                // When parent is checked/unchecked, update all children
-                modelCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
+            if (parentModelCheckbox && modelCheckboxes.length > 0) {
+                parentModelCheckbox.addEventListener('change', function () {
+                    modelCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
                 });
-            });
 
-            // Model children checkbox handler
-            modelCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function () {
-                    const allChecked = Array.from(modelCheckboxes).every(cb => cb.checked);
-                    const anyChecked = Array.from(modelCheckboxes).some(cb => cb.checked);
-                    parentModelCheckbox.checked = anyChecked;
-                    // If all children are checked, ensure parent is checked
-                    if (allChecked) {
-                        parentModelCheckbox.checked = true;
-                    }
+                modelCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function () {
+                        const allChecked = Array.from(modelCheckboxes).every(cb => cb.checked);
+                        const anyChecked = Array.from(modelCheckboxes).some(cb => cb.checked);
+                        parentModelCheckbox.checked = anyChecked;
+                        if (allChecked) {
+                            parentModelCheckbox.checked = true;
+                        }
+                    });
                 });
-            });
+            }
 
             // Fusion checkbox handler
-            parentFusionCheckbox.addEventListener('change', function () {
-                // When parent is checked/unchecked, update all children
-                fusionCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
+            if (parentFusionCheckbox && fusionCheckboxes.length > 0) {
+                parentFusionCheckbox.addEventListener('change', function () {
+                    fusionCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
                 });
-            });
 
-            // Fusion children checkbox handler
-            fusionCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function () {
-                    const allChecked = Array.from(fusionCheckboxes).every(cb => cb.checked);
-                    const anyChecked = Array.from(fusionCheckboxes).some(cb => cb.checked);
-                    parentFusionCheckbox.checked = anyChecked;
-                    // If all children are checked, ensure parent is checked
-                    if (allChecked) {
-                        parentFusionCheckbox.checked = true;
-                    }
+                fusionCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function () {
+                        const allChecked = Array.from(fusionCheckboxes).every(cb => cb.checked);
+                        const anyChecked = Array.from(fusionCheckboxes).some(cb => cb.checked);
+                        parentFusionCheckbox.checked = anyChecked;
+                        if (allChecked) {
+                            parentFusionCheckbox.checked = true;
+                        }
+                    });
                 });
-            });
+            }
 
             // Setup search functionality
             const searchInput = document.getElementById('topicSearch');
@@ -572,15 +815,12 @@
                     const topicItems = document.querySelectorAll('.topic-item');
 
                     topicItems.forEach(item => {
-                        // Reset display to 'flex' if search is empty
                         if (searchTerm === '') {
-                            // Only show if it's not a RAIVIN topic on MAIVIN device
                             if (!item.hasAttribute('data-hidden-by-device')) {
                                 item.style.display = 'flex';
                             }
                         } else {
                             const topicText = item.querySelector('span').textContent.toLowerCase();
-                            // Only show if it matches search and isn't hidden by device type
                             if (topicText.includes(searchTerm) && !item.hasAttribute('data-hidden-by-device')) {
                                 item.style.display = 'flex';
                             } else {
@@ -591,13 +831,13 @@
                 });
             }
 
-            // First fetch device type
+            // First fetch device type, then config
             fetch('/config/webui/details')
                 .then(response => response.json())
                 .then(data => {
                     const deviceType = data.DEVICE;
                     if (deviceType.toLowerCase() === 'maivin') {
-                        // List of topics to hide for maivin
+                        // Handle MAIVIN specific topics
                         const topicsToHide = [
                             '/fusion/occupancy',
                             '/fusion/targets',
@@ -606,23 +846,7 @@
                             '/radar/clusters',
                             '/radar/info'
                         ];
-
-                        // Hide and disable each topic
-                        topicsToHide.forEach(topic => {
-                            const topicElement = document.querySelector(`input[value="${topic}"]`);
-                            if (topicElement) {
-                                // Get the parent topic-item div and hide it
-                                const topicItem = topicElement.closest('.topic-item');
-                                if (topicItem) {
-                                    topicItem.style.display = 'none';
-                                    // Mark this item as hidden by device type
-                                    topicItem.setAttribute('data-hidden-by-device', 'true');
-                                }
-                                // Disable the checkbox
-                                topicElement.disabled = true;
-                                topicElement.checked = false;
-                            }
-                        });
+                        hideAndDisableTopics(topicsToHide);
                     }
                 })
                 .then(() => fetchConfigDetails())
@@ -639,15 +863,31 @@
                     'Content-Type': 'application/json'
                 }
             })
-                .then(handleFetchResponse)
-                .catch(error => console.error('Error fetching config:', error));
-        }
+                .then(response => response.json())
+                .then(data => {
+                    // Store existing topics when config is fetched
+                    existingTopics = Array.isArray(data.TOPICS) ? data.TOPICS : (data.TOPICS || '').split(' ');
 
-        function handleFetchResponse(response) {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json().then(updateConfigFields);
+                    // Set cube FPS slider value from config
+                    const fpsSlider = document.getElementById('cube_fps');
+                    const fpsValue = document.getElementById('fps_value');
+                    const cubeCheckbox = document.getElementById('topic_radarcube');
+
+                    // Check if cube topic exists in the config
+                    if (existingTopics.includes('/radar/cube')) {
+                        cubeCheckbox.checked = true;
+                        fpsSlider.disabled = false;
+                    }
+
+                    if (data.CUBE_FPS) {
+                        fpsSlider.value = data.CUBE_FPS;
+                        fpsValue.textContent = data.CUBE_FPS + ' FPS';
+                    }
+
+                    return data;
+                })
+                .then(updateConfigFields)
+                .catch(error => console.error('Error fetching config:', error));
         }
 
         function updateConfigFields(data) {
@@ -656,30 +896,40 @@
             const topics = Array.isArray(data.TOPICS) ? data.TOPICS : (data.TOPICS || '').split(' ');
 
             // First uncheck ALL radar checkboxes, including /radar/targets
-            radarCheckboxes.forEach(checkbox => {
-                checkbox.checked = false;
-            });
+            if (radarCheckboxes) {
+                radarCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            }
 
             // Then check only the ones that exist in the config
             topics.forEach(checkTopic);
 
             // Update camera parent checkbox
-            const anyCameraChecked = Array.from(cameraCheckboxes).some(cb => cb.checked);
-            parentCameraCheckbox.checked = anyCameraChecked;
+            if (cameraCheckboxes && parentCameraCheckbox) {
+                const anyCameraChecked = Array.from(cameraCheckboxes).some(cb => cb.checked);
+                parentCameraCheckbox.checked = anyCameraChecked;
+            }
 
             // Update radar parent checkbox based on actual config
-            const anyRadarChecked = Array.from(radarCheckboxes)
-                .filter(cb => cb.id !== 'topic_radar_parent')
-                .some(cb => cb.checked);
-            parentRadarCheckbox.checked = anyRadarChecked;
+            if (radarCheckboxes && parentRadarCheckbox) {
+                const anyRadarChecked = Array.from(radarCheckboxes)
+                    .filter(cb => cb.id !== 'topic_radar_parent')
+                    .some(cb => cb.checked);
+                parentRadarCheckbox.checked = anyRadarChecked;
+            }
 
             // Update model parent checkbox
-            const anyModelChecked = Array.from(modelCheckboxes).some(cb => cb.checked);
-            parentModelCheckbox.checked = anyModelChecked;
+            if (modelCheckboxes && parentModelCheckbox) {
+                const anyModelChecked = Array.from(modelCheckboxes).some(cb => cb.checked);
+                parentModelCheckbox.checked = anyModelChecked;
+            }
 
             // Update fusion parent checkbox
-            const anyFusionChecked = Array.from(fusionCheckboxes).some(cb => cb.checked);
-            parentFusionCheckbox.checked = anyFusionChecked;
+            if (fusionCheckboxes && parentFusionCheckbox) {
+                const anyFusionChecked = Array.from(fusionCheckboxes).some(cb => cb.checked);
+                parentFusionCheckbox.checked = anyFusionChecked;
+            }
         }
 
         function checkTopic(topic) {
@@ -695,9 +945,21 @@
 
             const storage = document.getElementById('storage').value;
             const compression = document.getElementById('compression').value;
-            const topics = Array.from(document.querySelectorAll('input[name="topics"]:checked'))
-                .map(checkbox => checkbox.value)
-                .join(' ');
+            const cubeFps = document.getElementById('cube_fps').value;
+
+            // Get all available UI topics (both checked and unchecked)
+            const allUiTopics = Array.from(document.querySelectorAll('input[name="topics"]'))
+                .map(checkbox => checkbox.value);
+
+            // Get selected topics from UI
+            const selectedTopics = Array.from(document.querySelectorAll('input[name="topics"]:checked'))
+                .map(checkbox => checkbox.value);
+
+            // Keep only manually added topics that aren't in the UI
+            const manualTopics = existingTopics.filter(topic => !allUiTopics.includes(topic));
+
+            // Combine manual topics with selected UI topics
+            const allTopics = [...new Set([...manualTopics, ...selectedTopics])].join(' ');
 
             fetch('/config/recorder', {
                 method: 'POST',
@@ -708,13 +970,13 @@
                     fileName: "recorder",
                     storage: storage,
                     compression: compression,
-                    topics: topics
+                    topics: allTopics,
+                    cube_fps: cubeFps
                 })
             })
                 .then(response => {
                     loadingOverlay.style.display = 'none';
-                    if (response.ok) {
-                    } else {
+                    if (!response.ok) {
                         alert('Error saving configuration');
                     }
                 })
@@ -723,6 +985,22 @@
                     console.error('Error saving config:', error);
                     alert('Error saving configuration');
                 });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const cubeCheckbox = document.getElementById('topic_radarcube');
+            const fpsSlider = document.getElementById('cube_fps');
+            const fpsValue = document.getElementById('fps_value');
+
+            // Enable/disable slider based on checkbox
+            cubeCheckbox.addEventListener('change', function () {
+                fpsSlider.disabled = !this.checked;
+            });
+
+            // Update the value display
+            fpsSlider.addEventListener('input', function () {
+                fpsValue.textContent = this.value + ' FPS';
+            });
         });
     </script>
 </body>
