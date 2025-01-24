@@ -305,7 +305,7 @@
                 const isRaivin = deviceData.DEVICE?.toLowerCase().includes('raivin');
 
                 // Then check services - filter based on device type
-                const baseServices = ["camera", "imu", "navsat", "recorder", "model"];
+                const baseServices = ["camera", "imu", "navsat", "model"];
                 const raivinServices = ["radarpub", "fusion"];
                 const services = isRaivin ? [...baseServices, ...raivinServices] : baseServices;
 
@@ -387,7 +387,7 @@
                 const isRaivin = deviceData.DEVICE?.toLowerCase().includes('raivin');
 
                 // Filter services based on device type
-                const baseServices = ["camera", "imu", "navsat", "recorder", "model"];
+                const baseServices = ["camera", "imu", "navsat", "model"];
                 const raivinServices = ["radarpub", "fusion"];
                 const services = isRaivin ? [...baseServices, ...raivinServices] : baseServices;
 

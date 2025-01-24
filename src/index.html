@@ -481,7 +481,7 @@
 
                 // Update quick status
                 await updateQuickStatus();
-            }catch (error) {
+            } catch (error) {
                 console.error('Error checking replay status:', error);
                 const modeIndicator = document.getElementById('modeIndicator');
                 const modeText = document.getElementById('modeText');
@@ -550,7 +550,7 @@
                 if (!deviceResponse.ok) throw new Error(`HTTP error! status: ${deviceResponse.status}`);
                 const deviceData = await deviceResponse.json();
                 const isRaivin = deviceData.DEVICE?.toLowerCase().includes('raivin');
-                const baseServices = ["camera", "imu", "navsat", "recorder", "model"];
+                const baseServices = ["camera", "imu", "navsat", "model"];
                 const raivinServices = ["radarpub", "fusion"];
                 const services = isRaivin ? [...baseServices, ...raivinServices] : baseServices;
 
@@ -629,7 +629,7 @@
                 const deviceData = await deviceResponse.json();
                 const isRaivin = deviceData.DEVICE?.toLowerCase().includes('raivin');
 
-                const baseServices = ["camera", "imu", "navsat", "recorder", "model"];
+                const baseServices = ["camera", "imu", "navsat", "model"];
                 const raivinServices = ["radarpub", "fusion"];
                 const services = isRaivin ? [...baseServices, ...raivinServices] : baseServices;
 
