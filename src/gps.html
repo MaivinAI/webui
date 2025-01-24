@@ -260,9 +260,11 @@
                 if (!deviceResponse.ok) throw new Error(`HTTP error! status: ${deviceResponse.status}`);
                 const deviceData = await deviceResponse.json();
                 const isRaivin = deviceData.DEVICE?.toLowerCase().includes('raivin');
-
+                console.log(isRaivin);
                 // Check services status
-                const services = ["camera", "imu", "navsat", "recorder", "fusion", "radarpub", "model"];
+                const services = isRaivin ?
+                    ["camera", "imu", "navsat", "radarpub"] :
+                    ["camera", "imu", "navsat"];
                 const serviceResponse = await fetch('/config/service/status', {
                     method: 'POST',
                     headers: {
@@ -289,18 +291,19 @@
                 const modeIndicator = document.getElementById('modeIndicator');
                 const modeText = document.getElementById('modeText');
                 const loadingSpinner = modeIndicator.querySelector('svg.animate-spin');
-                if (loadingSpinner) loadingSpinner.remove();
-
-                if (isReplay) {
-                    const isCameraActive = statusMap['camera'] === 'running';
-                    const allServicesActive = services.every(service => statusMap[service] === 'running');
-
-                    if (allServicesActive) {
-                        modeText.textContent = "Replay Mode (Critical)";
-                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
-                    } else if (isCameraActive) {
+                if (loadingSpinner) {
+                    loadingSpinner.remove();
+                }
+                const allSensorsInactive = services.every(service => statusMap[service] !== 'running');
+                const allSensorActive = services.every(service => statusMap[service] === 'running');
+                if (allSensorsInactive && !isReplay) {
+                    modeText.textContent = "Stopped";
+                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
+                }
+                else if (isReplay) {
+                    if (allSensorActive) {
                         modeText.textContent = "Replay Mode (Degraded)";
-                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 flex items-center gap-2";
+                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
                     } else {
                         modeText.textContent = "Replay Mode";
                         modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-2";
@@ -309,12 +312,8 @@
                     const isCameraDown = !statusMap['camera'] || statusMap['camera'] !== 'running';
                     const isradarpubDown = !statusMap['radarpub'] || statusMap['radarpub'] !== 'running';
                     const isDegraded = (isRaivin && isradarpubDown) || isCameraDown;
-                    const isCritical = isCameraDown && (isRaivin && isradarpubDown);
 
-                    if (isCritical) {
-                        modeText.textContent = "Live Mode (Critical)";
-                        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
-                    } else if (isDegraded) {
+                    if (!allSensorActive) {
                         modeText.textContent = "Live Mode (Degraded)";
                         modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 flex items-center gap-2";
                     } else {
@@ -345,7 +344,7 @@
                 const isRaivin = deviceData.DEVICE?.toLowerCase().includes('raivin');
 
                 // Then check services - filter based on device type
-                const baseServices = ["camera", "imu", "navsat", "recorder", "model"];
+                const baseServices = ["camera", "imu", "navsat", "model"];
                 const raivinServices = ["radarpub", "fusion"];
                 const services = isRaivin ? [...baseServices, ...raivinServices] : baseServices;
 
@@ -427,7 +426,7 @@
                 const isRaivin = deviceData.DEVICE?.toLowerCase().includes('raivin');
 
                 // Filter services based on device type
-                const baseServices = ["camera", "imu", "navsat", "recorder", "model"];
+                const baseServices = ["camera", "imu", "navsat", "model"];
                 const raivinServices = ["radarpub", "fusion"];
                 const services = isRaivin ? [...baseServices, ...raivinServices] : baseServices;
 
