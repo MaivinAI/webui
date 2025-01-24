@@ -839,24 +839,13 @@
                         fileTableBody.appendChild(errorRow);
                         return;
                     }
-
-                    if (data.message) {
-                        document.getElementById('directoryPath').textContent = `Directory: ${data.dir_name}`;
-                        const files = data.files || [];
-                        files.sort((a, b) => new Date(b.created) - new Date(a.created));
-                        files.forEach((file) => {
-                            const row = createTableRow(file, data.dir_name);
-                            fileTableBody.appendChild(row);
-                        });
-                    } else {
-                        document.getElementById('directoryPath').textContent = `Directory: ${data.dir_name}`;
-                        const files = data.files || [];
-                        files.sort((a, b) => new Date(b.created) - new Date(a.created));
-                        files.forEach((file) => {
-                            const row = createTableRow(file, data.dir_name);
-                            fileTableBody.appendChild(row);
-                        });
-                    }
+                    document.getElementById('directoryPath').textContent = `Directory: ${data.dir_name}`;
+                    const files = data.files || [];
+                    files.sort((a, b) => new Date(b.created) - new Date(a.created));
+                    files.forEach((file) => {
+                        const row = createTableRow(file, data.dir_name);
+                        fileTableBody.appendChild(row);
+                    });
                 } catch (error) {
                     console.error('Error parsing JSON:', error);
                     console.error('Response text:', responseText);
