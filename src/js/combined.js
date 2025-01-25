@@ -306,8 +306,8 @@ function animate() {
             rendered.forEach((cell) => {
                 clearThree(cell)
             })
-            if (CAMERA_DRAW_PCD == "class") {
-                color_points_class(points, scene, rendered, true, CAMERA_PCD_LABEL)
+            if (CAMERA_DRAW_PCD.endsWith("class")) {
+                color_points_class(points, CAMERA_DRAW_PCD, scene, rendered, true, CAMERA_PCD_LABEL)
             } else {
                 color_points_field(points, CAMERA_DRAW_PCD, scene, rendered, true, CAMERA_PCD_LABEL)
             }

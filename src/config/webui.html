@@ -452,7 +452,9 @@
                     <option value="power">Power</option>
                     <option value="rcs">RCS</option>
                     <option value="speed">Speed</option>
-                    <option value="class">Class</option>
+                    <option value="fusion_class">Fusion Class</option>
+                    <option value="vision_class">Vision Class</option>
+                    <option value="combined_class">Combined Class</option>
                 </select>
             </div>
             <div class="form-group">
@@ -462,7 +464,9 @@
                     <option value="power">Power</option>
                     <option value="rcs">RCS</option>
                     <option value="speed">Speed</option>
-                    <option value="class">Class</option>
+                    <option value="fusion_class">Fusion Class</option>
+                    <option value="vision_class">Vision Class</option>
+                    <option value="combined_class">Combined Class</option>
                 </select>
             </div>
             <div class="form-group">
@@ -472,7 +476,9 @@
                     <option value="power">Power</option>
                     <option value="rcs">RCS</option>
                     <option value="speed">Speed</option>
-                    <option value="class">Class</option>
+                    <option value="fusion_class">Fusion Class</option>
+                    <option value="vision_class">Vision Class</option>
+                    <option value="combined_class">Combined Class</option>
                 </select>
             </div>
 
@@ -480,6 +486,23 @@
             <div class="form-group">
                 <label for="combined_camera_pcd_label">Combined Camera PCD Label:</label>
                 <input type="checkbox" id="combined_camera_pcd_label" name="combined_camera_pcd_label">
+            </div>
+
+            <!-- Draw Cells Checkbox -->
+            <div class="form-group">
+                <label for="draw_cells">Draw Cells:</label>
+                <select id="draw_cells" name="draw_cells">
+                    <option value="disabled">Disabled</option>
+                    <option value="fusion_class">Fusion Class</option>
+                    <option value="vision_class">Vision Class</option>
+                    <option value="combined_class">Combined Class</option>
+                </select>
+            </div>
+            
+            <!-- Draw Unknown Cells Checkbox (When draw cells is enabled) -->
+            <div class="form-group">
+                <label for="draw_unknown_cells">Draw Unknown Cells:</label>
+                <input type="checkbox" id="draw_unknown_cells" name="draw_unknown_cells">
             </div>
 
             <!-- Topic Configuration -->
@@ -498,18 +521,6 @@
             <div class="form-group">
                 <label for="h264_topic">H264 Topic:</label>
                 <input type="text" id="h264_topic" name="h264_topic" placeholder="/rt/camera/h264/">
-            </div>
-
-            <!-- Draw Cells Checkbox -->
-            <div class="form-group">
-                <label for="draw_cells">Draw Cells:</label>
-                <input type="checkbox" id="draw_cells" name="draw_cells">
-            </div>
-
-            <!-- Draw Unknown Cells Checkbox (When draw cells is enabled) -->
-            <div class="form-group">
-                <label for="draw_unknown_cells">Draw Unknown Cells:</label>
-                <input type="checkbox" id="draw_unknown_cells" name="draw_unknown_cells">
             </div>
 
             <!-- Draw Box Checkbox -->
@@ -551,7 +562,8 @@
     <script>
         document.querySelector('#draw_cells').addEventListener('change', function () {
             const drawUnknownCells = document.querySelector('#draw_unknown_cells');
-            drawUnknownCells.disabled = !this.checked;
+            drawUnknownCells.disabled = (this.value == "disabled");
+            drawUnknownCells.checked = false
         });
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -582,8 +594,9 @@
                     document.getElementById('detect_topic').value = data.DETECT_TOPIC || '/rt/detect/boxes2d/';
                     document.getElementById('pcd_topic').value = data.PCD_TOPIC || '/rt/radar/targets/';
                     document.getElementById('h264_topic').value = data.H264_TOPIC || '/rt/camera/h264/';
-                    document.getElementById('draw_cells').checked = data.DRAW_CELLS === 'true' || data.DRAW_CELLS === true;
+                    document.getElementById('draw_cells').value = data.DRAW_CELLS;
                     document.getElementById('draw_unknown_cells').checked = data.DRAW_UNKNOWN_CELLS === 'true' || data.DRAW_UNKNOWN_CELLS === true;
+                    document.getElementById('draw_unknown_cells').disabled = (data.DRAW_CELLS == "disabled");
                     document.getElementById('draw_box').checked = data.DRAW_BOX === 'true' || data.DRAW_BOX === true;
                     document.getElementById('draw_box_text').checked = data.DRAW_BOX_TEXT === 'true' || data.DRAW_BOX_TEXT === true;
                     document.getElementById('show_stats').checked = data.SHOW_STATS === 'true' || data.SHOW_STATS === true;
@@ -596,6 +609,8 @@
                     deviceToggle.addEventListener('change', function () {
                         deviceTypeText.textContent = this.checked ? 'RAIVIN' : 'MAIVIN';
                     });
+
+                    
                 })
                 .catch(error => console.error('Error fetching config:', error));
         });
@@ -626,7 +641,7 @@
                 PCD_TOPIC: document.getElementById('pcd_topic').value,
                 H264_TOPIC: document.getElementById('h264_topic').value,
                 DEVICE: document.getElementById('device_type').checked ? 'RAIVIN' : 'MAIVIN',
-                DRAW_CELLS: document.getElementById('draw_cells').checked.toString(),
+                DRAW_CELLS: document.getElementById('draw_cells').value.toString(),
                 DRAW_UNKNOWN_CELLS: document.getElementById('draw_unknown_cells').checked.toString(),
                 DRAW_BOX: document.getElementById('draw_box').checked.toString(),
                 DRAW_BOX_TEXT: document.getElementById('draw_box_text').checked.toString(),
