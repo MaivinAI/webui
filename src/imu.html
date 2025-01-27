@@ -175,16 +175,15 @@
         window.resetIMU = function () {
             window.initialQuaternion = null;
             window.currentQuaternion = null;
+            window.initialYaw = null;
 
             if (window.cameraModel) {
                 window.cameraModel.position.set(0, 0, 0);
-
                 window.cameraModel.rotation.set(
                     0,
-                    Math.PI,
+                    0,
                     -Math.PI / 2
                 );
-
                 window.euler = new THREE.Euler(0, 0, 0, 'XYZ');
             }
 
@@ -202,6 +201,7 @@
         window.currentQuaternion = null;
         window.euler = null;
         window.needsCalibration = true;
+        window.initialYaw = null;
 
         import * as THREE from './js/three.js';
         import { STLLoader } from './js/STLLoader.js'
@@ -250,53 +250,34 @@
             renderer.render(scene, camera);
         }
 
+        function quaternionToEuler(x, y, z, w) {
+            const roll = Math.atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y)) * (180 / Math.PI);
+            const pitch = Math.asin(2.0 * (w * y - z * x)) * (180 / Math.PI);
+            const yaw = Math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z)) * (180 / Math.PI);
+
+            return { roll, pitch, yaw };
+        }
+
+
         function updateOrientation(x, y, z, w) {
-            try {
-                window.currentQuaternion = { x, y, z, w };
+            const euler = quaternionToEuler(x, y, z, w);
 
-                if (window.needsCalibration || window.initialQuaternion === null) {
-                    window.initialQuaternion = { x, y, z, w };
-                    window.needsCalibration = false;
-                    document.getElementById('roll').innerText = '0.00°';
-                    document.getElementById('pitch').innerText = '0.00°';
-                    document.getElementById('yaw').innerText = '0.00°';
-                    return;
-                }
+            if (window.initialYaw === null) {
+                window.initialYaw = euler.yaw;
+            }
 
-                const currentQuat = new THREE.Quaternion(
-                    window.currentQuaternion.x,
-                    window.currentQuaternion.y,
-                    window.currentQuaternion.z,
-                    window.currentQuaternion.w
+            const relativeYaw = euler.yaw - window.initialYaw;
+
+            document.getElementById('roll').innerText = `${euler.roll.toFixed(2)}°`;
+            document.getElementById('pitch').innerText = `${euler.pitch.toFixed(2)}°`;
+            document.getElementById('yaw').innerText = `${relativeYaw.toFixed(2)}°`;
+
+            if (cameraModel) {
+                cameraModel.rotation.set(
+                    euler.pitch * Math.PI / 180,
+                    relativeYaw * Math.PI / 180,
+                    euler.roll * Math.PI / 180
                 );
-
-                const initialQuat = new THREE.Quaternion(
-                    window.initialQuaternion.x,
-                    window.initialQuaternion.y,
-                    window.initialQuaternion.z,
-                    window.initialQuaternion.w
-                );
-
-                const relativeQuat = currentQuat.multiply(initialQuat.invert());
-                const euler = new THREE.Euler().setFromQuaternion(relativeQuat, 'XYZ');
-
-                const roll = euler.z * (180 / Math.PI);
-                const pitch = euler.x * (180 / Math.PI);
-                const yaw = euler.y * (180 / Math.PI);
-
-                document.getElementById('roll').innerText = `${roll.toFixed(2)}°`;
-                document.getElementById('pitch').innerText = `${pitch.toFixed(2)}°`;
-                document.getElementById('yaw').innerText = `${yaw.toFixed(2)}°`;
-
-                if (cameraModel) {
-                    cameraModel.rotation.set(
-                        euler.x,
-                        euler.z,
-                        euler.y
-                    );
-                }
-            } catch (error) {
-                console.error("Error in updateOrientation:", error);
             }
         }
 
