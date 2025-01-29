@@ -779,7 +779,7 @@
                     modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
                 }
                 else if (isReplay) {
-                    if (allSensorActive) {
+                    if (!allSensorsInactive) {
                         modeText.textContent = "Replay Mode (Degraded)";
                         modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
                     } else {
