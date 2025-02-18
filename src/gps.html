@@ -7,14 +7,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPS Data Visualization</title>
 
-    <!-- Load Leaflet first -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- MapLibre GL JS -->
+    <link href='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css' rel='stylesheet' />
+    <script src='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'></script>
 
-    <!-- Then load VectorGrid -->
-    <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
+    <!-- Add Vector Tile library -->
+    <script src="https://unpkg.com/@mapbox/vector-tile@1.3.1/dist/vectortile-browser.js"></script>
+    <script src="https://unpkg.com/@mapbox/pbf@3.2.1/dist/pbf-browser.js"></script>
 
-    <!-- Then load SQL.js -->
+    <!-- Add Pako for gzip decompression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+
+    <!-- SQL.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 
     <!-- Your other styles -->
@@ -191,8 +195,6 @@
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" />
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@maplibre/leaflet-maplibre-gl@0.0.19/leaflet-maplibre-gl.js"></script>
-    <script src="./js/tiny-world-all-10000.js"></script>
-    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -292,60 +294,64 @@
         let timeoutId;
         let statusCheckInterval;
         let mbtiles = null;
-        let offlineLayer = null;
 
-        // Add the loadMBTiles function
+        // Custom protocol for handling MBTiles
+        class MBTilesProtocol {
+            async loadTile(params, callback) {
+                try {
+                    console.log('Protocol params:', params);  // Debug log
+
+                    // Extract coordinates from the URL
+                    const match = params.url.match(/mbtiles:\/\/(\d+)\/(\d+)\/(\d+)/);
+                    if (!match) {
+                        console.error('Invalid tile URL format:', params.url);
+                        callback(new Error('Invalid tile URL'));
+                        return;
+                    }
+
+                    const [_, z, x, y] = match.map(Number);
+                    console.log('Parsed coordinates:', { z, x, y });  // Debug log
+
+                    const tileData = await getTile(z, x, y);
+                    if (tileData) {
+                        callback(null, tileData, null, null);
+                    } else {
+                        callback(new Error('Tile not found'));
+                    }
+                } catch (error) {
+                    console.error('Protocol error:', error);  // Debug log
+                    callback(error);
+                }
+            }
+        }
+
         async function loadMBTiles() {
             try {
                 console.log('Attempting to load MBTiles...');
-                const response = await fetch('/maps/current.mbtiles');
+                const response = await fetch('./current.mbtiles');
                 if (!response.ok) throw new Error('Failed to fetch MBTiles');
 
-                console.log('MBTiles file fetched, size:', response.headers.get('content-length'), 'bytes');
+                console.log('MBTiles file fetched');
                 const arrayBuffer = await response.arrayBuffer();
 
-                // Initialize SQL.js
                 console.log('Initializing SQL.js...');
                 const SQL = await initSqlJs({
                     locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
                 });
 
-                // Create database from the fetched file
                 mbtiles = new SQL.Database(new Uint8Array(arrayBuffer));
 
-                // Check metadata and available tiles
-                const metadata = mbtiles.exec("SELECT * FROM metadata");
-                console.log('Metadata (raw):', JSON.stringify(metadata, null, 2));
+                // Check metadata
+                const metadata = mbtiles.exec('SELECT * FROM metadata');
+                console.log('MBTiles metadata:', metadata);
 
-                // Check available zoom levels
-                const zoomLevels = mbtiles.exec("SELECT DISTINCT zoom_level FROM tiles ORDER BY zoom_level");
-                console.log('Available zoom levels (raw):', JSON.stringify(zoomLevels, null, 2));
+                // Check available zoom levels and bounds
+                const zoomLevels = mbtiles.exec('SELECT DISTINCT zoom_level FROM tiles ORDER BY zoom_level');
+                console.log('Available zoom levels:', zoomLevels[0].values.flat());
 
-                // Check tile bounds for zoom level 13
-                const bounds = mbtiles.exec(`
-                    SELECT 
-                        MIN(tile_column) as min_x, 
-                        MAX(tile_column) as max_x,
-                        MIN(tile_row) as min_y,
-                        MAX(tile_row) as max_y
-                    FROM tiles 
-                    WHERE zoom_level = 13
-                `);
-                console.log('Bounds for zoom level 13 (raw):', JSON.stringify(bounds, null, 2));
-
-                // Check total number of tiles
-                const tileCount = mbtiles.exec("SELECT COUNT(*) as count FROM tiles");
-                console.log('Total number of tiles (raw):', JSON.stringify(tileCount, null, 2));
-
-                // Also check a specific tile that's failing
-                const sampleTile = mbtiles.exec(`
-                    SELECT COUNT(*) as count 
-                    FROM tiles 
-                    WHERE zoom_level = 13 
-                    AND tile_column = 1499 
-                    AND tile_row = 2740
-                `);
-                console.log('Sample tile check (raw):', JSON.stringify(sampleTile, null, 2));
+                // Check a sample tile to understand the structure
+                const sampleTile = mbtiles.exec('SELECT zoom_level, tile_column, tile_row FROM tiles LIMIT 1');
+                console.log('Sample tile coordinates:', sampleTile);
 
                 return true;
             } catch (error) {
@@ -354,33 +360,94 @@
             }
         }
 
-        // Prevent multiple initializations
-        let mapInitialized = false;
+        async function getTile(z, x, y) {
+            if (!mbtiles) {
+                console.error('MBTiles database not initialized');
+                return null;
+            }
+
+            try {
+                console.log(`Fetching tile: z=${z}, x=${x}, y=${y}`);
+
+                // Convert y coordinate to TMS
+                const tmsY = (1 << z) - 1 - y;
+
+                // Directly query the tile without bounds checking first
+                const stmt = mbtiles.prepare(`
+                    SELECT tile_data 
+                    FROM tiles 
+                    WHERE zoom_level = ? 
+                    AND tile_column = ? 
+                    AND tile_row = ?
+                `);
+
+                const result = stmt.getAsObject([z, x, tmsY]);
+                stmt.free();
+
+                if (result && result.tile_data) {
+                    console.log('Found tile data');
+                    let tileData = result.tile_data instanceof Uint8Array ?
+                        result.tile_data : new Uint8Array(result.tile_data);
+
+                    try {
+                        const unzippedData = pako.inflate(tileData);
+                        console.log('Successfully unzipped tile data');
+                        return unzippedData;
+                    } catch (error) {
+                        console.log('Tile was not gzipped, returning as-is');
+                        return tileData;
+                    }
+                }
+
+                console.log(`No tile found for z=${z}, x=${x}, tmsY=${tmsY}`);
+                return null;
+            } catch (error) {
+                console.error('Error fetching tile:', error);
+                return null;
+            }
+        }
+
+        // Helper function to calculate tile bounds
+        function getTileBounds(z, x, y) {
+            const n = Math.PI - 2 * Math.PI * y / Math.pow(2, z);
+            const lat = (180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))));
+            const lon = (x / Math.pow(2, z) * 360 - 180);
+
+            const n1 = Math.PI - 2 * Math.PI * (y + 1) / Math.pow(2, z);
+            const lat1 = (180 / Math.PI * Math.atan(0.5 * (Math.exp(n1) - Math.exp(-n1))));
+            const lon1 = ((x + 1) / Math.pow(2, z) * 360 - 180);
+
+            return [lon, lat1, lon1, lat]; // [minLon, minLat, maxLon, maxLat]
+        }
+
+        // Helper function to check if tile is within bounds
+        function isWithinBounds(tileBounds, mapBounds) {
+            const [tileMinLon, tileMinLat, tileMaxLon, tileMaxLat] = tileBounds;
+            const [mapMinLon, mapMinLat, mapMaxLon, mapMaxLat] = mapBounds;
+
+            return !(tileMaxLon < mapMinLon || tileMinLon > mapMaxLon ||
+                tileMaxLat < mapMinLat || tileMinLat > mapMaxLat);
+        }
 
         async function initMap() {
-            if (mapInitialized) {
-                console.log('Map already initialized');
-                return;
-            }
-            mapInitialized = true;
-
-            // Set Calgary's coordinates
-            const CALGARY_LAT = 51.0447;
-            const CALGARY_LNG = -114.0719;
-
-            // Try to load MBTiles first
-            let offlineStyle = null;
             try {
-                const mbtilesLoaded = await loadMBTiles();
-                if (mbtilesLoaded && mbtiles) {
-                    console.log('MBTiles loaded successfully, creating vector tile style');
-                    offlineStyle = {
+                // Load MBTiles first
+                await loadMBTiles();
+
+                // Register custom protocol
+                const protocol = new MBTilesProtocol();
+                maplibregl.addProtocol('mbtiles', (params, callback) => protocol.loadTile(params, callback));
+
+                map = new maplibregl.Map({
+                    container: 'map',
+                    style: {
                         version: 8,
+                        glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
                         sources: {
-                            mbtiles: {
+                            'mbtiles': {
                                 type: 'vector',
-                                scheme: 'xyz',
-                                tiles: ['/tiles/{z}/{x}/{y}.pbf'],  // Your backend endpoint for serving vector tiles
+                                scheme: "xyz",
+                                tiles: ['mbtiles://{z}/{x}/{y}'],
                                 minzoom: 0,
                                 maxzoom: 14
                             }
@@ -390,229 +457,187 @@
                                 id: 'background',
                                 type: 'background',
                                 paint: {
-                                    'background-color': '#f8f4f0'
+                                    'background-color': '#ffffff'
                                 }
                             },
+                            // Land
                             {
-                                id: 'vector-tile-data',
-                                type: 'fill',  // Adjust based on your data type (fill, line, symbol, etc.)
+                                id: 'land',
+                                type: 'fill',
                                 source: 'mbtiles',
-                                'source-layer': 'layer0',  // Adjust based on your tippecanoe output
+                                'source-layer': 'land',
                                 paint: {
-                                    'fill-color': '#088',
-                                    'fill-opacity': 0.8
+                                    'fill-color': '#f8f4f0'
+                                }
+                            },
+                            // Parks and green spaces
+                            {
+                                id: 'landuse',
+                                type: 'fill',
+                                source: 'mbtiles',
+                                'source-layer': 'landuse',
+                                paint: {
+                                    'fill-color': [
+                                        'match',
+                                        ['get', 'class'],
+                                        'park', '#d8f2d3',
+                                        'residential', '#f0f0f0',
+                                        'industrial', '#f0e8e8',
+                                        '#efefef'
+                                    ]
+                                }
+                            },
+                            // Water features
+                            {
+                                id: 'water',
+                                type: 'fill',
+                                source: 'mbtiles',
+                                'source-layer': 'water',
+                                paint: {
+                                    'fill-color': '#a0cfff'
+                                }
+                            },
+                            // Roads - casing
+                            {
+                                id: 'roads-casing',
+                                type: 'line',
+                                source: 'mbtiles',
+                                'source-layer': 'transportation',
+                                layout: {
+                                    'line-join': 'round',
+                                    'line-cap': 'round'
+                                },
+                                paint: {
+                                    'line-color': '#cfcdca',
+                                    'line-width': [
+                                        'interpolate', ['linear'], ['zoom'],
+                                        12, 1,
+                                        18, 4
+                                    ],
+                                    'line-opacity': 0.8
+                                }
+                            },
+                            // Roads - main
+                            {
+                                id: 'roads',
+                                type: 'line',
+                                source: 'mbtiles',
+                                'source-layer': 'transportation',
+                                layout: {
+                                    'line-join': 'round',
+                                    'line-cap': 'round'
+                                },
+                                paint: {
+                                    'line-color': [
+                                        'match',
+                                        ['get', 'class'],
+                                        'motorway', '#fc8',
+                                        'trunk', '#fba',
+                                        'primary', '#fea',
+                                        'secondary', '#fff',
+                                        'tertiary', '#fff',
+                                        '#fff'
+                                    ],
+                                    'line-width': [
+                                        'interpolate', ['linear'], ['zoom'],
+                                        12, 0.5,
+                                        18, 2
+                                    ]
+                                }
+                            },
+                            // Buildings
+                            {
+                                id: 'buildings',
+                                type: 'fill',
+                                source: 'mbtiles',
+                                'source-layer': 'building',
+                                paint: {
+                                    'fill-color': '#d9d0c9',
+                                    'fill-outline-color': '#b3ada6'
+                                }
+                            },
+                            // Place labels
+                            {
+                                id: 'place-labels',
+                                type: 'symbol',
+                                source: 'mbtiles',
+                                'source-layer': 'place',
+                                layout: {
+                                    'text-field': ['get', 'name'],
+                                    'text-font': ['Noto Sans Regular'],
+                                    'text-size': 12,
+                                    'text-anchor': 'center',
+                                    'text-max-width': 8
+                                },
+                                paint: {
+                                    'text-color': '#666',
+                                    'text-halo-color': '#fff',
+                                    'text-halo-width': 1
                                 }
                             }
                         ]
-                    };
-                }
-            } catch (error) {
-                console.error('Error setting up MBTiles style:', error);
-            }
-
-            // Initialize the map with Leaflet
-            map = L.map('map', {
-                zoomControl: true,
-                center: [CALGARY_LAT, CALGARY_LNG],
-                zoom: 13
-            });
-
-            // Create layers
-            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            });
-
-            // Create offline layer based on what's available
-            if (offlineStyle) {
-                try {
-                    console.log('Creating vector tile layer...');
-                    offlineLayer = L.vectorGrid.protobuf('/tiles/{z}/{x}/{y}.pbf', {
-                        vectorTileLayerStyles: {
-                            '*': {
-                                fill: true,
-                                fillColor: '#088',
-                                fillOpacity: 0.8,
-                                weight: 1,
-                                color: '#666'
-                            }
-                        },
-                        maxZoom: 14,
-                        minZoom: 0,
-                        interactive: true,
-                        // Add bounds to limit requests to available tiles
-                        bounds: L.latLngBounds(
-                            L.latLng(50.71, -114.612),  // SW corner from metadata bounds
-                            L.latLng(51.353, -113.478)  // NE corner from metadata bounds
-                        ),
-                        // Debug tile requests
-                        getTileUrl: function (coords) {
-                            const url = `/tiles/${coords.z}/${coords.x}/${coords.y}.pbf`;
-                            console.log('Requesting tile:', coords.z, coords.x, coords.y);
-                            return url;
-                        }
-                    });
-
-                    // Add event listeners for debugging
-                    offlineLayer.on('loading', function (e) {
-                        console.log('Started loading tiles');
-                    });
-
-                    offlineLayer.on('load', function (e) {
-                        console.log('Finished loading tiles');
-                    });
-
-                    offlineLayer.on('tileerror', function (e) {
-                        console.error('Tile error:', e.coords);
-                    });
-
-                } catch (error) {
-                    console.error('Error creating vector tile layer:', error);
-                    // Fallback to TinyWorld
-                    offlineLayer = new L.GridLayer.TinyWorld({
-                        maxZoom: 19,
-                        render: {
-                            background: {
-                                style: { fillStyle: '#f0f0f0' }
-                            },
-                            country_borders: {
-                                style: {
-                                    fillStyle: '#ffffff',
-                                    strokeStyle: '#cccccc',
-                                    lineWidth: 1
-                                }
-                            },
-                            lakes: {
-                                style: {
-                                    fillStyle: '#a3ccff',
-                                    strokeStyle: '#99b3cc'
-                                }
-                            }
-                        }
-                    });
-                }
-            } else {
-                // Fallback to TinyWorld
-                offlineLayer = new L.GridLayer.TinyWorld({
-                    maxZoom: 19,
-                    render: {
-                        background: {
-                            style: { fillStyle: '#f0f0f0' }
-                        },
-                        country_borders: {
-                            style: {
-                                fillStyle: '#ffffff',
-                                strokeStyle: '#cccccc',
-                                lineWidth: 1
-                            }
-                        },
-                        lakes: {
-                            style: {
-                                fillStyle: '#a3ccff',
-                                strokeStyle: '#99b3cc'
-                            }
-                        }
-                    }
+                    },
+                    center: [-114.045, 51.0315],
+                    zoom: 13
                 });
-            }
 
-            // Add OSM layer by default
-            osmLayer.addTo(map);
+                // Add debugging
+                map.on('load', () => {
+                    // Log available layers
+                    const source = map.getSource('mbtiles');
+                    if (source) {
+                        console.log('Available vector layers:', source.vectorLayerIds);
+                    }
 
-            // Handle offline/online events
-            window.addEventListener('online', () => {
-                map.removeLayer(offlineLayer);
-                map.addLayer(osmLayer);
-                console.log('Map source changed: Using Online Map: OSM');
-            });
+                    // Log tile loading
+                    map.on('data', (e) => {
+                        if (e.dataType === 'source' && e.tile) {
+                            console.log('Loaded tile:', e.tile);
+                        }
+                    });
+                });
 
-            window.addEventListener('offline', () => {
-                map.removeLayer(osmLayer);
-                map.addLayer(offlineLayer);
-                console.log('Map source changed: Using Offline Map: ' + (mbtiles ? 'MBTiles' : 'TinyWorld'));
-            });
+                // Error handling
+                map.on('error', (e) => {
+                    console.error('Map error:', e.error);
+                    console.error('Error details:', {
+                        message: e.error.message,
+                        source: e.source,
+                        sourceId: e.sourceId
+                    });
+                });
 
-            // If we're offline when loading, use the offline layer
-            if (!navigator.onLine) {
-                map.removeLayer(osmLayer);
-                map.addLayer(offlineLayer);
-                console.log('Starting in offline mode with: ' + (mbtiles ? 'MBTiles' : 'TinyWorld'));
-            }
+                // Create marker
+                marker = new maplibregl.Marker()
+                    .setLngLat([-114.045, 51.0315])
+                    .addTo(map);
 
-            marker = L.marker([CALGARY_LAT, CALGARY_LNG]).addTo(map);
-            let lastGPS = JSON.parse(localStorage.getItem('lastGPS'));
-            if (lastGPS) {
-                updateGPS(lastGPS.latitude, lastGPS.longitude);
+                let lastGPS = JSON.parse(localStorage.getItem('lastGPS'));
+                if (lastGPS) {
+                    map.setCenter([lastGPS.longitude, lastGPS.latitude]);
+                    updateGPS(lastGPS.latitude, lastGPS.longitude);
+                }
+
+                // Add this after map initialization
+                map.showTileBoundaries = true;
+            } catch (error) {
+                console.error('Error initializing map:', error);
             }
         }
 
-        // MBTiles layer definition
-        L.TileLayer.MBTiles = L.TileLayer.extend({
-            initialize: function (db, options) {
-                this.db = db;
-                L.TileLayer.prototype.initialize.call(this, '', options);
-            },
-
-            getTileUrl: function (coords) {
-                const z = coords.z;
-                const x = coords.x;
-                const y = Math.pow(2, z) - 1 - coords.y;
-
-                try {
-                    const stmt = this.db.prepare(
-                        "SELECT tile_id FROM map WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?"
-                    );
-                    const result = stmt.getAsObject([z, x, y]);
-                    stmt.free();
-
-                    if (result && result.tile_id) {
-                        const imageStmt = this.db.prepare(
-                            "SELECT tile_data FROM images WHERE tile_id = ?"
-                        );
-                        const imageResult = imageStmt.getAsObject([result.tile_id]);
-                        imageStmt.free();
-
-                        if (imageResult && imageResult.tile_data) {
-                            const blob = new Blob([imageResult.tile_data], { type: 'image/png' });
-                            return URL.createObjectURL(blob);
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error getting tile:', e);
-                }
-                return '';
-            },
-
-            _removeTile: function (key) {
-                const tile = this._tiles[key];
-                if (tile && tile.el && tile.el.src) {
-                    URL.revokeObjectURL(tile.el.src);
-                }
-                L.TileLayer.prototype._removeTile.call(this, key);
-            }
-        });
-
-        L.tileLayer.mbtiles = function (db, options) {
-            return new L.TileLayer.MBTiles(db, options);
-        };
-
-        // Initialize the map when the page loads
-        window.addEventListener('load', initMap);
-
         function updateGPS(latitude, longitude) {
-            // Check if marker exists before updating
-            if (!marker) {
-                console.log('Marker not initialized yet, creating new marker');
-                marker = L.marker([latitude, longitude]).addTo(map);
-            } else {
-                let latLng = new L.LatLng(latitude, longitude);
-                marker.setLatLng(latLng);
+            try {
+                if (marker && map) {
+                    marker.setLngLat([longitude, latitude]);
+                    document.getElementById('latitude').innerText = latitude.toFixed(6);
+                    document.getElementById('longitude').innerText = longitude.toFixed(6);
+                    resetTimeout();
+                } else {
+                    console.warn('Map or marker not initialized yet');
+                }
+            } catch (error) {
+                console.error('Error updating GPS:', error);
             }
-
-            document.getElementById('latitude').innerText = latitude.toFixed(6);
-            document.getElementById('longitude').innerText = longitude.toFixed(6);
-
-            resetTimeout();
         }
 
         function resetTimeout() {
@@ -668,9 +693,9 @@
                     const header_stamp_nsec = reader.uint32();
                     const header_frame_id = reader.string();
 
-                    const latitude = reader.float64();
-                    const longitude = reader.float64();
-                    const altitude = reader.float64();
+                    const latitude = 51.0315;
+                    const longitude = -114.045;
+                    const altitude = 0;
 
                     if (!isNaN(latitude) && !isNaN(longitude)) {
                         updateGPS(latitude, longitude);
@@ -985,6 +1010,56 @@
                 `;
             }
         };
+
+        // Add this diagnostic function
+        async function inspectMBTilesContent() {
+            if (!mbtiles) return;
+
+            console.log('Inspecting MBTiles content...');
+
+            // Check metadata
+            const metadata = mbtiles.exec(`
+                SELECT name, value 
+                FROM metadata 
+                WHERE name IN ('name', 'format', 'bounds', 'center', 'minzoom', 'maxzoom')
+            `);
+            console.log('Metadata:', metadata[0].values);
+
+            // Check available layers at zoom level 13 (Calgary area)
+            const calgaryTiles = mbtiles.exec(`
+                SELECT DISTINCT tile_column, tile_row 
+                FROM tiles 
+                WHERE zoom_level = 13 
+                AND tile_column BETWEEN 1499 AND 1502 
+                AND tile_row BETWEEN 2740 AND 2743
+            `);
+            console.log('Calgary area tiles:', calgaryTiles[0]?.values);
+
+            // Sample the vector layers in a tile
+            const sampleTile = mbtiles.exec(`
+                SELECT tile_data 
+                FROM tiles 
+                WHERE zoom_level = 13 
+                LIMIT 1
+            `);
+
+            if (sampleTile[0]?.values?.length > 0) {
+                const tileData = sampleTile[0].values[0][0];
+                try {
+                    const unzipped = pako.inflate(tileData);
+                    console.log('Sample tile data size:', unzipped.length);
+                    // Log the structure of the tile data
+                    const pbf = new Pbf(unzipped);
+                    const vt = new VectorTile(pbf);
+                    console.log('Available layers in tile:', Object.keys(vt.layers));
+                } catch (e) {
+                    console.error('Error analyzing tile:', e);
+                }
+            }
+        }
+
+        // Call this after loading MBTiles
+        await inspectMBTilesContent();
     </script>
 
     <div id="serviceStatusDialog"
