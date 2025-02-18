@@ -6,6 +6,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPS Data Visualization</title>
+
+    <!-- Load Leaflet first -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <!-- Then load VectorGrid -->
+    <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
+
+    <!-- Then load SQL.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+
+    <!-- Your other styles -->
     <link href="./css/styles.css" rel="stylesheet">
     <link href="./css/full.css" rel="stylesheet" type="text/css" />
     <script src="./js/tailwind.js"></script>
@@ -24,13 +36,13 @@
 
         #map {
             height: 100vh;
-            flex: 1;
-            z-index: 1;
-            position: fixed;
+            width: 100%;
+            position: absolute;
             top: 64px;
             left: 0;
             right: 0;
             bottom: 0;
+            z-index: 1;
         }
 
         #gps-data {
@@ -153,8 +165,34 @@
             background-color: #CBD5E0;
             border-radius: 3px;
         }
+
+        #mapSourceIndicator {
+            transition: background-color 0.3s ease;
+        }
+
+        #mapSourceIndicator:hover {
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .leaflet-tile {
+            border: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .maplibregl-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
     </style>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" />
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/leaflet-maplibre-gl@0.0.19/leaflet-maplibre-gl.js"></script>
+    <script src="./js/tiny-world-all-10000.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -240,17 +278,477 @@
                     <div id="longitude" class="stat-value text-xl">0</div>
                 </div>
                 <button class="refresh-button" onclick="location.reload()">Refresh</button>
+                <button id="connectionToggle" class="refresh-button ml-2" onclick="toggleConnection()">
+                    Toggle Online/Offline
+                </button>
             </div>
         </div>
         <div id="map"></div>
     </main>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script type="module">
         import { CdrReader } from './js/Cdr.js';
 
         let map, marker;
         let timeoutId;
         let statusCheckInterval;
+        let mbtiles = null;
+        let offlineLayer = null;
+
+        // Add the loadMBTiles function
+        async function loadMBTiles() {
+            try {
+                console.log('Attempting to load MBTiles...');
+                const response = await fetch('/maps/current.mbtiles');
+                if (!response.ok) throw new Error('Failed to fetch MBTiles');
+
+                console.log('MBTiles file fetched, size:', response.headers.get('content-length'), 'bytes');
+                const arrayBuffer = await response.arrayBuffer();
+
+                // Initialize SQL.js
+                console.log('Initializing SQL.js...');
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                });
+
+                // Create database from the fetched file
+                mbtiles = new SQL.Database(new Uint8Array(arrayBuffer));
+
+                // Check metadata and available tiles
+                const metadata = mbtiles.exec("SELECT * FROM metadata");
+                console.log('Metadata (raw):', JSON.stringify(metadata, null, 2));
+
+                // Check available zoom levels
+                const zoomLevels = mbtiles.exec("SELECT DISTINCT zoom_level FROM tiles ORDER BY zoom_level");
+                console.log('Available zoom levels (raw):', JSON.stringify(zoomLevels, null, 2));
+
+                // Check tile bounds for zoom level 13
+                const bounds = mbtiles.exec(`
+                    SELECT 
+                        MIN(tile_column) as min_x, 
+                        MAX(tile_column) as max_x,
+                        MIN(tile_row) as min_y,
+                        MAX(tile_row) as max_y
+                    FROM tiles 
+                    WHERE zoom_level = 13
+                `);
+                console.log('Bounds for zoom level 13 (raw):', JSON.stringify(bounds, null, 2));
+
+                // Check total number of tiles
+                const tileCount = mbtiles.exec("SELECT COUNT(*) as count FROM tiles");
+                console.log('Total number of tiles (raw):', JSON.stringify(tileCount, null, 2));
+
+                // Also check a specific tile that's failing
+                const sampleTile = mbtiles.exec(`
+                    SELECT COUNT(*) as count 
+                    FROM tiles 
+                    WHERE zoom_level = 13 
+                    AND tile_column = 1499 
+                    AND tile_row = 2740
+                `);
+                console.log('Sample tile check (raw):', JSON.stringify(sampleTile, null, 2));
+
+                return true;
+            } catch (error) {
+                console.error('Error loading MBTiles:', error);
+                return false;
+            }
+        }
+
+        // Prevent multiple initializations
+        let mapInitialized = false;
+
+        async function initMap() {
+            if (mapInitialized) {
+                console.log('Map already initialized');
+                return;
+            }
+            mapInitialized = true;
+
+            // Set Calgary's coordinates
+            const CALGARY_LAT = 51.0447;
+            const CALGARY_LNG = -114.0719;
+
+            // Try to load MBTiles first
+            let offlineStyle = null;
+            try {
+                const mbtilesLoaded = await loadMBTiles();
+                if (mbtilesLoaded && mbtiles) {
+                    console.log('MBTiles loaded successfully, creating vector tile style');
+                    offlineStyle = {
+                        version: 8,
+                        sources: {
+                            mbtiles: {
+                                type: 'vector',
+                                scheme: 'xyz',
+                                tiles: ['/tiles/{z}/{x}/{y}.pbf'],  // Your backend endpoint for serving vector tiles
+                                minzoom: 0,
+                                maxzoom: 14
+                            }
+                        },
+                        layers: [
+                            {
+                                id: 'background',
+                                type: 'background',
+                                paint: {
+                                    'background-color': '#f8f4f0'
+                                }
+                            },
+                            {
+                                id: 'vector-tile-data',
+                                type: 'fill',  // Adjust based on your data type (fill, line, symbol, etc.)
+                                source: 'mbtiles',
+                                'source-layer': 'layer0',  // Adjust based on your tippecanoe output
+                                paint: {
+                                    'fill-color': '#088',
+                                    'fill-opacity': 0.8
+                                }
+                            }
+                        ]
+                    };
+                }
+            } catch (error) {
+                console.error('Error setting up MBTiles style:', error);
+            }
+
+            // Initialize the map with Leaflet
+            map = L.map('map', {
+                zoomControl: true,
+                center: [CALGARY_LAT, CALGARY_LNG],
+                zoom: 13
+            });
+
+            // Create layers
+            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            });
+
+            // Create offline layer based on what's available
+            if (offlineStyle) {
+                try {
+                    console.log('Creating vector tile layer...');
+                    offlineLayer = L.vectorGrid.protobuf('/tiles/{z}/{x}/{y}.pbf', {
+                        vectorTileLayerStyles: {
+                            '*': {
+                                fill: true,
+                                fillColor: '#088',
+                                fillOpacity: 0.8,
+                                weight: 1,
+                                color: '#666'
+                            }
+                        },
+                        maxZoom: 14,
+                        minZoom: 0,
+                        interactive: true,
+                        // Add bounds to limit requests to available tiles
+                        bounds: L.latLngBounds(
+                            L.latLng(50.71, -114.612),  // SW corner from metadata bounds
+                            L.latLng(51.353, -113.478)  // NE corner from metadata bounds
+                        ),
+                        // Debug tile requests
+                        getTileUrl: function (coords) {
+                            const url = `/tiles/${coords.z}/${coords.x}/${coords.y}.pbf`;
+                            console.log('Requesting tile:', coords.z, coords.x, coords.y);
+                            return url;
+                        }
+                    });
+
+                    // Add event listeners for debugging
+                    offlineLayer.on('loading', function (e) {
+                        console.log('Started loading tiles');
+                    });
+
+                    offlineLayer.on('load', function (e) {
+                        console.log('Finished loading tiles');
+                    });
+
+                    offlineLayer.on('tileerror', function (e) {
+                        console.error('Tile error:', e.coords);
+                    });
+
+                } catch (error) {
+                    console.error('Error creating vector tile layer:', error);
+                    // Fallback to TinyWorld
+                    offlineLayer = new L.GridLayer.TinyWorld({
+                        maxZoom: 19,
+                        render: {
+                            background: {
+                                style: { fillStyle: '#f0f0f0' }
+                            },
+                            country_borders: {
+                                style: {
+                                    fillStyle: '#ffffff',
+                                    strokeStyle: '#cccccc',
+                                    lineWidth: 1
+                                }
+                            },
+                            lakes: {
+                                style: {
+                                    fillStyle: '#a3ccff',
+                                    strokeStyle: '#99b3cc'
+                                }
+                            }
+                        }
+                    });
+                }
+            } else {
+                // Fallback to TinyWorld
+                offlineLayer = new L.GridLayer.TinyWorld({
+                    maxZoom: 19,
+                    render: {
+                        background: {
+                            style: { fillStyle: '#f0f0f0' }
+                        },
+                        country_borders: {
+                            style: {
+                                fillStyle: '#ffffff',
+                                strokeStyle: '#cccccc',
+                                lineWidth: 1
+                            }
+                        },
+                        lakes: {
+                            style: {
+                                fillStyle: '#a3ccff',
+                                strokeStyle: '#99b3cc'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Add OSM layer by default
+            osmLayer.addTo(map);
+
+            // Handle offline/online events
+            window.addEventListener('online', () => {
+                map.removeLayer(offlineLayer);
+                map.addLayer(osmLayer);
+                console.log('Map source changed: Using Online Map: OSM');
+            });
+
+            window.addEventListener('offline', () => {
+                map.removeLayer(osmLayer);
+                map.addLayer(offlineLayer);
+                console.log('Map source changed: Using Offline Map: ' + (mbtiles ? 'MBTiles' : 'TinyWorld'));
+            });
+
+            // If we're offline when loading, use the offline layer
+            if (!navigator.onLine) {
+                map.removeLayer(osmLayer);
+                map.addLayer(offlineLayer);
+                console.log('Starting in offline mode with: ' + (mbtiles ? 'MBTiles' : 'TinyWorld'));
+            }
+
+            marker = L.marker([CALGARY_LAT, CALGARY_LNG]).addTo(map);
+            let lastGPS = JSON.parse(localStorage.getItem('lastGPS'));
+            if (lastGPS) {
+                updateGPS(lastGPS.latitude, lastGPS.longitude);
+            }
+        }
+
+        // MBTiles layer definition
+        L.TileLayer.MBTiles = L.TileLayer.extend({
+            initialize: function (db, options) {
+                this.db = db;
+                L.TileLayer.prototype.initialize.call(this, '', options);
+            },
+
+            getTileUrl: function (coords) {
+                const z = coords.z;
+                const x = coords.x;
+                const y = Math.pow(2, z) - 1 - coords.y;
+
+                try {
+                    const stmt = this.db.prepare(
+                        "SELECT tile_id FROM map WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?"
+                    );
+                    const result = stmt.getAsObject([z, x, y]);
+                    stmt.free();
+
+                    if (result && result.tile_id) {
+                        const imageStmt = this.db.prepare(
+                            "SELECT tile_data FROM images WHERE tile_id = ?"
+                        );
+                        const imageResult = imageStmt.getAsObject([result.tile_id]);
+                        imageStmt.free();
+
+                        if (imageResult && imageResult.tile_data) {
+                            const blob = new Blob([imageResult.tile_data], { type: 'image/png' });
+                            return URL.createObjectURL(blob);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error getting tile:', e);
+                }
+                return '';
+            },
+
+            _removeTile: function (key) {
+                const tile = this._tiles[key];
+                if (tile && tile.el && tile.el.src) {
+                    URL.revokeObjectURL(tile.el.src);
+                }
+                L.TileLayer.prototype._removeTile.call(this, key);
+            }
+        });
+
+        L.tileLayer.mbtiles = function (db, options) {
+            return new L.TileLayer.MBTiles(db, options);
+        };
+
+        // Initialize the map when the page loads
+        window.addEventListener('load', initMap);
+
+        function updateGPS(latitude, longitude) {
+            // Check if marker exists before updating
+            if (!marker) {
+                console.log('Marker not initialized yet, creating new marker');
+                marker = L.marker([latitude, longitude]).addTo(map);
+            } else {
+                let latLng = new L.LatLng(latitude, longitude);
+                marker.setLatLng(latLng);
+            }
+
+            document.getElementById('latitude').innerText = latitude.toFixed(6);
+            document.getElementById('longitude').innerText = longitude.toFixed(6);
+
+            resetTimeout();
+        }
+
+        function resetTimeout() {
+            clearTimeout(timeoutId);
+            document.getElementById('timeout-val').innerText = '';
+            document.getElementById('timeout').classList.add('hidden')
+            timeoutId = setTimeout(() => {
+                document.getElementById('timeout-val').innerText = 'Verify if GPS service is running';
+                document.getElementById('timeout').classList.remove('hidden')
+            }, 15000);
+        }
+
+        // Add the checkRecorderStatus function
+        async function checkRecorderStatus() {
+            try {
+                const response = await fetch('/recorder-status');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const statusText = await response.text();
+                const isRecording = statusText.trim() === "Recorder is running";
+
+                const recorderIndicator = document.getElementById('recorderIndicator');
+
+                if (isRecording) {
+                    recorderIndicator.classList.remove('hidden');
+                    recorderIndicator.className = "text-red-600 animate-pulse relative group";
+                } else {
+                    recorderIndicator.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Error checking recorder status:', error);
+                const recorderIndicator = document.getElementById('recorderIndicator');
+                recorderIndicator.classList.add('hidden');
+            }
+        }
+
+        // Move WebSocket initialization after map initialization
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initMap(); // Initialize map first
+
+            // Then initialize WebSocket
+            let socket = new WebSocket('/rt/gps/');
+
+            socket.onmessage = async function (event) {
+                const arrayBuffer = await event.data.arrayBuffer();
+
+                const dataView = new DataView(arrayBuffer);
+                const reader = new CdrReader(dataView);
+
+                try {
+                    const header_stamp_sec = reader.uint32();
+                    const header_stamp_nsec = reader.uint32();
+                    const header_frame_id = reader.string();
+
+                    const latitude = reader.float64();
+                    const longitude = reader.float64();
+                    const altitude = reader.float64();
+
+                    if (!isNaN(latitude) && !isNaN(longitude)) {
+                        updateGPS(latitude, longitude);
+                        localStorage.setItem('lastGPS', JSON.stringify({ latitude, longitude }));
+                    } else {
+                        console.error('Invalid latitude, longitude, or altitude:', { latitude, longitude });
+                    }
+                } catch (error) {
+                    console.error("Failed to deserialize GPS data:", error);
+                }
+            };
+
+            socket.onerror = function (error) {
+                console.error(`WebSocket error: ${error}`);
+            };
+
+            socket.onclose = function (event) {
+                console.log('WebSocket connection closed');
+            };
+
+            await checkReplayStatus();
+            await checkRecorderStatus();
+            await updateQuickStatus();
+            statusCheckInterval = setInterval(async () => {
+                await checkReplayStatus();
+                await checkRecorderStatus();
+                await updateQuickStatus();
+            }, 5000);
+        });
+
+        // Update the beforeunload event listener
+        window.addEventListener('beforeunload', () => {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+        });
+
+        // Add hideServiceStatus function
+        window.hideServiceStatus = function () {
+            document.getElementById('serviceStatusDialog').classList.add('hidden');
+        };
+
+        // Update toggleConnection to show current map source
+        window.toggleConnection = function () {
+            const wasOnline = navigator.onLine;
+            const event = new Event(wasOnline ? 'offline' : 'online');
+            window.dispatchEvent(event);
+
+            const button = document.getElementById('connectionToggle');
+            button.style.backgroundColor = wasOnline ? '#dc2626' : '#059669';
+            button.textContent = wasOnline ? 'Go Online' : 'Go Offline';
+
+            // Add visual indicator of current map source
+            const mapSource = wasOnline ?
+                'Using Offline Map: ' + (mbtiles ? 'MBTiles' : 'TinyWorld') :
+                'Using Online Map: OSM';
+
+            // Create or update map source indicator
+            let indicator = document.getElementById('mapSourceIndicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'mapSourceIndicator';
+                indicator.style.cssText = `
+                    position: absolute;
+                    bottom: 10px;
+                    left: 10px;
+                    background: rgba(255, 255, 255, 0.9);
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    z-index: 1000;
+                    font-size: 12px;
+                `;
+                document.getElementById('map').appendChild(indicator);
+            }
+            indicator.textContent = mapSource;
+
+            console.log('Map source changed:', mapSource);
+        };
 
         // Add the status check functions
         async function checkReplayStatus() {
@@ -486,132 +984,6 @@
                     </div>
                 `;
             }
-        };
-
-        // Initialize map and other existing functions
-        function initMap() {
-            map = L.map('map', {
-                zoomControl: true
-            });
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19
-            }).addTo(map);
-
-            marker = L.marker([51.505, -0.09]).addTo(map);
-            let lastGPS = JSON.parse(localStorage.getItem('lastGPS'));
-            if (lastGPS) {
-                map.setView([lastGPS.latitude, lastGPS.longitude], 13);
-                updateGPS(lastGPS.latitude, lastGPS.longitude);
-            } else {
-                map.setView([51.505, -0.09], 13);
-            }
-        }
-
-        function updateGPS(latitude, longitude) {
-            let latLng = new L.LatLng(latitude, longitude);
-            marker.setLatLng(latLng);
-
-            document.getElementById('latitude').innerText = latitude.toFixed(6);
-            document.getElementById('longitude').innerText = longitude.toFixed(6);
-
-            resetTimeout();
-        }
-
-        function resetTimeout() {
-            clearTimeout(timeoutId);
-            document.getElementById('timeout-val').innerText = '';
-            document.getElementById('timeout').classList.add('hidden')
-            timeoutId = setTimeout(() => {
-                document.getElementById('timeout-val').innerText = 'Verify if GPS service is running';
-                document.getElementById('timeout').classList.remove('hidden')
-            }, 15000);
-        }
-
-        // Add the checkRecorderStatus function
-        async function checkRecorderStatus() {
-            try {
-                const response = await fetch('/recorder-status');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const statusText = await response.text();
-                const isRecording = statusText.trim() === "Recorder is running";
-
-                const recorderIndicator = document.getElementById('recorderIndicator');
-
-                if (isRecording) {
-                    recorderIndicator.classList.remove('hidden');
-                    recorderIndicator.className = "text-red-600 animate-pulse relative group";
-                } else {
-                    recorderIndicator.classList.add('hidden');
-                }
-            } catch (error) {
-                console.error('Error checking recorder status:', error);
-                const recorderIndicator = document.getElementById('recorderIndicator');
-                recorderIndicator.classList.add('hidden');
-            }
-        }
-
-        // Update the DOMContentLoaded event listener to include recorder status check
-        document.addEventListener('DOMContentLoaded', async () => {
-            initMap();
-            await checkReplayStatus();
-            await checkRecorderStatus();
-            await updateQuickStatus();
-            statusCheckInterval = setInterval(async () => {
-                await checkReplayStatus();
-                await checkRecorderStatus();
-                await updateQuickStatus();
-            }, 5000);
-        });
-
-        // Update the beforeunload event listener
-        window.addEventListener('beforeunload', () => {
-            if (statusCheckInterval) {
-                clearInterval(statusCheckInterval);
-            }
-        });
-
-        let socket = new WebSocket('/rt/gps/');
-
-        socket.onmessage = async function (event) {
-            const arrayBuffer = await event.data.arrayBuffer();
-
-            const dataView = new DataView(arrayBuffer);
-            const reader = new CdrReader(dataView); // Specify big-endian here
-
-            try {
-                const header_stamp_sec = reader.uint32(); // Read uint32 header.stamp.sec
-                const header_stamp_nsec = reader.uint32(); // Read uint32 header.stamp.nsec
-                const header_frame_id = reader.string(); // Read uint32 header.frame_id
-
-                const latitude = reader.float64(); // Read latitude
-                const longitude = reader.float64(); // Read longitude
-                const altitude = reader.float64(); // Read altitude
-
-                if (!isNaN(latitude) && !isNaN(longitude)) {
-                    updateGPS(latitude, longitude);
-                    localStorage.setItem('lastGPS', JSON.stringify({ latitude, longitude }));
-                } else {
-                    console.error('Invalid latitude, longitude, or altitude:', { latitude, longitude });
-                }
-            } catch (error) {
-                console.error("Failed to deserialize GPS data:", error);
-            }
-        };
-
-        socket.onerror = function (error) {
-            console.error(`WebSocket error: ${error}`);
-        };
-
-        socket.onclose = function (event) {
-            console.log('WebSocket connection closed');
-        };
-
-        // Add hideServiceStatus function
-        window.hideServiceStatus = function () {
-            document.getElementById('serviceStatusDialog').classList.add('hidden');
         };
     </script>
 
