@@ -529,21 +529,39 @@
                 }
             });
 
-            // Check if OSM tiles are accessible
-            fetch('https://tile.openstreetmap.org/1/1/1.png')
-                .then(response => {
+            // Check if OSM tiles are accessible with a timeout
+            const checkOSMAccess = async () => {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 second timeout
+
+                    const response = await fetch('https://tile.openstreetmap.org/1/1/1.png', {
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
                     if (!response.ok) throw new Error('OSM tiles not accessible');
-                })
-                .catch(() => {
-                    // If OSM tiles aren't accessible, switch to TinyWorld
+
+                    return true;
+                } catch (error) {
+                    console.log('OSM tiles not accessible:', error.message);
+                    return false;
+                }
+            };
+
+            // Immediately check OSM accessibility
+            checkOSMAccess().then(isAccessible => {
+                if (!isAccessible) {
                     try {
                         map.removeLayer(osmLayer);
                         map.addLayer(tinyWorldLayer);
-                        console.log('Initial switch to TinyWorld layer due to inaccessible OSM tiles');
+                        console.log('Switched to TinyWorld layer due to inaccessible OSM tiles');
                     } catch (e) {
-                        console.error('Error in initial switch to TinyWorld:', e);
+                        console.error('Error switching to TinyWorld:', e);
                     }
-                });
+                }
+            });
 
             // If we're already offline, use TinyWorld immediately
             if (!navigator.onLine) {
