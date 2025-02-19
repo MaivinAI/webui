@@ -154,7 +154,9 @@
             border-radius: 3px;
         }
     </style>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="./css/leaflet.css" />
+    <script src="./js/leaflet.js"></script>
+    <script src="./js/tiny-world-all-10000.js"></script>
 </head>
 
 <body>
@@ -244,7 +246,6 @@
         </div>
         <div id="map"></div>
     </main>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script type="module">
         import { CdrReader } from './js/Cdr.js';
 
@@ -494,9 +495,66 @@
                 zoomControl: true
             });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // Create both tile layers
+            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://www.tinyworldmap.com">tinyworldmap</a>'
+            });
+
+            const tinyWorldLayer = new L.GridLayer.TinyWorld({
                 maxZoom: 19
-            }).addTo(map);
+            });
+
+            // Add OSM layer by default
+            osmLayer.addTo(map);
+
+            // Handle offline/online events
+            window.addEventListener('online', () => {
+                try {
+                    map.removeLayer(tinyWorldLayer);
+                    map.addLayer(osmLayer);
+                    console.log('Switched to OSM layer');
+                } catch (e) {
+                    console.error('Error switching to OSM:', e);
+                }
+            });
+
+            window.addEventListener('offline', () => {
+                try {
+                    map.removeLayer(osmLayer);
+                    map.addLayer(tinyWorldLayer);
+                    console.log('Switched to TinyWorld layer');
+                } catch (e) {
+                    console.error('Error switching to TinyWorld:', e);
+                }
+            });
+
+            // Check if OSM tiles are accessible
+            fetch('https://tile.openstreetmap.org/1/1/1.png')
+                .then(response => {
+                    if (!response.ok) throw new Error('OSM tiles not accessible');
+                })
+                .catch(() => {
+                    // If OSM tiles aren't accessible, switch to TinyWorld
+                    try {
+                        map.removeLayer(osmLayer);
+                        map.addLayer(tinyWorldLayer);
+                        console.log('Initial switch to TinyWorld layer due to inaccessible OSM tiles');
+                    } catch (e) {
+                        console.error('Error in initial switch to TinyWorld:', e);
+                    }
+                });
+
+            // If we're already offline, use TinyWorld immediately
+            if (!navigator.onLine) {
+                try {
+                    map.removeLayer(osmLayer);
+                    map.addLayer(tinyWorldLayer);
+                    console.log('Initial offline state - using TinyWorld');
+                } catch (e) {
+                    console.error('Error in initial offline state:', e);
+                }
+            }
 
             marker = L.marker([51.505, -0.09]).addTo(map);
             let lastGPS = JSON.parse(localStorage.getItem('lastGPS'));
