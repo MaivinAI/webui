@@ -153,6 +153,28 @@
             background-color: #CBD5E0;
             border-radius: 3px;
         }
+
+        .map-attribution {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            font-size: 12px;
+            z-index: 2000;
+            border-radius: 4px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .map-attribution a {
+            color: #0078A8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .map-attribution a:hover {
+            text-decoration: underline;
+        }
     </style>
     <link rel="stylesheet" href="./css/leaflet.css" />
     <script src="./js/leaflet.js"></script>
@@ -492,17 +514,25 @@
         // Initialize map and other existing functions
         function initMap() {
             map = L.map('map', {
-                zoomControl: true
+                zoomControl: true,
+                attributionControl: false  // Make sure this is false
             });
+
+            // Add custom attribution element directly to the map container
+            const attributionDiv = document.createElement('div');
+            attributionDiv.className = 'map-attribution';
+            attributionDiv.innerHTML = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://www.tinyworldmap.com">tinyworldmap</a>';
+            document.getElementById('map').appendChild(attributionDiv);
 
             // Create both tile layers
             const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://www.tinyworldmap.com">tinyworldmap</a>'
+                attribution: ''  // Remove attribution from layers since we're using custom element
             });
 
             const tinyWorldLayer = new L.GridLayer.TinyWorld({
-                maxZoom: 19
+                maxZoom: 19,
+                attribution: ''  // Remove attribution from layers since we're using custom element
             });
 
             // Add OSM layer by default
