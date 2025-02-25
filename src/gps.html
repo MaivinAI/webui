@@ -153,8 +153,32 @@
             background-color: #CBD5E0;
             border-radius: 3px;
         }
+
+        .map-attribution {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            font-size: 12px;
+            z-index: 2000;
+            border-radius: 4px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .map-attribution a {
+            color: #0078A8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .map-attribution a:hover {
+            text-decoration: underline;
+        }
     </style>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="./css/leaflet.css" />
+    <script src="./js/leaflet.js"></script>
+    <script src="./js/tiny-world-all-10000.js"></script>
 </head>
 
 <body>
@@ -244,7 +268,6 @@
         </div>
         <div id="map"></div>
     </main>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script type="module">
         import { CdrReader } from './js/Cdr.js';
 
@@ -491,12 +514,95 @@
         // Initialize map and other existing functions
         function initMap() {
             map = L.map('map', {
-                zoomControl: true
+                zoomControl: true,
+                attributionControl: false
             });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19
-            }).addTo(map);
+            // Update attribution links to open in new tabs
+            const attributionDiv = document.createElement('div');
+            attributionDiv.className = 'map-attribution';
+            attributionDiv.innerHTML = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>, <a href="https://www.tinyworldmap.com" target="_blank" rel="noopener noreferrer">tinyworldmap</a>';
+            document.getElementById('map').appendChild(attributionDiv);
+
+            // Create both tile layers
+            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: ''  // Remove attribution from layers since we're using custom element
+            });
+
+            const tinyWorldLayer = new L.GridLayer.TinyWorld({
+                maxZoom: 19,
+                attribution: ''  // Remove attribution from layers since we're using custom element
+            });
+
+            // Add OSM layer by default
+            osmLayer.addTo(map);
+
+            // Handle offline/online events
+            window.addEventListener('online', () => {
+                try {
+                    map.removeLayer(tinyWorldLayer);
+                    map.addLayer(osmLayer);
+                    console.log('Switched to OSM layer');
+                } catch (e) {
+                    console.error('Error switching to OSM:', e);
+                }
+            });
+
+            window.addEventListener('offline', () => {
+                try {
+                    map.removeLayer(osmLayer);
+                    map.addLayer(tinyWorldLayer);
+                    console.log('Switched to TinyWorld layer');
+                } catch (e) {
+                    console.error('Error switching to TinyWorld:', e);
+                }
+            });
+
+            // Check if OSM tiles are accessible with a timeout
+            const checkOSMAccess = async () => {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 second timeout
+
+                    const response = await fetch('https://tile.openstreetmap.org/1/1/1.png', {
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) throw new Error('OSM tiles not accessible');
+
+                    return true;
+                } catch (error) {
+                    console.log('OSM tiles not accessible:', error.message);
+                    return false;
+                }
+            };
+
+            // Immediately check OSM accessibility
+            checkOSMAccess().then(isAccessible => {
+                if (!isAccessible) {
+                    try {
+                        map.removeLayer(osmLayer);
+                        map.addLayer(tinyWorldLayer);
+                        console.log('Switched to TinyWorld layer due to inaccessible OSM tiles');
+                    } catch (e) {
+                        console.error('Error switching to TinyWorld:', e);
+                    }
+                }
+            });
+
+            // If we're already offline, use TinyWorld immediately
+            if (!navigator.onLine) {
+                try {
+                    map.removeLayer(osmLayer);
+                    map.addLayer(tinyWorldLayer);
+                    console.log('Initial offline state - using TinyWorld');
+                } catch (e) {
+                    console.error('Error in initial offline state:', e);
+                }
+            }
 
             marker = L.marker([51.505, -0.09]).addTo(map);
             let lastGPS = JSON.parse(localStorage.getItem('lastGPS'));
