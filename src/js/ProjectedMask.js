@@ -3,9 +3,7 @@ import * as THREE from './three.js'
 // Based on https://tympanus.net/codrops/2020/01/07/playing-with-texture-projection-in-three-js/
 export default class ProjectedMask extends THREE.ShaderMaterial {
     constructor({ camera, texture, colors, alphas, default_alpha = 0.7, flip = false, ...options } = {}) {
-        if (!texture || !texture.isTexture) {
-            throw new Error('Invalid texture passed to the ProjectedMask')
-        }
+
 
         if (!camera || !camera.isCamera) {
             throw new Error('Invalid camera passed to the ProjectedMask')
@@ -61,7 +59,6 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
         super({
             ...options,
             uniforms: {
-                tex: { type: 'sampler2DArray', value: texture },
                 viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
                 projectionMatrixCamera: { type: 'm4', value: projectionMatrixCamera },
                 modelMatrixCamera: { type: 'mat4', value: modelMatrixCamera },
@@ -142,6 +139,9 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
             glslVersion: THREE.GLSL3,
         })
 
+        if (texture && texture.isTexture) {
+            this.uniforms.tex = { type: 'sampler2DArray', value: texture }
+        }
         this.isProjectedMaterial = true
     }
 
@@ -159,5 +159,9 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
         this.uniforms.projectionMatrixCamera.value = camera.projectionMatrix.clone()
         this.uniforms.modelMatrixCamera.value = camera.matrixWorld.clone()
         this.uniforms.projPosition.value = camera.position.clone()
+    }
+
+    updateTexture(texture) {
+        this.uniforms.tex = { type: 'sampler2DArray', value: texture }
     }
 }

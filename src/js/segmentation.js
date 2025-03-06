@@ -1,12 +1,12 @@
 import * as THREE from './three.js'
 import ProjectedMaterial from './ProjectedMaterial.js'
 import ProjectedMask from './ProjectedMask.js'
-import segstream, { get_shape } from './mask.js'
+import segstream from './mask.js'
 import h264Stream from './stream.js'
 import boxesstream from './boxes.js'
 import Stats, { fpsUpdate } from "./Stats.js"
 import droppedframes from './droppedframes.js'
-import { mask_colors } from './utils.js'
+import { clearThree, mask_colors } from './utils.js'
 import { parseNumbersInObject } from './parseNumbersInObject.js'
 const PI = Math.PI
 
@@ -26,14 +26,12 @@ const height = 1080;
 const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: playerCanvas });
 renderer.setSize(width, height)
 renderer.domElement.style.cssText = ""
-// const camera_proj = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, -1, 1000);
-const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000);
+const camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, 0, 1000);
 camera.rotation.z = PI
 camera.rotation.x = PI
 
 let texture_camera;
 let material_proj;
-let material_mask;
 
 const boxCanvas = document.getElementById("boxes")
 boxCanvas.width = width;
@@ -99,7 +97,7 @@ loader.load(
         }
 
 
-        const quad = new THREE.PlaneGeometry(width / height * 500, 500);
+        const quad = new THREE.PlaneGeometry(width, height);
         const cameraUpdate = fpsUpdate(cameraPanel)
         h264Stream(socketUrlH264, 1920, 1080, 30, () => {
             cameraUpdate(), resetTimeout()
@@ -108,37 +106,60 @@ loader.load(
             material_proj = new ProjectedMaterial({
                 camera: camera, // the camera that acts as a projector
                 texture: texture_camera, // the texture being projected
-                color: '#000', // the color of the object if it's not projected on
+                color: '#111', // the color of the object if it's not projected on
                 flip: mirror,
                 transparent: true,
             })
             const mesh_cam = new THREE.Mesh(quad, material_proj);
             mesh_cam.needsUpdate = true;
-            mesh_cam.position.z = 50;
+            mesh_cam.position.z = 20;
             mesh_cam.rotation.x = PI;
             scene.add(mesh_cam);
         })
 
 
-        const modelFPSUpdate = fpsUpdate(modelPanel)
+        const modelFPSUpdate = fpsUpdate(modelPanel);
 
-        get_shape(socketUrlMask, (height, width, length, mask) => {
-            const classes = Math.round(mask.length / height / width)
-            segstream(socketUrlMask, height, width, classes, modelFPSUpdate).then((texture_mask) => {
-                material_mask = new ProjectedMask({
+        const mesh_masks = []
+        const material_masks = []
+        const onModelUpdate = (model, textures) => {
+            modelFPSUpdate()
+            while (mesh_masks.length < model.masks.length) {
+                let material_mask = new ProjectedMask({
                     camera: camera, // the camera that acts as a projector
-                    texture: texture_mask, // the texture being projected
+                    texture: null, // the texture being projected
                     transparent: true,
                     flip: mirror,
                     colors: mask_colors,
                 })
-                const mesh_mask = new THREE.Mesh(quad, material_mask);
-                mesh_mask.needsUpdate = true;
-                mesh_mask.position.z = 50;
+                let mesh_mask = new THREE.Mesh(quad, material_mask);
+                mesh_mask.position.z = 10;
                 mesh_mask.rotation.x = PI;
-                scene.add(mesh_mask);
-            })
-        })
+                mesh_masks.push(mesh_mask)
+                material_masks.push(material_mask)
+                scene.add(mesh_mask)
+            }
+
+            for (const mesh of mesh_masks.splice(model.masks.length)) {
+                clearThree(mesh)
+            }
+            
+
+            for (let i = 0; i < model.masks.length; i++) {
+                if (model.masks[i].boxed) {
+                    let x = model.boxes[i].center_x - 0.5
+                    let y = model.boxes[i].center_y - 0.5
+                    let w2 = model.boxes[i].width / 2
+                    let h2 = model.boxes[i].height / 2
+                    let camera = new THREE.OrthographicCamera(width * (x - w2), width * (x + w2), height * (y + h2), height * (y - h2), 0, 1000);
+                    camera.rotation.x = PI
+                    material_masks[i].update(camera)
+                }
+                material_masks[i].updateTexture(textures[i])
+            }
+        }
+        segstream(socketUrlMask, onModelUpdate).then()
+
         let drawBoxSettings = {
             canvas: boxCanvas,
             drawBox: DRAW_BOX,
