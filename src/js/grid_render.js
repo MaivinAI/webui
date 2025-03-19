@@ -23,6 +23,7 @@ let GRID_DRAW_PCD = "disabled"
 let DRAW_UNKNOWN_CELLS = false
 let DRAW_CELLS = "disabled"
 let SHOW_PEOPLE_COUNT = false
+let GRID_FLATTEN_PCD = true
 
 let textContext = null
 let count = 0
@@ -147,7 +148,10 @@ function init_config(config) {
     if (typeof config.SHOW_PEOPLE_COUNT == "boolean") {
         SHOW_PEOPLE_COUNT = config.SHOW_PEOPLE_COUNT
     }
-
+    
+    if (typeof config.GRID_FLATTEN_PCD == "boolean") {
+        GRID_FLATTEN_PCD = config.GRID_FLATTEN_PCD
+    }
 
     if (!DRAW_CELLS || DRAW_CELLS == "disabled") {
         DRAW_UNKNOWN_CELLS = false
@@ -274,9 +278,9 @@ function animate_grid() {
     let points = radar_points.points
     if (GRID_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
         if (GRID_DRAW_PCD.endsWith("class")) {
-            color_points_class(points, GRID_DRAW_PCD, grid_scene, rendered_points, false)
+            color_points_class(points, GRID_DRAW_PCD, grid_scene, rendered_points, !GRID_FLATTEN_PCD)
         } else {
-            color_points_field(points, GRID_DRAW_PCD, grid_scene, rendered_points, false)
+            color_points_field(points, GRID_DRAW_PCD, grid_scene, rendered_points, !GRID_FLATTEN_PCD)
         }
     }
 
