@@ -161,6 +161,7 @@ loader.load(
             stats.showPanel([3, 4, 5])
         } 
         config.GRID_DRAW_PCD = config.COMBINED_GRID_DRAW_PCD
+        config.GRID_FLATTEN_PCD = config.COMBINED_GRID_FLATTEN_PCD
         init_grid(grid_scene, renderer_grid, camera_grid, config)
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);

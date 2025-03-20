@@ -488,6 +488,15 @@
                 <input type="checkbox" id="combined_camera_pcd_label" name="combined_camera_pcd_label">
             </div>
 
+            <div class="form-group">
+                <label for="grid_flatten_pcd">Grid Flatten PCD:</label>
+                <input type="checkbox" id="grid_flatten_pcd" name="grid_flatten_pcd">
+            </div>
+            <div class="form-group">
+                <label for="combined_grid_flatten_pcd">Combined Grid Flatten PCD:</label>
+                <input type="checkbox" id="combined_grid_flatten_pcd" name="combined_grid_flatten_pcd">
+            </div>
+
             <!-- Draw Cells Checkbox -->
             <div class="form-group">
                 <label for="draw_cells">Draw Cells:</label>
@@ -590,6 +599,8 @@
                     document.getElementById('combined_grid_draw_pcd').value = data.COMBINED_GRID_DRAW_PCD.replace(/"/g, '') || 'disabled';
                     document.getElementById('combined_camera_draw_pcd').value = data.COMBINED_CAMERA_DRAW_PCD.replace(/"/g, '') || 'disabled';
                     document.getElementById('combined_camera_pcd_label').checked = data.COMBINED_CAMERA_PCD_LABEL === 'true' || data.COMBINED_CAMERA_PCD_LABEL === true;
+                    document.getElementById('grid_flatten_pcd').checked = data.GRID_FLATTEN_PCD === 'true' || data.GRID_FLATTEN_PCD === true;
+                    document.getElementById('combined_grid_flatten_pcd').checked = data.COMBINED_GRID_FLATTEN_PCD === 'true' || data.COMBINED_GRID_FLATTEN_PCD === true;
                     document.getElementById('mask_topic').value = data.MASK_TOPIC || '/rt/detect/mask/';
                     document.getElementById('detect_topic').value = data.DETECT_TOPIC || '/rt/detect/boxes2d/';
                     document.getElementById('pcd_topic').value = data.PCD_TOPIC || '/rt/radar/targets/';
@@ -636,6 +647,8 @@
                 COMBINED_GRID_DRAW_PCD: document.getElementById('combined_grid_draw_pcd').value,
                 COMBINED_CAMERA_DRAW_PCD: document.getElementById('combined_camera_draw_pcd').value,
                 COMBINED_CAMERA_PCD_LABEL: document.getElementById('combined_camera_pcd_label').checked.toString(),
+                GRID_FLATTEN_PCD: document.getElementById('grid_flatten_pcd').checked.toString(),
+                COMBINED_GRID_FLATTEN_PCD: document.getElementById('combined_grid_flatten_pcd').checked.toString(),
                 MASK_TOPIC: document.getElementById('mask_topic').value,
                 DETECT_TOPIC: document.getElementById('detect_topic').value,
                 PCD_TOPIC: document.getElementById('pcd_topic').value,
