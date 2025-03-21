@@ -298,7 +298,6 @@
         .range-slider-container {
             position: relative;
             width: 100%;
-            padding: 0;
             height: auto;
             margin: 30px 0 40px;
             background: #f8fafc;
@@ -896,46 +895,34 @@
 
         // Add event listeners for sliders with constraints
         document.getElementById('lidar-start').addEventListener('input', function () {
-            const stopValue = parseInt(document.getElementById('lidar-stop').value);
-            const startValue = parseInt(this.value);
-
-            // Ensure min doesn't exceed max
-            if (startValue > stopValue) {
-                this.value = stopValue;
+            const maxValue = parseInt(document.getElementById('lidar-stop').value);
+            if (parseInt(this.value) > maxValue) {
+                this.value = maxValue;
             }
-
             updateFOVDisplay();
         });
 
         document.getElementById('lidar-stop').addEventListener('input', function () {
-            const startValue = parseInt(document.getElementById('lidar-start').value);
-            const stopValue = parseInt(this.value);
-
-            // Ensure max isn't less than min
-            if (stopValue < startValue) {
-                this.value = startValue;
+            const minValue = parseInt(document.getElementById('lidar-start').value);
+            if (parseInt(this.value) < minValue) {
+                this.value = minValue;
             }
-
             updateFOVDisplay();
         });
 
         // Add these event listeners after the existing ones
         document.getElementById('start-angle-input').addEventListener('input', function () {
-            const startValue = parseInt(this.value);
-            const stopValue = parseInt(document.getElementById('stop-angle-input').value);
-
-            if (!isNaN(startValue) && startValue >= 0 && startValue <= 360) {
-                document.getElementById('lidar-start').value = startValue;
+            const value = parseInt(this.value);
+            if (!isNaN(value) && value >= 0 && value <= 360) {
+                document.getElementById('lidar-start').value = value;
                 updateFOVDisplay();
             }
         });
 
         document.getElementById('stop-angle-input').addEventListener('input', function () {
-            const stopValue = parseInt(this.value);
-            const startValue = parseInt(document.getElementById('start-angle-input').value);
-
-            if (!isNaN(stopValue) && stopValue >= 0 && stopValue <= 360) {
-                document.getElementById('lidar-stop').value = stopValue;
+            const value = parseInt(this.value);
+            if (!isNaN(value) && value >= 0 && value <= 360) {
+                document.getElementById('lidar-stop').value = value;
                 updateFOVDisplay();
             }
         });
