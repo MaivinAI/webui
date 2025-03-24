@@ -427,9 +427,7 @@
             appearance: none;
             width: 200px;
             height: 4px;
-            background: linear-gradient(to right,
-                    #e5e7eb 0%, #e5e7eb calc((18 / 25) * 100%),
-                    #fee2e2 calc((18 / 25) * 100%), #fee2e2 100%);
+            background: #e5e7eb;
             border-radius: 4px;
             transition: all 0.2s ease;
         }
@@ -444,6 +442,10 @@
             border: 2px solid #ffffff;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
         }
 
         input[type="range"]:disabled {
@@ -483,23 +485,6 @@
         .checkbox-wrapper input[type="checkbox"]:disabled:checked {
             background-color: #9ca3af;
             border-color: #9ca3af;
-        }
-
-        /* Add these new styles for the FPS slider */
-        input[type="range"].danger::-webkit-slider-thumb {
-            background: #dc2626;
-            /* red color for dangerous values */
-        }
-
-        input[type="range"].danger::-webkit-slider-thumb:hover {
-            background: #ef4444;
-            /* lighter red on hover */
-        }
-
-        .fps-label.danger {
-            color: #dc2626;
-            /* red color for dangerous values */
-            font-weight: 600;
         }
     </style>
 </head>
@@ -607,7 +592,7 @@
                             </label>
                             <span>/radar/cube</span>
                             <div class="fps-slider">
-                                <input type="range" id="cube_fps" min="1" max="25" value="18" step="1" disabled
+                                <input type="range" id="cube_fps" min="1" max=19" value="18" step="1" disabled
                                     title="Enable radar cube topic to adjust FPS" oninput="updateFpsLabel(this.value)">
                                 <span id="fps_value" class="fps-label">18 FPS</span>
                             </div>
@@ -840,8 +825,12 @@
                     initializeModelState();
 
                     if (data.CUBE_FPS) {
-                        fpsSlider.value = data.CUBE_FPS;
+                        fpsSlider.value = data.CUBE_FPS === '' ? 19 : parseInt(data.CUBE_FPS);
                         updateFpsLabel(data.CUBE_FPS);
+                    } else {
+                        // If CUBE_FPS is blank/undefined, set it to MAX
+                        fpsSlider.value = 19;
+                        updateFpsLabel(19);
                     }
 
                     return data;
@@ -893,9 +882,14 @@
 
             if (data.CUBE_FPS) {
                 const fpsSlider = document.getElementById('cube_fps');
-                const fpsValue = data.CUBE_FPS === 'MAX' ? 19 : parseInt(data.CUBE_FPS);
+                const fpsValue = data.CUBE_FPS === '' ? 19 : parseInt(data.CUBE_FPS);
                 fpsSlider.value = fpsValue;
                 updateFpsLabel(fpsValue);
+            } else {
+                // If CUBE_FPS is blank/undefined, set it to MAX
+                const fpsSlider = document.getElementById('cube_fps');
+                fpsSlider.value = 19;
+                updateFpsLabel(19);
             }
         }
 
@@ -913,7 +907,7 @@
             const storage = document.getElementById('storage').value;
             const compression = document.getElementById('compression').value;
             const fpsSlider = document.getElementById('cube_fps');
-            const cubeFps = parseInt(fpsSlider.value) > 18 ? 'MAX' : fpsSlider.value;
+            const cubeFps = parseInt(fpsSlider.value) > 18 ? '' : fpsSlider.value;
 
             // Only collect topics from checkboxes that have a value attribute
             const selectedTopics = Array.from(document.querySelectorAll('input[name="topics"]:checked'))
@@ -1153,18 +1147,15 @@
             fpsLabel.classList.remove('danger');
 
             if (numValue > 18) {
-                // Add danger classes for values over 18
-                fpsSlider.classList.add('danger');
-                fpsLabel.classList.add('danger');
                 fpsLabel.textContent = 'MAX FPS';
-                fpsSlider.value = 25; // Reduced from 60 to 25 for better proportions
+                fpsSlider.value = 19; // Changed from 25 to 19
             } else {
                 fpsLabel.textContent = numValue + ' FPS';
             }
         }
 
-        // Update the HTML for the range input
-        document.querySelector('.fps-slider input[type="range"]').max = "25"; // Reduced from 60 to 25
+        // Remove or update this line at the bottom of the file
+        document.querySelector('.fps-slider input[type="range"]').max = "19"; // Changed from 25 to 19
     </script>
 </body>
 
