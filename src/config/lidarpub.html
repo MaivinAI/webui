@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiDAR Configuration</title>
+    <link href="../css/styles.css" rel="stylesheet">
+    <link href="../css/full.css" rel="stylesheet" type="text/css" />
+    <script src="../js/tailwind.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #007bff;
+            color: #060606;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #ffffff;
+            overflow-y: auto;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            max-height: auto;
+            margin-top: auto;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .comment {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .navbar-end .btn-circle svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .navbar-end .btn-circle:hover svg {
+            color: #e2e8f0;
+        }
+
+        .navbar-end .menu {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-end .btn-circle.btn-lg {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .navbar-end .btn-circle.btn-lg svg {
+            margin-top: -5px;
+            width: 25px;
+            height: 25px;
+            color: white;
+        }
+
+        .navbar-end .btn-circle.btn-lg:hover svg {
+            color: #e2e8f0;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .loading-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Save Button Container */
+        .button-container {
+            position: sticky;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background: linear-gradient(to top, white 60%, transparent);
+        }
+
+        /* Save Button Style */
+        button#saveConfig {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+
+        button#saveConfig:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        button#saveConfig:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        button#saveConfig:focus {
+            outline: 2px solid #60a5fa;
+            outline-offset: 2px;
+        }
+
+        /* Visualization styles */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 30px;
+            background-color: transparent;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #grid-container {
+            width: 100%;
+            height: 600px;
+            position: relative;
+            background-color: transparent;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .grid-canvas {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+        }
+
+        /* Legend styles */
+        .top-legend {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            transform: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            font-size: 13px;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            display: inline-block;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Slider styles */
+        .range-slider-container {
+            position: relative;
+            width: 100%;
+            height: auto;
+            margin: 30px 0 40px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .angle-inputs {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            gap: 30px;
+        }
+
+        .angle-input {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .angle-input span {
+            color: #4a5568;
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .angle-input input {
+            width: 100%;
+            height: 40px;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 500;
+            background-color: white;
+            color: #2d3748;
+            transition: all 0.2s;
+        }
+
+        .angle-input input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .slider {
+            position: relative;
+            width: 100%;
+            height: 6px;
+            margin: 35px 0 20px 0;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        .slider-track-highlight {
+            position: absolute;
+            height: 100%;
+            background: #3b82f6;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
+        .range-input {
+            position: relative;
+            z-index: 2;
+        }
+
+        .range-input input {
+            -webkit-appearance: none;
+            position: absolute;
+            top: -10px;
+            width: 100%;
+            height: 6px;
+            background: none;
+            pointer-events: none;
+        }
+
+        .range-input input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            background: #3b82f6;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            pointer-events: auto;
+            transition: all 0.2s ease;
+        }
+
+        .range-input input::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        .range-input input::-webkit-slider-thumb:active {
+            transform: scale(0.95);
+        }
+
+        .min-range::-webkit-slider-thumb {
+            background: #3b82f6;
+        }
+
+        .max-range::-webkit-slider-thumb {
+            background: #1e40af;
+        }
+
+        .range-values {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .fov-value {
+            text-align: center;
+            font-size: 15px;
+            color: #1e40af;
+            margin-top: 20px;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar bg-base-100">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl">
+                <img class="header__logo me-2" src="../assets/auzoneLogo.svg" alt="">
+            </a>
+        </div>
+        <div class="navbar-center">
+            <span class="text-xl">LiDAR Configuration</span>
+        </div>
+        <div class="navbar-end">
+            <ul class="menu menu-horizontal px-1">
+                <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-8 h-8">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </a>
+            </ul>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <!-- Add timeout element for streamH264.js -->
+            <p id="timeout" style="display: none;"></p>
+
+            <!-- Camera Feed with FOV Overlay -->
+            <div class="camera-container">
+                <div id="grid-container">
+                    <canvas id="grid-canvas" class="grid-canvas"></canvas>
+                    <div class="top-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: rgba(0, 255, 0, 0.6);"></div>
+                            <span>Camera (84°)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: rgba(255, 0, 0, 0.6);"></div>
+                            <span>Radar (140°)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: rgba(0, 0, 255, 0.6);"></div>
+                            <span id="top-lidar-range">LiDAR Range: 194°</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lidar Controls -->
+            <div class="form-group">
+                <h2>LiDAR Field of View</h2>
+                <div class="range-slider-container">
+                    <div class="angle-inputs">
+                        <div class="angle-input">
+                            <input type="number" id="start-angle-input" min="0" max="360" value="73">
+                            <span>Min AZIMUTH</span>
+                        </div>
+                        <div class="angle-input">
+                            <input type="number" id="stop-angle-input" min="0" max="360" value="267">
+                            <span>Max AZIMUTH</span>
+                        </div>
+                    </div>
+                    <div class="slider">
+                        <div class="slider-track-highlight" id="slider-highlight"></div>
+                    </div>
+                    <div class="range-input">
+                        <input type="range" class="min-range" id="lidar-start" min="0" max="360" value="73" step="1">
+                        <input type="range" class="max-range" id="lidar-stop" min="0" max="360" value="267" step="1">
+                    </div>
+                    <div class="range-values">
+                        <span>0°</span>
+                        <span>360°</span>
+                    </div>
+                    <div class="fov-value">
+                        Coverage: <span id="coverage-value">150</span>°
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional LiDAR Configuration -->
+            <div class="form-group">
+                <h2>Additional LiDAR Settings</h2>
+
+                <div class="form-group">
+                    <label for="log_level">Log Level:</label>
+                    <select id="log_level" name="log_level">
+                        <option value="info">Info</option>
+                        <option value="debug">Debug</option>
+                        <option value="warn">Warn</option>
+                        <option value="error">Error</option>
+                    </select>
+                    <div class="comment">Log level for the application, relevant sub-filters are radarpub and drvegrd
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="zenoh_timeout">Zenoh Wait Before Drop (μs):</label>
+                    <input type="number" id="zenoh_timeout" name="zenoh_timeout" value="100000">
+                    <div class="comment">Microsecond timeout before dropping a Zenoh message (default: 100000 for 10Hz)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="target">Target Device:</label>
+                    <input type="text" id="target" name="target" value="os-122122000149.local">
+                    <div class="comment">Hostname or IP address of the LiDAR target device</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="lidar_mode">LiDAR Mode:</label>
+                    <select id="lidar_mode" name="lidar_mode">
+                        <option value="512x10">512x10</option>
+                        <option value="1024x10" selected>1024x10</option>
+                        <option value="2048x10">2048x10</option>
+                        <option value="512x20">512x20</option>
+                        <option value="1024x20">1024x20</option>
+                    </select>
+                    <div class="comment">LiDAR column and refresh rate mode</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="timestamp_mode">Timestamp Mode:</label>
+                    <select id="timestamp_mode" name="timestamp_mode">
+                        <option value="internal">Internal</option>
+                        <option value="ptp1588" selected>PTP-1588</option>
+                    </select>
+                    <div class="comment">Controls how the LiDAR configures its clock</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tf_vec">Transform Vector:</label>
+                    <input type="text" id="tf_vec" name="tf_vec" value="0 0 -0.19"
+                        pattern="-?\d*\.?\d+\s+-?\d*\.?\d+\s+-?\d*\.?\d+">
+                    <div class="comment">LiDAR frame transformation vector (X Y Z) from the base_link</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tf_quat">Rotation Quaternion:</label>
+                    <input type="text" id="tf_quat" name="tf_quat" value="0 0 -0.9998157 0.0191974"
+                        pattern="-?\d*\.?\d+\s+-?\d*\.?\d+\s+-?\d*\.?\d+\s+-?\d*\.?\d+">
+                    <div class="comment">LiDAR frame rotation quaternion (X Y Z W) from the base_link</div>
+                </div>
+            </div>
+
+            <div class="button-container">
+                <button id="saveConfig">Save Configuration</button>
+            </div>
+        </div>
+    </main>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div>Saving configuration...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        function drawGrid() {
+            const canvas = document.getElementById('grid-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width = canvas.offsetWidth;
+            const height = canvas.height = canvas.offsetHeight;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Use a slightly offset center to give more room at the top
+            ctx.translate(width / 2, height / 2 + 20);
+
+            // Reduce the maximum radius to prevent clipping
+            const maxRadius = Math.min(width / 2, height / 2) - 50;
+
+            // Draw the full circle background
+            ctx.beginPath();
+            ctx.arc(0, 0, maxRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            // Draw distance circles and labels
+            for (let r = maxRadius / 4; r <= maxRadius; r += maxRadius / 4) {
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, 2 * Math.PI);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                const distance = Math.round((r / maxRadius) * 8);
+                ctx.save();
+                ctx.font = '12px Arial';
+                ctx.fillStyle = '#000000';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // Add distance labels at four positions
+                ctx.fillText(`${distance}m`, 0, -r);
+                ctx.fillText(`${distance}m`, r, 0);
+                ctx.fillText(`${distance}m`, 0, r);
+                ctx.fillText(`${distance}m`, -r, 0);
+                ctx.restore();
+            }
+
+            // Draw angle lines and labels with better visibility
+            for (let angle = 0; angle < 360; angle += 30) {
+                // Convert to the correct angle system (0° at front, clockwise)
+                const displayAngle = (angle) % 360;
+                const rotatedAngle = (angle + 90) % 360;
+                const rad = (rotatedAngle * Math.PI) / 180;
+
+                // Draw line
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                const x = Math.cos(rad) * maxRadius;
+                const y = Math.sin(rad) * maxRadius;
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Add angle label with background for better visibility
+                const labelRadius = maxRadius + 20;
+                const labelX = Math.cos(rad) * labelRadius;
+                const labelY = Math.sin(rad) * labelRadius;
+
+                // Draw label background
+                ctx.save();
+                ctx.font = '14px Arial';
+                const text = `${displayAngle}°`;
+                const textMetrics = ctx.measureText(text);
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(
+                    labelX - textMetrics.width / 2 - 4,
+                    labelY - 10,
+                    textMetrics.width + 8,
+                    20
+                );
+
+                // Draw text
+                ctx.fillStyle = '#FFFFFF';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, labelX, labelY);
+                ctx.restore();
+            }
+        }
+
+        function drawFOV(startAngle, stopAngle) {
+            const canvas = document.getElementById('grid-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Use the same radius and offset as in drawGrid
+            const maxRadius = Math.min(width / 2, height / 2) - 50;
+
+            // For canvas arc drawing, convert to radians
+            function angleToRad(angle) {
+                // Rotate 90 degrees clockwise
+                const rotatedAngle = (angle + 90) % 360;
+                return (rotatedAngle * Math.PI) / 180;
+            }
+
+            // Draw FOV boundary lines function
+            const drawFOVLine = (angle, color) => {
+                const rad = angleToRad(angle);
+                const x = Math.cos(rad) * maxRadius;
+                const y = Math.sin(rad) * maxRadius;
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw arrow
+                const arrowSize = 15;
+                const arrowAngle = Math.atan2(y, x);
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - arrowSize * Math.cos(arrowAngle - Math.PI / 6), y - arrowSize * Math.sin(arrowAngle - Math.PI / 6));
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - arrowSize * Math.cos(arrowAngle + Math.PI / 6), y - arrowSize * Math.sin(arrowAngle + Math.PI / 6));
+                ctx.stroke();
+            };
+
+            // Add angle labels function
+            const addAngleLabel = (angle, color = '#0000ff', customText = null) => {
+                const rad = angleToRad(angle);
+                const labelRadius = maxRadius + 30;
+                const x = Math.cos(rad) * labelRadius;
+                const y = Math.sin(rad) * labelRadius;
+
+                ctx.save();
+                ctx.font = '14px Arial';
+                ctx.fillStyle = color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Use custom text if provided, otherwise use angle
+                const text = customText || `${angle}°`;
+                ctx.fillText(text, x, y);
+                ctx.restore();
+            };
+
+            // Draw distance circles with gradient
+            for (let r = maxRadius / 4; r <= maxRadius; r += maxRadius / 4) {
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Camera FOV (84°)
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.15)';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, maxRadius, angleToRad(180 - 42), angleToRad(180 + 42));
+            ctx.lineTo(0, 0);
+            ctx.fill();
+
+            // Draw Camera FOV boundary lines
+            drawFOVLine(180 - 42, 'rgba(0, 255, 0, 0.8)');
+            drawFOVLine(180 + 42, 'rgba(0, 255, 0, 0.8)');
+            addAngleLabel(180 - 42, 'rgba(0, 255, 0, 0.8)', '-42°');
+            addAngleLabel(180 + 42, 'rgba(0, 255, 0, 0.8)', '+42°');
+
+            // Radar FOV (140°)
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, maxRadius, angleToRad(180 - 70), angleToRad(180 + 70));
+            ctx.lineTo(0, 0);
+            ctx.fill();
+
+            // Draw Radar FOV boundary lines
+            drawFOVLine(180 - 70, 'rgba(255, 0, 0, 0.8)');
+            drawFOVLine(180 + 70, 'rgba(255, 0, 0, 0.8)');
+            addAngleLabel(180 - 70, 'rgba(255, 0, 0, 0.8)', '-70°');
+            addAngleLabel(180 + 70, 'rgba(255, 0, 0, 0.8)', '+70°');
+
+            // Lidar FOV - handle wraparound case
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.15)';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+
+            if (startAngle > stopAngle) {
+                // Wraparound case
+                ctx.arc(0, 0, maxRadius, angleToRad(startAngle), angleToRad(360));
+                ctx.lineTo(0, 0);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, maxRadius, angleToRad(0), angleToRad(stopAngle));
+                ctx.lineTo(0, 0);
+                ctx.fill();
+            } else {
+                // Normal case
+                ctx.arc(0, 0, maxRadius, angleToRad(startAngle), angleToRad(stopAngle));
+                ctx.lineTo(0, 0);
+                ctx.fill();
+            }
+
+            // Draw Lidar FOV boundary lines
+            drawFOVLine(startAngle, 'rgba(0, 0, 255, 0.8)');
+            drawFOVLine(stopAngle, 'rgba(0, 0, 255, 0.8)');
+            addAngleLabel(startAngle);
+            addAngleLabel(stopAngle);
+
+            // Update legend to show accurate angles
+            const cameraLegend = document.querySelector('.legend-item:nth-child(1) span');
+            const radarLegend = document.querySelector('.legend-item:nth-child(2) span');
+            const lidarLegend = document.querySelector('.legend-item:nth-child(3) span');
+
+            // Calculate coverage, handling wraparound
+            let coverage;
+            if (startAngle > stopAngle) {
+                coverage = 360 - startAngle + stopAngle;
+            } else {
+                coverage = stopAngle - startAngle;
+            }
+
+            cameraLegend.textContent = `Camera (84°)`;
+            radarLegend.textContent = `Radar (140°)`;
+            lidarLegend.textContent = `Lidar Range: ${Math.round(coverage)}°`;
+        }
+
+        function updateFOVDisplay() {
+            const startSlider = document.getElementById('lidar-start');
+            const stopSlider = document.getElementById('lidar-stop');
+            const startAngleInput = document.getElementById('start-angle-input');
+            const stopAngleInput = document.getElementById('stop-angle-input');
+            const coverageValueSpan = document.getElementById('coverage-value');
+            const topLidarRange = document.getElementById('top-lidar-range');
+            const highlight = document.getElementById('slider-highlight');
+
+            // Guard clause - check for required elements
+            if (!startSlider || !stopSlider) {
+                console.warn('Required slider elements not found');
+                return;
+            }
+
+            // Get current slider values
+            let startValue = parseInt(startSlider.value);
+            let stopValue = parseInt(stopSlider.value);
+
+            // Ensure values are within range
+            if (isNaN(startValue)) startValue = 0;
+            if (isNaN(stopValue)) stopValue = 360;
+            if (startValue < 0) startValue = 0;
+            if (stopValue > 360) stopValue = 360;
+
+            // Calculate coverage - handle wraparound case
+            let coverage;
+            if (startValue > stopValue) {
+                coverage = 360 - startValue + stopValue;
+            } else {
+                coverage = stopValue - startValue;
+            }
+
+            // Update input boxes if they exist
+            if (startAngleInput) startAngleInput.value = startValue;
+            if (stopAngleInput) stopAngleInput.value = stopValue;
+
+            // Update coverage value if element exists
+            if (coverageValueSpan) coverageValueSpan.textContent = coverage;
+
+            // Update the top legend if it exists
+            if (topLidarRange) topLidarRange.textContent = `Lidar Range: ${coverage}°`;
+
+            // Update slider highlight if it exists
+            if (highlight) {
+                const startPercent = (startValue / 360) * 100;
+                const stopPercent = (stopValue / 360) * 100;
+
+                if (startValue <= stopValue) {
+                    // Normal case
+                    highlight.style.left = `${startPercent}%`;
+                    highlight.style.width = `${stopPercent - startPercent}%`;
+                    highlight.style.background = '#3b82f6';
+                } else {
+                    // Wraparound case - use gradient
+                    highlight.style.left = '0%';
+                    highlight.style.width = '100%';
+                    highlight.style.background = `linear-gradient(90deg, 
+                        #3b82f6 0%, 
+                        #3b82f6 ${stopPercent}%, 
+                        #e2e8f0 ${stopPercent}%, 
+                        #e2e8f0 ${startPercent}%, 
+                        #3b82f6 ${startPercent}%, 
+                        #3b82f6 100%)`;
+                }
+            }
+
+            drawGrid();
+            drawFOV(startValue, stopValue);
+        }
+
+        // Add event listeners for sliders with constraints
+        document.getElementById('lidar-start').addEventListener('input', function () {
+            const maxValue = parseInt(document.getElementById('lidar-stop').value);
+            if (parseInt(this.value) > maxValue) {
+                this.value = maxValue;
+            }
+            updateFOVDisplay();
+        });
+
+        document.getElementById('lidar-stop').addEventListener('input', function () {
+            const minValue = parseInt(document.getElementById('lidar-start').value);
+            if (parseInt(this.value) < minValue) {
+                this.value = minValue;
+            }
+            updateFOVDisplay();
+        });
+
+        // Add these event listeners after the existing ones
+        document.getElementById('start-angle-input').addEventListener('input', function () {
+            const value = parseInt(this.value);
+            if (!isNaN(value) && value >= 0 && value <= 360) {
+                document.getElementById('lidar-start').value = value;
+                updateFOVDisplay();
+            }
+        });
+
+        document.getElementById('stop-angle-input').addEventListener('input', function () {
+            const value = parseInt(this.value);
+            if (!isNaN(value) && value >= 0 && value <= 360) {
+                document.getElementById('lidar-stop').value = value;
+                updateFOVDisplay();
+            }
+        });
+
+        // Initialize grid and FOV display
+        window.addEventListener('load', () => {
+            drawGrid();
+            updateFOVDisplay();
+        });
+
+        // Update on window resize
+        window.addEventListener('resize', () => {
+            drawGrid();
+            updateFOVDisplay();
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch(`/config/lidarpub/details`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Set values for all form fields
+                    document.getElementById('log_level').value = data.RUST_LOG || 'info';
+                    document.getElementById('zenoh_timeout').value = data.ZENOH_WAIT_BEFORE_DROP || '100000';
+                    document.getElementById('target').value = data.TARGET || 'os-122122000149.local';
+                    document.getElementById('lidar_mode').value = data.LIDAR_MODE || '1024x10';
+                    document.getElementById('timestamp_mode').value = data.TIMESTAMP_MODE || 'ptp1588';
+                    document.getElementById('tf_vec').value = Array.isArray(data.TF_VEC) ? data.TF_VEC.join(' ') : (data.TF_VEC || '0 0 -0.19');
+                    document.getElementById('tf_quat').value = Array.isArray(data.TF_QUAT) ? data.TF_QUAT.join(' ') : (data.TF_QUAT || '0 0 -0.9998157 0.0191974');
+
+                    if (data.AZIMUTH) {
+                        const angles = Array.isArray(data.AZIMUTH) ? data.AZIMUTH : data.AZIMUTH.trim().split(/\s+/);
+                        if (angles.length === 2) {
+                            const start = parseInt(angles[0]);
+                            const stop = parseInt(angles[1]);
+                            if (!isNaN(start) && !isNaN(stop)) {
+                                document.getElementById('lidar-start').value = start;
+                                document.getElementById('lidar-stop').value = stop;
+                                document.getElementById('start-angle-input').value = start;
+                                document.getElementById('stop-angle-input').value = stop;
+                                updateFOVDisplay();
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching configuration:', error);
+                });
+
+            document.getElementById('saveConfig').addEventListener('click', function () {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.style.display = 'block';
+
+                const startAngle = document.getElementById('start-angle-input').value;
+                const stopAngle = document.getElementById('stop-angle-input').value;
+
+                const configData = {
+                    fileName: "lidarpub",
+                    RUST_LOG: document.getElementById('log_level').value,
+                    ZENOH_WAIT_BEFORE_DROP: document.getElementById('zenoh_timeout').value,
+                    TARGET: document.getElementById('target').value,
+                    AZIMUTH: `${startAngle} ${stopAngle}`,
+                    LIDAR_MODE: document.getElementById('lidar_mode').value,
+                    TIMESTAMP_MODE: document.getElementById('timestamp_mode').value,
+                    TF_VEC: document.getElementById('tf_vec').value,
+                    TF_QUAT: document.getElementById('tf_quat').value
+                };
+
+                fetch('/config/lidarpub', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(configData)
+                })
+                    .then(response => {
+                        loadingOverlay.style.display = 'none';
+                        if (response.ok) {
+                            alert('Configuration saved successfully');
+                        } else {
+                            alert('Error saving configuration');
+                        }
+                    })
+                    .catch(error => {
+                        loadingOverlay.style.display = 'none';
+                        console.error('Error:', error);
+                        alert('Error saving configuration');
+                    });
+            });
+        });
+    </script>
+</body>
+
+</html>
