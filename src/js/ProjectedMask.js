@@ -137,7 +137,7 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
                         max_all = max_;
                         max_ind = i*4 + max_ind_;
                     }
-                    max_ind = clamp(max_ind, 0, ${colors.length});
+                    max_ind = clamp(max_ind, 0, ${colors.length-1});
                     pc_fragColor = colors[max_ind];
                 }`,
             glslVersion: THREE.GLSL3,
