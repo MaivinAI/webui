@@ -233,42 +233,7 @@
                     </div>
                 </div>
                 <!-- Mode Indicator with Tooltip -->
-                <div class="relative group" id="statusContainer">
-                    <div class="flex items-center gap-2">
-                        <div id="modeIndicator"
-                            class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 flex items-center gap-2">
-                            <span id="modeText">Loading...</span>
-                            <!-- Add loading animation -->
-                            <svg class="animate-spin h-4 w-4 text-gray-600" xmlns="http://www.w3.org/2000/svg"
-                                fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg>
-                        </div>
-                        <!-- Add Info Icon -->
-                        <button onclick="showServiceStatus()" class="btn btn-ghost btn-circle btn-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                            </svg>
-                        </button>
-                    </div>
-                    <!-- Quick Status Tooltip -->
-                    <div class="absolute right-0 mt-2 hidden group-hover:block z-50">
-                        <div class="bg-white rounded-lg shadow-lg border border-gray-200 p-4 w-64">
-                            <div class="text-sm">
-                                <div class="font-medium text-gray-900 mb-2">Service Status</div>
-                                <div id="quickStatusContent" class="space-y-2">
-                                    <!-- Status content will be dynamically inserted -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <ul class="menu menu-horizontal px-1">
                     <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
