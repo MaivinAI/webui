@@ -42,8 +42,8 @@ const boxCanvas = document.getElementById("boxes")
 boxCanvas.width = width;
 boxCanvas.height = height;
 
-const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000);
-camera.position.set(0, 5, 10); // Set initial camera position
+const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000); // Return to original FOV
+camera.position.set(0, 5, 10); // Return to original position
 camera.lookAt(0, 0, 0);
 
 const scene = new THREE.Scene();
@@ -88,15 +88,15 @@ let show_stats = false
 
 // Create a quad for the camera view
 const quad = new THREE.PlaneGeometry(16, 9); // Using 16:9 aspect ratio
-quad.scale(4, 4, 1); // Scale up to make it much larger
+quad.scale(6, 6, 1); // Moderate scale increase
 
 // Create a group for the camera feed
 const cameraGroup = new THREE.Group();
 scene.add(cameraGroup);
 
 // Position the camera group
-cameraGroup.position.set(0, 0, -15); // Move further back
-cameraGroup.rotation.x = 0; // Make it completely vertical
+cameraGroup.position.set(0, 0, -12); // Adjusted position
+cameraGroup.rotation.x = 0;
 
 // Initialize the PCD loader
 const pcdLoader = new PCDLoader();
