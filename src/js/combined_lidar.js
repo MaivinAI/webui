@@ -47,6 +47,13 @@ renderer.domElement.style.cssText = `
 const boxCanvas = document.getElementById("boxes")
 boxCanvas.width = width;
 boxCanvas.height = height;
+boxCanvas.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    pointer-events: none;
+`;
 
 const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000);
 camera.position.set(0, 5, 10);
@@ -167,7 +174,6 @@ lidarSocket.onclose = function () {
 droppedframes(socketUrlErrors, playerCanvas)
 
 function drawBoxesSpeedDistance(canvas, boxes, radar_points, drawBoxSettings) {
-
     if (!boxes) {
         return
     }
@@ -193,7 +199,8 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points, drawBoxSettings) {
         }
         if (drawBoxSettings.drawBox) {
             ctx.beginPath();
-            ctx.rect((x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
+            let y = box.center_y - 0.3;
+            ctx.rect((x - box.width / 2) * canvas.width, (y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
             ctx.strokeStyle = color_box;
             ctx.lineWidth = 4;
             ctx.stroke();
@@ -206,9 +213,10 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points, drawBoxSettings) {
             ctx.strokeStyle = color_box
             ctx.fillStyle = color_text;
             ctx.lineWidth = 1;
+            let y = box.center_y - 0.3;
             for (let i = 0; i < lines.length; i++) {
-                ctx.fillText(lines[i], (x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
-                ctx.strokeText(lines[i], (x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+                ctx.fillText(lines[i], (x - box.width / 2) * canvas.width, (y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+                ctx.strokeText(lines[i], (x - box.width / 2) * canvas.width, (y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
             }
         }
     }
