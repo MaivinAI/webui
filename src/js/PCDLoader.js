@@ -62,7 +62,7 @@ class PCDLoader extends Loader {
 
     createRangeRings() {
         const rings = new Group();
-        const material = new LineBasicMaterial({ color: 0x404040 });
+        // const material = new LineBasicMaterial({ color: 0x404040 });
 
         // Create rings at 1m intervals up to 5m
         for (let radius = 1; radius <= 5; radius++) {
@@ -75,9 +75,9 @@ class PCDLoader extends Loader {
                     return vertex;
                 }).filter((_, i) => i > 0) // Remove center vertex
             );
-            const circle = new LineLoop(circleGeom, material);
-            circle.rotation.x = -Math.PI / 2; // Lay flat
-            rings.add(circle);
+            // const circle = new LineLoop(circleGeom, material);
+            // circle.rotation.x = -Math.PI / 2; // Lay flat
+            // rings.add(circle);
         }
         return rings;
     }

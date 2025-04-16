@@ -38,7 +38,7 @@ function create_text() {
     canvas.style.cssText = 'width:200;height:50px';
 
     textContext = canvas.getContext('2d');
-    textContext.font = 'bold '+ (20 * PR) + 'px Helvetica,Arial,sans-serif';
+    textContext.font = 'bold ' + (20 * PR) + 'px Helvetica,Arial,sans-serif';
     textContext.textBaseline = 'top';
     textContext.fillText(`${count}`, 20, 20);
     container.appendChild(canvas)
@@ -71,7 +71,7 @@ export function init_grid(grid_scene_, grid_renderer_, grid_camera_, config) {
         0x000,
         0x000);
     gridHelper.position.z = 0.002;
-    grid_scene.add(gridHelper);
+    // grid_scene.add(gridHelper);
     let decimals = 1
     if (Number.isInteger(RANGE_BIN_LIMITS[0]) && Number.isInteger(RANGE_BIN_WIDTH * 2)) {
         decimals = 0
@@ -81,14 +81,14 @@ export function init_grid(grid_scene_, grid_renderer_, grid_camera_, config) {
         myText.material.sizeAttenuation = false
         myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[0] + 1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI) * 0.16
         myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[0] + 1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[0] + 91) / 180 * PI) * 0.16
-        grid_scene.add(myText)
+        // grid_scene.add(myText)
     }
     for (let i = RANGE_BIN_LIMITS[0]; i <= RANGE_BIN_LIMITS[1]; i += RANGE_BIN_WIDTH * 2) {
         const myText = new SpriteText(i.toFixed(decimals) + "m", 0.03, "0x888888")
         myText.material.sizeAttenuation = false
         myText.position.x = Math.sin((-ANGLE_BIN_LIMITS[1] - 1) / 180 * PI) * i + Math.sin((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.16
         myText.position.z = Math.cos((-ANGLE_BIN_LIMITS[1] - 1) / 180 * PI) * i + Math.cos((-ANGLE_BIN_LIMITS[1] - 91) / 180 * PI) * 0.16
-        grid_scene.add(myText)
+        // grid_scene.add(myText)
     }
 
     for (let i = ANGLE_BIN_LIMITS[0]; i <= ANGLE_BIN_LIMITS[1]; i += ANGLE_BIN_WIDTH * 2) {
@@ -139,7 +139,7 @@ function init_config(config) {
 
     if (config.DRAW_CELLS) {
         DRAW_CELLS = config.DRAW_CELLS
-    }  
+    }
 
     if (typeof config.DRAW_UNKNOWN_CELLS == "boolean") {
         DRAW_UNKNOWN_CELLS = config.DRAW_UNKNOWN_CELLS
@@ -148,7 +148,7 @@ function init_config(config) {
     if (typeof config.SHOW_PEOPLE_COUNT == "boolean") {
         SHOW_PEOPLE_COUNT = config.SHOW_PEOPLE_COUNT
     }
-    
+
     if (typeof config.GRID_FLATTEN_PCD == "boolean") {
         GRID_FLATTEN_PCD = config.GRID_FLATTEN_PCD
     }
@@ -289,7 +289,7 @@ function animate_grid() {
             increment_bin(-p.angle * 180 / PI, p.range, p)
         }
         if (p[DRAW_CELLS] > 0) {
-            count+=1
+            count += 1
         }
     }
     occupied.forEach((cell) => {

@@ -30,7 +30,11 @@ const height = window.innerHeight;
 playerCanvas.width = width;
 playerCanvas.height = height;
 
-const renderer = new THREE.WebGLRenderer({ canvas: playerCanvas, antialias: true });
+const renderer = new THREE.WebGLRenderer({
+    canvas: playerCanvas,
+    antialias: true,
+    alpha: true  // Enable transparency
+});
 renderer.setSize(width, height);
 renderer.domElement.style.cssText = ""
 
@@ -43,7 +47,7 @@ camera.position.set(0, 5, 10); // Set initial camera position
 camera.lookAt(0, 0, 0);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xa0a0a0);
+scene.background = null;  // Make background transparent instead of grey
 
 // Add OrbitControls with better settings for LiDAR viewing
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -55,13 +59,9 @@ controls.maxDistance = 50;
 controls.maxPolarAngle = Math.PI;    // Allow full rotation
 controls.target.set(0, 0, 0);        // Set orbit target to center
 
-// Add a grid helper for better orientation
-const gridHelper = new THREE.GridHelper(20, 20);
-scene.add(gridHelper);
 
-// Add axes helper to show coordinate system
-const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
+
+
 
 let texture_camera;
 let material_proj;
