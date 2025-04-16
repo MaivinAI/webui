@@ -94,6 +94,24 @@ cameraGroup.position.set(0, 0, -12);
 
 const pcdLoader = new PCDLoader();
 
+function makeCircularTexture() {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fillStyle = 'white';
+    ctx.fill();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    return texture;
+}
+
 function updateLidarScene(arrayBuffer) {
     try {
         lidarGroup.clear(); // Remove previous LiDAR
@@ -103,8 +121,13 @@ function updateLidarScene(arrayBuffer) {
             lidar_points = points;
             points.children.forEach(child => {
                 if (child instanceof THREE.Points) {
-                    child.material.size = 0.2;
+                    const circularTexture = makeCircularTexture();
+                    child.material.map = circularTexture;
+                    child.material.alphaTest = 0.5;
+                    child.material.transparent = true;
+                    child.material.size = 0.1;
                     child.material.sizeAttenuation = true;
+                    child.material.needsUpdate = true;
                 }
             });
             points.position.set(0, 0, 0);
