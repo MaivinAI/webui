@@ -197,7 +197,7 @@
                     alt=""></a>
         </div>
         <div class="navbar-center">
-            <span class="text-xl">Edgefirst Perception Middleware</span>
+            <span class="text-xl">Edgefirst LiDAR Perception Middleware</span>
         </div>
         <div class="navbar-end">
             <div class="flex items-center gap-4">
@@ -230,8 +230,6 @@
                         Recording
                     </div>
                 </div>
-                <!-- Mode Indicator with Tooltip -->
-
 
                 <ul class="menu menu-horizontal px-1">
                     <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
@@ -668,6 +666,126 @@
         window.addEventListener('beforeunload', () => {
             clearInterval(statusCheckInterval);
         });
+
+        async function checkReplayStatus() {
+            try {
+                if (!lastDeviceData) {
+                    const deviceResponse = await fetch('/config/webui/details');
+                    if (!deviceResponse.ok) throw new Error(`HTTP error! status: ${deviceResponse.status}`);
+                    lastDeviceData = await deviceResponse.json();
+                }
+                const isRaivin = lastDeviceData.DEVICE?.toLowerCase().includes('raivin');
+
+                const services = isRaivin ? ["camera", "model"] : ["camera", "model"];
+
+                const [serviceResponse, replayResponse] = await Promise.all([
+                    fetch('/config/service/status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ services })
+                    }),
+                    fetch('/replay-status')
+                ]);
+
+                if (!serviceResponse.ok || !replayResponse.ok) throw new Error('Network response was not ok');
+
+                const serviceStatuses = await serviceResponse.json();
+                const statusText = await replayResponse.text();
+                const isReplay = statusText.trim() === "Replay is running";
+
+                const statusesChanged = JSON.stringify(serviceStatuses) !== JSON.stringify(lastServiceStatuses);
+                const replayChanged = isReplay !== lastReplayStatus;
+
+                if (!statusesChanged && !replayChanged) {
+                    return;
+                }
+
+                lastServiceStatuses = serviceStatuses;
+                lastReplayStatus = isReplay;
+
+                updateStatusUI(serviceStatuses, isReplay, isRaivin, services);
+            } catch (error) {
+                console.error('Error checking replay status:', error);
+                handleStatusError();
+            }
+        }
+
+        function updateStatusUI(serviceStatuses, isReplay, isRaivin, services) {
+            const statusMap = serviceStatuses.reduce((acc, { service, status }) => {
+                acc[service] = status;
+                return acc;
+            }, {});
+
+            const modeIndicator = document.getElementById('modeIndicator');
+            const modeText = document.getElementById('modeText');
+            const loadingSpinner = modeIndicator.querySelector('svg.animate-spin');
+
+            if (loadingSpinner) {
+                loadingSpinner.remove();
+            }
+
+            const allSensorsInactive = services.every(service => statusMap[service] !== 'running');
+            const allSensorActive = services.every(service => statusMap[service] === 'running');
+            if (allSensorsInactive && !isReplay) {
+                modeText.textContent = "Stopped";
+                modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
+            }
+            else if (isReplay) {
+                if (!allSensorsInactive) {
+                    modeText.textContent = "Replay Mode (Degraded)";
+                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
+                } else {
+                    modeText.textContent = "Replay Mode";
+                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-2";
+                }
+            } else {
+                const isCameraDown = !statusMap['camera'] || statusMap['camera'] !== 'running';
+                const isradarpubDown = !statusMap['radarpub'] || statusMap['radarpub'] !== 'running';
+                const isDegraded = (isRaivin && isradarpubDown) || isCameraDown;
+
+                if (!allSensorActive) {
+                    modeText.textContent = "Live Mode (Degraded)";
+                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 flex items-center gap-2";
+                } else {
+                    modeText.textContent = "Live Mode";
+                    modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 flex items-center gap-2";
+                }
+            }
+            updateQuickStatus();
+        }
+
+        function handleStatusError() {
+            const modeIndicator = document.getElementById('modeIndicator');
+            const modeText = document.getElementById('modeText');
+            const loadingSpinner = modeIndicator.querySelector('svg.animate-spin');
+            if (loadingSpinner) loadingSpinner.remove();
+            modeText.textContent = "Status Unknown";
+            modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2";
+        }
+
+        function updateQuickStatus() {
+            const quickStatusContent = document.getElementById('quickStatusContent');
+            quickStatusContent.innerHTML = `
+                ${Object.entries(lastServiceStatuses).map(([service, status]) => `
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-600">${service}:</span>
+                        <span class="text-gray-800">${status}</span>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function showServiceStatus() {
+            const serviceStatusDialog = document.getElementById('serviceStatusDialog');
+            serviceStatusDialog.classList.remove('hidden');
+            serviceStatusDialog.showModal();
+        }
+
+        function hideServiceStatus() {
+            const serviceStatusDialog = document.getElementById('serviceStatusDialog');
+            serviceStatusDialog.classList.add('hidden');
+            serviceStatusDialog.close();
+        }
     </script>
 
     <!-- Service Status Dialog -->

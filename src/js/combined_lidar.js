@@ -138,7 +138,7 @@ function updateLidarScene(arrayBuffer) {
                 }
             });
             points.position.set(0, 0, 0);
-            points.rotation.set(0, 0, 0);
+            points.rotation.set(0, Math.PI / 2, 0);
             lidarGroup.add(points);
         } else {
             console.warn('No valid points found in LiDAR data');
