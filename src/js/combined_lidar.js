@@ -166,12 +166,62 @@ lidarSocket.onclose = function () {
 
 droppedframes(socketUrlErrors, playerCanvas)
 
+function drawBoxesSpeedDistance(canvas, boxes, radar_points, drawBoxSettings) {
+
+    if (!boxes) {
+        return
+    }
+    if (!radar_points) {
+        return
+    }
+
+    project_points_onto_box(radar_points, boxes)
+    const ctx = canvas.getContext("2d");
+    if (ctx == null) {
+        return
+    }
+    ctx.font = "48px monospace";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let box of boxes) {
+        let text = ""
+        let color_box = "white"
+        let color_text = "red"
+
+        let x = box.center_x;
+        if (drawBoxSettings.mirror) {
+            x = 1.0 - x
+        }
+        if (drawBoxSettings.drawBox) {
+            ctx.beginPath();
+            ctx.rect((x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
+            ctx.strokeStyle = color_box;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+
+        if (drawBoxSettings.drawBoxText && box.text) {
+            text = box.text
+            let lines = text.split('\n');
+            let lineheight = 40;
+            ctx.strokeStyle = color_box
+            ctx.fillStyle = color_text;
+            ctx.lineWidth = 1;
+            for (let i = 0; i < lines.length; i++) {
+                ctx.fillText(lines[i], (x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+                ctx.strokeText(lines[i], (x - box.width / 2) * canvas.width, (box.center_y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
+            }
+        }
+    }
+}
+
 const loader = new THREE.FileLoader();
 loader.load(
     '/config/webui/details',
     function (data) {
         const config = parseNumbersInObject(JSON.parse(data));
         console.log("Parsed config:", config);
+        init_config(config);
+
 
         if (config.LIDAR_TOPIC && config.LIDAR_TOPIC !== socketUrlLidar) {
             socketUrlLidar = config.LIDAR_TOPIC;
@@ -265,6 +315,55 @@ loader.load(
         console.error('An error happened', err);
     }
 );
+
+function init_config(config) {
+    if (config.RANGE_BIN_LIMITS_MIN) {
+        RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
+    }
+    if (config.RANGE_BIN_LIMITS_MAX) {
+        RANGE_BIN_LIMITS[1] = config.RANGE_BIN_LIMITS_MAX
+    }
+
+    if (config.MASK_TOPIC) {
+        socketUrlMask = config.MASK_TOPIC
+    }
+
+    if (config.DETECT_TOPIC) {
+        socketUrlDetect = config.DETECT_TOPIC
+    }
+
+    if (config.PCD_TOPIC) {
+        socketUrlPcd = config.PCD_TOPIC
+    }
+
+    if (config.H264_TOPIC) {
+        socketUrlH264 = config.H264_TOPIC
+    }
+
+    if (config.COMBINED_CAMERA_DRAW_PCD) {
+        CAMERA_DRAW_PCD = config.COMBINED_CAMERA_DRAW_PCD
+    }
+    if (config.COMBINED_CAMERA_PCD_LABEL) {
+        CAMERA_PCD_LABEL = config.COMBINED_CAMERA_PCD_LABEL
+    }
+
+    if (typeof config.DRAW_BOX == "boolean") {
+        DRAW_BOX = config.DRAW_BOX
+    }
+
+    if (typeof config.DRAW_BOX_TEXT == "boolean") {
+        DRAW_BOX_TEXT = config.DRAW_BOX_TEXT
+    }
+
+    if (typeof config.MIRROR == "boolean") {
+        mirror = config.MIRROR
+    }
+
+    if (typeof config.SHOW_STATS == "boolean") {
+        show_stats = config.SHOW_STATS
+    }
+
+}
 
 function animate() {
     requestAnimationFrame(animate);
