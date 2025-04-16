@@ -45,14 +45,23 @@ camera.lookAt(0, 0, 0);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xa0a0a0);
 
-// Add OrbitControls
+// Add OrbitControls with better settings for LiDAR viewing
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
-controls.screenSpacePanning = false;
+controls.screenSpacePanning = true;  // Changed to true for better panning
 controls.minDistance = 1;
 controls.maxDistance = 50;
-controls.maxPolarAngle = Math.PI / 2;
+controls.maxPolarAngle = Math.PI;    // Allow full rotation
+controls.target.set(0, 0, 0);        // Set orbit target to center
+
+// Add a grid helper for better orientation
+const gridHelper = new THREE.GridHelper(20, 20);
+scene.add(gridHelper);
+
+// Add axes helper to show coordinate system
+const axesHelper = new THREE.AxesHelper(5);
+scene.add(axesHelper);
 
 let texture_camera;
 let material_proj;
@@ -79,39 +88,62 @@ let show_stats = false
 
 // Create a quad for the camera view
 const quad = new THREE.PlaneGeometry(16, 9); // Using 16:9 aspect ratio
-quad.scale(2, 2, 1); // Scale to make it larger
+quad.scale(4, 4, 1); // Scale up to make it much larger
 
 // Create a group for the camera feed
 const cameraGroup = new THREE.Group();
 scene.add(cameraGroup);
 
 // Position the camera group
-cameraGroup.position.set(0, 0, -10);
-cameraGroup.rotation.x = 0;
+cameraGroup.position.set(0, 0, -15); // Move further back
+cameraGroup.rotation.x = 0; // Make it completely vertical
 
 // Initialize the PCD loader
 const pcdLoader = new PCDLoader();
 
 // Function to update LiDAR points
 function updateLidarScene(arrayBuffer) {
-    // Remove the old point cloud if it exists
-    if (lidar_points) {
-        scene.remove(lidar_points);
-        lidar_points.geometry.dispose();
-        if (lidar_points.material.isMaterial) {
-            lidar_points.material.dispose();
-        } else {
-            // handle array of materials
-            lidar_points.material.forEach(m => m.dispose());
+    try {
+        // Remove the old point cloud if it exists
+        if (lidar_points) {
+            scene.remove(lidar_points);
+            if (lidar_points.geometry) {
+                lidar_points.geometry.dispose();
+            }
+            if (lidar_points.material) {
+                if (Array.isArray(lidar_points.material)) {
+                    lidar_points.material.forEach(m => m.dispose());
+                } else {
+                    lidar_points.material.dispose();
+                }
+            }
         }
-    }
 
-    // Parse and add the new one
-    const points = pcdLoader.parse(arrayBuffer, 'lidar.pcd');
-    points.material.size = 3;
-    points.material.sizeAttenuation = false;
-    scene.add(points);
-    lidar_points = points;
+        // Parse and add the new point cloud
+        const points = pcdLoader.parse(arrayBuffer);
+        if (points && points.children && points.children.length > 0) {
+            // The PCDLoader returns a group with points and rings
+            lidar_points = points;
+
+            // Find the Points object in the group's children
+            points.children.forEach(child => {
+                if (child instanceof THREE.Points) {
+                    child.material.size = 3;
+                    child.material.sizeAttenuation = false;
+                }
+            });
+
+            // Position the point cloud group appropriately
+            points.position.set(0, 0, 0);  // Center the points
+            points.rotation.set(0, 0, 0);  // Reset rotation
+
+            scene.add(points);
+        } else {
+            console.warn('No valid points found in LiDAR data');
+        }
+    } catch (error) {
+        console.error('Error updating LiDAR scene:', error);
+    }
 }
 
 // Initialize LiDAR WebSocket
@@ -254,25 +286,26 @@ loader.load(
 
 // Animation loop
 function animate() {
+    requestAnimationFrame(animate);
+
+    // Update controls first
+    controls.update();
+
     if ((typeof mask_tex !== "undefined" || typeof detect_boxes !== "undefined") && typeof radar_points !== "undefined") {
         if (CAMERA_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
-            let points = radar_points.points
+            let points = radar_points.points;
             rendered.forEach((cell) => {
-                clearThree(cell)
-            })
+                clearThree(cell);
+            });
             if (CAMERA_DRAW_PCD.endsWith("class")) {
-                color_points_class(points, CAMERA_DRAW_PCD, scene, rendered, true, CAMERA_PCD_LABEL)
+                color_points_class(points, CAMERA_DRAW_PCD, scene, rendered, true, CAMERA_PCD_LABEL);
             } else {
-                color_points_field(points, CAMERA_DRAW_PCD, scene, rendered, true, CAMERA_PCD_LABEL)
+                color_points_field(points, CAMERA_DRAW_PCD, scene, rendered, true, CAMERA_PCD_LABEL);
             }
         }
     }
 
-    // Update controls
-    controls.update();
-
-    renderer.render(scene, camera)
-    requestAnimationFrame(animate)
+    renderer.render(scene, camera);
 }
 
 animate() 

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>LiDAR Point Cloud Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+    <div class="controls">
+        <div>Mouse Drag - Rotate View</div>
+        <div>Mouse Wheel - Zoom</div>
+        <div>Right Mouse Drag - Pan</div>
+    </div>
+    <script type="module">
+        import * as THREE from './js/three.js';
+        import { OrbitControls } from './js/OrbitControls.js';
+        import { PCDLoader } from './js/PCDLoader.js';
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+
+        // Camera setup
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 5);
+        camera.lookAt(0, 0, 0);
+
+        // Renderer setup
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Controls setup
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.screenSpacePanning = true;
+        controls.minDistance = 1;
+        controls.maxDistance = 20;
+
+        // Grid helper
+        const gridHelper = new THREE.GridHelper(20, 20);
+        scene.add(gridHelper);
+
+        // Load PCD file
+        const loader = new PCDLoader();
+        let pointCloud;
+
+        function loadPointCloud() {
+            const ws = new WebSocket('/rt/lidar/points/');
+            ws.binaryType = 'arraybuffer';
+
+            ws.onmessage = function (event) {
+                const arrayBuffer = event.data;
+
+                try {
+                    if (pointCloud) {
+                        scene.remove(pointCloud);
+                        // Clean up the points and rings in the group
+                        pointCloud.traverse((child) => {
+                            if (child.geometry) child.geometry.dispose();
+                            if (child.material) {
+                                if (Array.isArray(child.material)) {
+                                    child.material.forEach(mat => mat.dispose());
+                                } else {
+                                    child.material.dispose();
+                                }
+                            }
+                        });
+                    }
+
+                    pointCloud = loader.parse(arrayBuffer);
+                    scene.add(pointCloud);
+                } catch (error) {
+                    console.error('Error parsing point cloud:', error);
+                }
+            };
+
+            ws.onerror = function (error) {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = function () {
+                console.log('WebSocket connection closed');
+                setTimeout(loadPointCloud, 3000);
+            };
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Start everything
+        loadPointCloud();
+        animate();
+    </script>
+</body>
+
+</html>
