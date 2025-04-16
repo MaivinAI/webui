@@ -15,29 +15,6 @@ import {
     Vector3
 } from './three.js';
 
-function jetColormap(val) {
-    const color = new Color();
-    const t = Math.max(0, Math.min(1, val)); // Clamp between 0 and 1
-
-    // Adjust color mapping to be more like the second image
-    // More blue-cyan dominant with subtle transitions
-    if (t < 0.25) {
-        // Deep blue to light blue
-        color.setRGB(0.2, 0.2 + 2 * t, 0.8 + 0.2 * t);
-    } else if (t < 0.5) {
-        // Light blue to cyan
-        color.setRGB(0.2 + 2 * (t - 0.25), 0.7, 1);
-    } else if (t < 0.75) {
-        // Cyan to yellow
-        color.setRGB(0.7, 0.7, 1 - (t - 0.5) * 2);
-    } else {
-        // Yellow to white
-        color.setRGB(0.7 + (t - 0.75) * 1.2, 0.7 + (t - 0.75) * 1.2, 0.5 * (t - 0.75));
-    }
-
-    return color;
-}
-
 class PCDLoader extends Loader {
 
     constructor(manager) {
@@ -165,21 +142,24 @@ class PCDLoader extends Loader {
         // Create geometry
         const geometry = new BufferGeometry();
         geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
 
         // Create material with adjusted point size and blending
         const material = new PointsMaterial({
-            size: 3,
+            size: 2,
             vertexColors: true,
             sizeAttenuation: false,
             transparent: true,
-            opacity: 0.8,
+            opacity: 1.0,
             blending: AdditiveBlending
         });
 
         // Create points and range rings
         const group = new Group();
         const points = new Points(geometry, material);
+
+        // Apply our distance-based coloring
+        this.colorPointsByXValue(points);
+
         const rings = this.createRangeRings();
 
         group.add(points);
@@ -187,6 +167,61 @@ class PCDLoader extends Loader {
 
         return group;
     }
+
+    colorPointsByXValue(points) {
+        const geometry = points.geometry;
+        const positionAttribute = geometry.attributes.position;
+        const numPoints = positionAttribute.count;
+        const colors = new Float32Array(numPoints * 3);
+
+        const maxDistance = 6.0;
+
+        for (let i = 0; i < numPoints; i++) {
+            const x = positionAttribute.getX(i);
+            const y = positionAttribute.getZ(i);  // Z holds vertical in your setup
+            const distance = Math.sqrt(x * x + y * y);
+
+            // Normalize distance 0 to 1
+            const t = Math.min(distance / maxDistance, 1.0);
+
+            // Use HSV to RGB conversion for rainbow gradient
+            const hue = (1.0 - t) * 240;  // 0 = red, 240 = blue
+            const rgb = this.hsvToRgb(hue, 1.0, 1.0);
+
+            colors[i * 3] = rgb.r;
+            colors[i * 3 + 1] = rgb.g;
+            colors[i * 3 + 2] = rgb.b;
+        }
+
+        geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
+
+        const mat = points.material;
+        mat.vertexColors = true;
+        mat.size = 3;
+        mat.sizeAttenuation = false;
+        mat.transparent = true;
+        mat.opacity = 1.0;
+        mat.blending = AdditiveBlending;
+    }
+
+    // HSV to RGB helper
+    hsvToRgb(h, s, v) {
+        const c = v * s;
+        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        const m = v - c;
+        let r = 0, g = 0, b = 0;
+
+        if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+        else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+        else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+        else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+        else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+
+        return { r: r + m, g: g + m, b: b + m };
+    }
+
+
 
 }
 
