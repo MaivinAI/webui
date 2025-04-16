@@ -33,43 +33,42 @@ playerCanvas.height = height;
 const renderer = new THREE.WebGLRenderer({
     canvas: playerCanvas,
     antialias: true,
-    alpha: true  // Enable transparency
+    alpha: true
 });
 renderer.setSize(width, height);
-renderer.domElement.style.cssText = ""
+renderer.domElement.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: auto;
+`;
 
 const boxCanvas = document.getElementById("boxes")
 boxCanvas.width = width;
 boxCanvas.height = height;
 
-const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000); // Return to original FOV
-camera.position.set(0, 5, 10); // Return to original position
+const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000);
+camera.position.set(0, 5, 10);
 camera.lookAt(0, 0, 0);
 
 const scene = new THREE.Scene();
-scene.background = null;  // Make background transparent instead of grey
+scene.background = null;
 
-// Add OrbitControls with better settings for LiDAR viewing
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
-controls.screenSpacePanning = true;  // Changed to true for better panning
+controls.screenSpacePanning = true;
 controls.minDistance = 1;
 controls.maxDistance = 50;
-controls.maxPolarAngle = Math.PI;    // Allow full rotation
-controls.target.set(0, 0, 0);        // Set orbit target to center
+controls.maxPolarAngle = Math.PI;
+controls.target.set(0, 0, 0);
 
-
-
-
-
-let texture_camera;
-let material_proj;
-let material_mask;
-let mask_tex;
-let detect_boxes;
-let radar_points;
+let texture_camera, material_proj, material_mask, mask_tex;
+let detect_boxes, radar_points;
 let lidar_points = null;
+let lidarGroup = new THREE.Group();
+scene.add(lidarGroup);
 
 let CAMERA_DRAW_PCD = "disabled"
 let CAMERA_PCD_LABEL = "disabled"
@@ -86,58 +85,31 @@ let RANGE_BIN_LIMITS = [0, 20]
 let mirror = false
 let show_stats = false
 
-// Create a quad for the camera view
-const quad = new THREE.PlaneGeometry(16, 9); // Using 16:9 aspect ratio
-quad.scale(6, 6, 1); // Moderate scale increase
+const quad = new THREE.PlaneGeometry(16, 9);
+quad.scale(6, 6, 1);
 
-// Create a group for the camera feed
 const cameraGroup = new THREE.Group();
 scene.add(cameraGroup);
+cameraGroup.position.set(0, 0, -12);
 
-// Position the camera group
-cameraGroup.position.set(0, 0, -12); // Adjusted position
-cameraGroup.rotation.x = 0;
-
-// Initialize the PCD loader
 const pcdLoader = new PCDLoader();
 
-// Function to update LiDAR points
 function updateLidarScene(arrayBuffer) {
     try {
-        // Remove the old point cloud if it exists
-        if (lidar_points) {
-            scene.remove(lidar_points);
-            if (lidar_points.geometry) {
-                lidar_points.geometry.dispose();
-            }
-            if (lidar_points.material) {
-                if (Array.isArray(lidar_points.material)) {
-                    lidar_points.material.forEach(m => m.dispose());
-                } else {
-                    lidar_points.material.dispose();
-                }
-            }
-        }
+        lidarGroup.clear(); // Remove previous LiDAR
 
-        // Parse and add the new point cloud
         const points = pcdLoader.parse(arrayBuffer);
         if (points && points.children && points.children.length > 0) {
-            // The PCDLoader returns a group with points and rings
             lidar_points = points;
-
-            // Find the Points object in the group's children
             points.children.forEach(child => {
                 if (child instanceof THREE.Points) {
-                    child.material.size = 3;
-                    child.material.sizeAttenuation = false;
+                    child.material.size = 0.2;
+                    child.material.sizeAttenuation = true;
                 }
             });
-
-            // Position the point cloud group appropriately
-            points.position.set(0, 0, 0);  // Center the points
-            points.rotation.set(0, 0, 0);  // Reset rotation
-
-            scene.add(points);
+            points.position.set(0, 0, 0);
+            points.rotation.set(0, 0, 0);
+            lidarGroup.add(points);
         } else {
             console.warn('No valid points found in LiDAR data');
         }
@@ -146,7 +118,6 @@ function updateLidarScene(arrayBuffer) {
     }
 }
 
-// Initialize LiDAR WebSocket
 let lidarSocket = new WebSocket(socketUrlLidar);
 lidarSocket.binaryType = 'arraybuffer';
 
@@ -170,10 +141,8 @@ lidarSocket.onclose = function () {
     }, 3000);
 };
 
-// Initialize dropped frames monitoring
 droppedframes(socketUrlErrors, playerCanvas)
 
-// Load configuration and initialize visualization
 const loader = new THREE.FileLoader();
 loader.load(
     '/config/webui/details',
@@ -181,24 +150,20 @@ loader.load(
         const config = parseNumbersInObject(JSON.parse(data));
         console.log("Parsed config:", config);
 
-        // Update WebSocket URLs from config
         if (config.LIDAR_TOPIC && config.LIDAR_TOPIC !== socketUrlLidar) {
             socketUrlLidar = config.LIDAR_TOPIC;
-            // Reconnect LiDAR WebSocket with new URL
-            if (lidarSocket) {
-                lidarSocket.close();
-            }
+            if (lidarSocket) lidarSocket.close();
             lidarSocket = new WebSocket(socketUrlLidar);
             lidarSocket.binaryType = 'arraybuffer';
-            lidarSocket.onmessage = function (event) {
+            lidarSocket.onmessage = (event) => {
                 updateLidarScene(event.data);
                 fpsUpdate(lidarPanel)();
             };
-            lidarSocket.onerror = function (error) {
+            lidarSocket.onerror = (error) => {
                 console.error('LiDAR WebSocket error:', error);
             };
             lidarSocket.onclose = function () {
-                console.log('LiDAR WebSocket connection closed');
+                console.log('LiDAR WebSocket closed');
                 setTimeout(() => {
                     lidarSocket = new WebSocket(socketUrlLidar);
                     lidarSocket.binaryType = 'arraybuffer';
@@ -209,13 +174,10 @@ loader.load(
             };
         }
 
-        if (show_stats) {
-            stats.showPanel([3])
-        }
+        if (show_stats) stats.showPanel([3]);
 
-        init_grid(scene, renderer, camera, config)
+        init_grid(scene, renderer, camera, config);
 
-        // Initialize camera stream
         h264Stream(socketUrlH264, 1920, 1080, 30, () => {
             fpsUpdate(cameraPanel)();
         }).then((texture) => {
@@ -225,14 +187,13 @@ loader.load(
                 texture: texture_camera,
                 transparent: true,
                 flip: mirror,
-                opacity: 0.8 // Make it slightly transparent to see points through it
-            })
+                opacity: 0.8
+            });
             const mesh = new THREE.Mesh(quad, material_proj);
             mesh.needsUpdate = true;
-            cameraGroup.add(mesh); // Add to camera group instead of scene directly
-        })
+            cameraGroup.add(mesh);
+        });
 
-        // Initialize mask stream
         get_shape(socketUrlMask, (height, width, length, mask) => {
             const classes = Math.round(mask.length / height / width)
             segstream(socketUrlMask, height, width, classes, () => {
@@ -244,16 +205,15 @@ loader.load(
                     transparent: true,
                     flip: mirror,
                     colors: mask_colors,
-                    opacity: 0.5 // Make mask more transparent
+                    opacity: 0.5
                 })
                 const mesh_mask = new THREE.Mesh(quad, material_mask);
                 mesh_mask.needsUpdate = true;
                 mask_tex = texture_mask;
-                cameraGroup.add(mesh_mask); // Add to camera group
+                cameraGroup.add(mesh_mask);
             })
-        })
+        });
 
-        // Initialize detection boxes
         let boxes;
         let drawBoxSettings = {
             drawBox: DRAW_BOX,
@@ -266,9 +226,8 @@ loader.load(
             }
         }).then((b) => {
             boxes = b
-        })
+        });
 
-        // Initialize radar points
         let radarFpsFn = fpsUpdate(radarPanel);
         pcdStream(socketUrlPcd, () => {
             radarFpsFn();
@@ -276,7 +235,7 @@ loader.load(
         }).then((pcd) => {
             radar_points = pcd;
             grid_set_radarpoints(radar_points)
-        })
+        });
     },
     function () { },
     function (err) {
@@ -284,13 +243,9 @@ loader.load(
     }
 );
 
-// Animation loop
 function animate() {
     requestAnimationFrame(animate);
-
-    // Update controls first
     controls.update();
-
     if ((typeof mask_tex !== "undefined" || typeof detect_boxes !== "undefined") && typeof radar_points !== "undefined") {
         if (CAMERA_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
             let points = radar_points.points;
@@ -304,8 +259,7 @@ function animate() {
             }
         }
     }
-
     renderer.render(scene, camera);
 }
 
-animate() 
+animate();
