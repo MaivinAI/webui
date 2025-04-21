@@ -56,26 +56,34 @@ boxCanvas.style.cssText = `
 `;
 
 const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000);
-camera.position.set(0, 5, 10);
+camera.position.set(0, 5, 0);
 camera.lookAt(0, 0, 0);
 
 const scene = new THREE.Scene();
 scene.background = null;
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.screenSpacePanning = true;
-controls.minDistance = 1;
-controls.maxDistance = 50;
-controls.maxPolarAngle = Math.PI;
-controls.target.set(0, 0, 0);
+// Create separate controls for LiDAR only
+const lidarControls = new OrbitControls(camera, renderer.domElement);
+lidarControls.enableDamping = true;
+lidarControls.dampingFactor = 0.05;
+lidarControls.screenSpacePanning = true;
+lidarControls.minDistance = 1;
+lidarControls.maxDistance = 10;
+lidarControls.maxPolarAngle = Math.PI;
+lidarControls.target.set(0, 0, 0);
+
+// Create a fixed camera group that won't be affected by controls
+const fixedCameraGroup = new THREE.Group();
+scene.add(fixedCameraGroup);
+fixedCameraGroup.position.set(0, 0, -12); // Set initial position for camera stream
 
 let texture_camera, material_proj, material_mask, mask_tex;
 let detect_boxes, radar_points;
 let lidar_points = null;
 let lidarGroup = new THREE.Group();
+let radarGroup = new THREE.Group(); // Create radar group
 scene.add(lidarGroup);
+fixedCameraGroup.add(radarGroup); // Add radar group to fixed camera group
 
 let CAMERA_DRAW_PCD = "disabled"
 let CAMERA_PCD_LABEL = "disabled"
@@ -94,10 +102,6 @@ let show_stats = false
 
 const quad = new THREE.PlaneGeometry(16, 9);
 quad.scale(6, 6, 1);
-
-const cameraGroup = new THREE.Group();
-scene.add(cameraGroup);
-cameraGroup.position.set(0, 0, -12);
 
 const pcdLoader = new PCDLoader();
 
@@ -139,6 +143,7 @@ function updateLidarScene(arrayBuffer) {
             });
             points.position.set(0, 0, 0);
             points.rotation.set(0, Math.PI / 2, 0);
+            points.scale.set(-1, 1, 1);
             lidarGroup.add(points);
         } else {
             console.warn('No valid points found in LiDAR data');
@@ -271,8 +276,9 @@ loader.load(
                 opacity: 0.8
             });
             const mesh = new THREE.Mesh(quad, material_proj);
+            mesh.position.set(0, 0, 0);
             mesh.needsUpdate = true;
-            cameraGroup.add(mesh);
+            fixedCameraGroup.add(mesh);
         });
 
         get_shape(socketUrlMask, (height, width, length, mask) => {
@@ -291,7 +297,7 @@ loader.load(
                 const mesh_mask = new THREE.Mesh(quad, material_mask);
                 mesh_mask.needsUpdate = true;
                 mask_tex = texture_mask;
-                cameraGroup.add(mesh_mask);
+                fixedCameraGroup.add(mesh_mask);
             })
         });
 
@@ -312,10 +318,51 @@ loader.load(
         let radarFpsFn = fpsUpdate(radarPanel);
         pcdStream(socketUrlPcd, () => {
             radarFpsFn();
-            radar_points.points = preprocessPoints(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1], mirror, radar_points.points)
+            radar_points.points = preprocessPoints(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1], mirror, radar_points.points);
+
+            // Update radar visualization
+            if (CAMERA_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
+                let points = radar_points.points;
+                radarGroup.clear(); // Clear previous points
+
+                // Create geometry for radar points
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(points.length * 3);
+                const colors = new Float32Array(points.length * 3);
+
+                points.forEach((point, i) => {
+                    // Transform points to match camera perspective
+                    positions[i * 3] = -point.y;     // Right (negated to match camera)
+                    positions[i * 3 + 1] = point.z;  // Up
+                    positions[i * 3 + 2] = point.x;  // Forward
+
+                    // Color based on range
+                    const range = Math.sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
+                    const normalizedRange = Math.min(range / 20.0, 1.0);
+                    colors[i * 3] = 1 - normalizedRange; // Red
+                    colors[i * 3 + 1] = normalizedRange;  // Green
+                    colors[i * 3 + 2] = 0.2;              // Blue
+                });
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                const material = new THREE.PointsMaterial({
+                    size: 0.15,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    sizeAttenuation: true
+                });
+
+                const pointCloud = new THREE.Points(geometry, material);
+                // Set the point cloud position to match the camera's view
+                pointCloud.position.set(0, 0, 50);
+                radarGroup.add(pointCloud);
+            }
         }).then((pcd) => {
             radar_points = pcd;
-            grid_set_radarpoints(radar_points)
+            grid_set_radarpoints(radar_points);
         });
     },
     function () { },
@@ -375,20 +422,22 @@ function init_config(config) {
 
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
-    if ((typeof mask_tex !== "undefined" || typeof detect_boxes !== "undefined") && typeof radar_points !== "undefined") {
-        if (CAMERA_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
-            let points = radar_points.points;
-            rendered.forEach((cell) => {
-                clearThree(cell);
-            });
-            if (CAMERA_DRAW_PCD.endsWith("class")) {
-                color_points_class(points, CAMERA_DRAW_PCD, scene, rendered, true, CAMERA_PCD_LABEL);
-            } else {
-                color_points_field(points, CAMERA_DRAW_PCD, scene, rendered, true, CAMERA_PCD_LABEL);
-            }
-        }
+    lidarControls.update();
+
+    // Update fixed camera group to stay in view
+    const cameraDirection = new THREE.Vector3(0, 0, -1);
+    cameraDirection.applyQuaternion(camera.quaternion);
+    cameraDirection.multiplyScalar(12);
+    fixedCameraGroup.position.copy(camera.position).add(cameraDirection);
+    fixedCameraGroup.quaternion.copy(camera.quaternion);
+
+    if (material_proj) {
+        material_proj.update(camera);
     }
+    if (material_mask) {
+        material_mask.update(camera);
+    }
+
     renderer.render(scene, camera);
 }
 
