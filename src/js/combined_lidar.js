@@ -13,6 +13,7 @@ import { OrbitControls } from './OrbitControls.js'
 import { clearThree, color_points_class, color_points_field, mask_colors } from './utils.js'
 import { grid_set_radarpoints, init_grid } from './grid_render.js'
 import { PCDLoader } from './PCDLoader.js'
+import boxes3dstream from './boxes3d.js'
 
 const PI = Math.PI
 
@@ -80,6 +81,7 @@ fixedCameraGroup.position.set(0, 0, -12); // Set initial position for camera str
 let texture_camera, material_proj, material_mask, mask_tex;
 let detect_boxes, radar_points;
 let lidar_points = null;
+let lidarBoxes = null;
 let lidarGroup = new THREE.Group();
 let radarGroup = new THREE.Group(); // Create radar group
 scene.add(lidarGroup);
@@ -96,6 +98,7 @@ let socketUrlLidar = '/rt/lidar/points/'
 let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlMask = '/rt/detect/mask/'
 let socketUrlErrors = '/ws/dropped'
+let socketUrlLidarBoxes = '/rt/lidar/boxes/'
 let RANGE_BIN_LIMITS = [0, 20]
 let mirror = false
 let show_stats = false
@@ -104,6 +107,10 @@ const quad = new THREE.PlaneGeometry(16, 9);
 quad.scale(6, 6, 1);
 
 const pcdLoader = new PCDLoader();
+
+// Add group for 3D boxes
+let lidarBoxesGroup = new THREE.Group();
+scene.add(lidarBoxesGroup);
 
 function makeCircularTexture() {
     const size = 128;
@@ -401,6 +408,100 @@ loader.load(
     }
 );
 
+// Add function to create and update 3D boxes
+function createBox(box) {
+    console.log("Creating box with data:", box);
+
+    // Create box geometry - height is the vertical dimension, width and depth are the same
+    const geometry = new THREE.BoxGeometry(box.width, box.height, box.width);
+
+    // Create semi-transparent material with wireframe
+    const material = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        opacity: 0.3,
+        transparent: true,
+        wireframe: true,
+        wireframeLinewidth: 2
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+
+    // Position the box - match LiDAR coordinate system exactly
+    // The box coordinates need to match the LiDAR point transformation:
+    // - LiDAR points are rotated by Math.PI/2 around Y and scaled by (-1, 1, 1)
+    const x = -box.distance;  // Forward distance
+    const y = box.height / 2;  // Up (half height to place bottom at ground)
+    const z = box.center_y;  // Right/Left position
+
+    mesh.position.set(x, y, z);
+
+    // Add text label using sprite
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = 256;
+    canvas.height = 64;
+    context.fillStyle = '#ffffff';
+    context.font = '24px Arial';
+    context.fillText(`${box.label} ${box.distance.toFixed(1)}m`, 0, 24);
+    if (box.score) {
+        context.fillText(`${(box.score * 100).toFixed(0)}%`, 0, 48);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true
+    });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.position.set(mesh.position.x, mesh.position.y + box.height / 2 + 0.2, mesh.position.z);
+    sprite.scale.set(1, 0.25, 1);
+
+    // Create a group to hold both box and label
+    const group = new THREE.Group();
+    group.add(mesh);
+    group.add(sprite);
+
+    return group;
+}
+
+function updateLidarBoxes(boxes) {
+    console.log("Updating boxes:", boxes);
+
+    // Clear existing boxes
+    while (lidarBoxesGroup.children.length > 0) {
+        lidarBoxesGroup.remove(lidarBoxesGroup.children[0]);
+    }
+
+    // Add new boxes
+    boxes.forEach(box => {
+        const boxMesh = createBox(box);
+        lidarBoxesGroup.add(boxMesh);
+    });
+
+    // Match LiDAR point transformation exactly
+    lidarBoxesGroup.position.set(0, 0, 0);
+    lidarBoxesGroup.rotation.set(0, Math.PI / 2, 0);
+    lidarBoxesGroup.scale.set(-1, 1, 1);
+
+    console.log("LiDAR group after update:", lidarGroup);
+}
+
+// Replace the lidarBoxesSocket setup with boxes3dstream
+boxes3dstream(socketUrlLidarBoxes, (boxMsg) => {
+    console.log('Received box message:', boxMsg);
+    if (boxMsg && boxMsg.boxes) {
+        console.log('Found boxes in message:', boxMsg.boxes);
+        updateLidarBoxes(boxMsg.boxes);
+    } else {
+        console.log('No boxes found in message:', boxMsg);
+    }
+}).then((boxes3d) => {
+    console.log('boxes3dstream initialized:', boxes3d);
+    lidarBoxes = boxes3d;
+}).catch(error => {
+    console.error('Error in boxes3dstream:', error);
+});
+
 function init_config(config) {
     if (config.RANGE_BIN_LIMITS_MIN) {
         RANGE_BIN_LIMITS[0] = config.RANGE_BIN_LIMITS_MIN
@@ -423,6 +524,26 @@ function init_config(config) {
 
     if (config.H264_TOPIC) {
         socketUrlH264 = config.H264_TOPIC
+    }
+
+    if (config.LIDAR_BOXES_TOPIC) {
+        console.log('Updating LIDAR_BOXES_TOPIC to:', config.LIDAR_BOXES_TOPIC);  // Add this debug log
+        socketUrlLidarBoxes = config.LIDAR_BOXES_TOPIC;
+        // The boxes3dstream will handle reconnection automatically
+        boxes3dstream(socketUrlLidarBoxes, (boxMsg) => {
+            console.log('Config: Received box message:', boxMsg);  // Add this debug log
+            if (boxMsg && boxMsg.boxes) {
+                console.log('Config: Found boxes in message:', boxMsg.boxes);  // Add this debug log
+                updateLidarBoxes(boxMsg.boxes);
+            } else {
+                console.log('Config: No boxes found in message:', boxMsg);  // Add this debug log
+            }
+        }).then((boxes3d) => {
+            console.log('Config: boxes3dstream initialized:', boxes3d);  // Add this debug log
+            lidarBoxes = boxes3d;
+        }).catch(error => {
+            console.error('Config: Error in boxes3dstream:', error);  // Add error handling
+        });
     }
 
     if (config.COMBINED_CAMERA_DRAW_PCD) {
