@@ -415,13 +415,13 @@ function createBox(box) {
     // Create box geometry - height is the vertical dimension, width and depth are the same
     const geometry = new THREE.BoxGeometry(box.width, box.height, box.width);
 
-    // Create semi-transparent material with wireframe
+    // Create semi-transparent material with wireframe - now black and thicker
     const material = new THREE.MeshBasicMaterial({
-        color: 0x00ff00,
-        opacity: 0.3,
+        color: 0x000000,  // Black color
+        opacity: 0.5,     // Increased opacity
         transparent: true,
         wireframe: true,
-        wireframeLinewidth: 2
+        wireframeLinewidth: 4  // Thicker lines
     });
 
     const mesh = new THREE.Mesh(geometry, material);
@@ -435,11 +435,16 @@ function createBox(box) {
 
     mesh.position.set(x, y, z);
 
-    // Add text label using sprite
+    // Add text label using sprite - now with black background for better visibility
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
     canvas.height = 64;
+
+    // Add black background to text
+    context.fillStyle = '#000000';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
     context.fillStyle = '#ffffff';
     context.font = '24px Arial';
     context.fillText(`${box.label} ${box.distance.toFixed(1)}m`, 0, 24);
