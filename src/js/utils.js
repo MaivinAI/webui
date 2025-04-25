@@ -76,11 +76,11 @@ export function color_points_field(points, field, scene, rendered_points, height
 export function color_points_class(points, field, scene, rendered_points, height = false, label = "disabled") {
     combined_classes(points)
     points.forEach((point) => {
-        let point_rad = 0.075
+        let point_rad = 0.4
         let color = new THREE.Color(0xFFFFFF)
         if (point[field] > 0) {
             color = mask_colors[point[field]]
-            point_rad = 0.15
+            point_rad = 0.5
         }
 
         const geometry = new THREE.SphereGeometry(point_rad)

@@ -450,10 +450,10 @@ function createBox(box) {
     // Create box geometry - height is the vertical dimension, width and depth are the same
     const geometry = new THREE.BoxGeometry(box.width, box.height, box.width);
 
-    // Create semi-transparent material with wireframe - now black and thicker
+    // Create semi-transparent material with wireframe - now white and thicker
     const material = new THREE.MeshBasicMaterial({
-        color: 0x000000,  // Black color
-        opacity: 0.5,     // Increased opacity
+        color: 0xFFFFFF,  // White color
+        opacity: 0.7,     // Increased opacity
         transparent: true,
         wireframe: true,
         wireframeLinewidth: 4  // Thicker lines
