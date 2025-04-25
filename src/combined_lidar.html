@@ -15,13 +15,17 @@
         body {
             margin: 0;
             display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
         }
 
         main {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100%;
+            flex: 1;
+            overflow: hidden;
         }
 
         #container {
@@ -29,7 +33,8 @@
             text-align: center;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100%;
+            width: 100%;
             justify-content: center;
             overflow: hidden;
             background-color: black;
@@ -37,38 +42,27 @@
 
         #test {
             width: 100%;
-            height: 100%;
+            height: calc(100vh - 64px);
+            /* Account for the nav header */
             max-height: 100%;
             max-width: 100%;
             margin: auto;
             position: relative;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
             display: flex;
             flex-direction: column;
         }
 
-        #player_div {
+        #visualization-container {
+            display: flex;
+            flex-direction: column;
             width: 100%;
             height: 100%;
-            max-height: 100%;
-            max-width: 100%;
-            flex: 1 20 80%;
-            display: flex;
-            align-items: middle;
-            background-color: #a0a0a0;
         }
 
         #player {
             width: 100%;
-            aspect-ratio: 16 / 9;
-            max-height: 100%;
-            max-width: 100%;
+            height: 100%;
             object-fit: contain;
-            position: relative;
-            bottom: 0px;
         }
 
         #boxes {
@@ -77,9 +71,66 @@
             left: 0px;
             width: 100%;
             height: 100%;
-            max-height: 100%;
-            max-width: 100%;
             object-fit: contain;
+        }
+
+        #lidar-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        #radar-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        #camera-view,
+        #lidar-view,
+        #radar-view {
+            overflow: hidden;
+            border: 1px solid #333;
+            position: relative;
+            background-color: #111;
+        }
+
+        #top-section {
+            display: flex;
+            flex-direction: row;
+            height: 70%;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 2px;
+        }
+
+        #bottom-section {
+            height: 30%;
+            width: 100%;
+            position: relative;
+            box-sizing: border-box;
+            padding: 2px;
+        }
+
+        #camera-view,
+        #lidar-view {
+            width: 50%;
+            height: 100%;
+        }
+
+        #radar-view {
+            width: 100%;
+            height: 100%;
+        }
+
+        .view-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 10;
         }
 
         #toggleButton {
@@ -187,6 +238,24 @@
             color: #4a5568;
             font-weight: 500;
         }
+
+        /* Responsive layout for small screens */
+        @media (max-width: 768px) {
+            #top-section {
+                flex-direction: column;
+                height: 80%;
+            }
+
+            #camera-view,
+            #lidar-view {
+                width: 100%;
+                height: 50%;
+            }
+
+            #bottom-section {
+                height: 20%;
+            }
+        }
     </style>
 </head>
 
@@ -246,9 +315,28 @@
     </header>
     <main id="container">
         <div id="test">
-            <div id="player_div">
-                <canvas id="player"></canvas>
-                <canvas id="boxes"></canvas>
+            <div id="visualization-container">
+                <!-- Top section with Camera and LiDAR side by side -->
+                <div id="top-section">
+                    <!-- Left side - Camera View -->
+                    <div id="camera-view">
+                        <canvas id="player"></canvas>
+                        <canvas id="boxes"></canvas>
+                        <div class="view-label">Camera</div>
+                    </div>
+
+                    <!-- Right side - LiDAR View -->
+                    <div id="lidar-view">
+                        <div class="view-label">LiDAR</div>
+                    </div>
+                </div>
+
+                <!-- Bottom section - Radar View -->
+                <div id="bottom-section">
+                    <div id="radar-view">
+                        <div class="view-label">Radar</div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>

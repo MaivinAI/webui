@@ -28,15 +28,15 @@ const playerCanvas = document.getElementById("player");
 const width = window.innerWidth;
 const height = window.innerHeight;
 
-playerCanvas.width = width;
-playerCanvas.height = height;
+playerCanvas.width = width / 2;  // Half width for camera view
+playerCanvas.height = height * 0.7;  // 70% height for top section
 
 const renderer = new THREE.WebGLRenderer({
     canvas: playerCanvas,
     antialias: true,
     alpha: true
 });
-renderer.setSize(width, height);
+renderer.setSize(width / 2, height * 0.7);
 renderer.domElement.style.cssText = `
     position: absolute;
     top: 0;
@@ -46,8 +46,8 @@ renderer.domElement.style.cssText = `
 `;
 
 const boxCanvas = document.getElementById("boxes")
-boxCanvas.width = width;
-boxCanvas.height = height;
+boxCanvas.width = width / 2;
+boxCanvas.height = height * 0.7;
 boxCanvas.style.cssText = `
     position: absolute;
     top: 0;
@@ -56,15 +56,88 @@ boxCanvas.style.cssText = `
     pointer-events: none;
 `;
 
-const camera = new THREE.PerspectiveCamera(46.4, width / height, 0.1, 1000);
+// Create a renderer for the LiDAR view
+const lidarView = document.getElementById("lidar-view");
+const lidarCanvas = document.createElement("canvas");
+lidarCanvas.id = "lidar-canvas";
+lidarView.appendChild(lidarCanvas);
+lidarCanvas.width = width / 2;
+lidarCanvas.height = height * 0.7;
+
+const lidarRenderer = new THREE.WebGLRenderer({
+    canvas: lidarCanvas,
+    antialias: true,
+    alpha: true
+});
+lidarRenderer.setSize(width / 2, height * 0.7);
+lidarRenderer.domElement.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: auto;
+`;
+
+// Create a renderer for the Radar view
+const radarView = document.getElementById("radar-view");
+const radarCanvas = document.createElement("canvas");
+radarCanvas.id = "radar-canvas";
+radarView.appendChild(radarCanvas);
+radarCanvas.width = width;
+radarCanvas.height = height * 0.3;
+
+const radarRenderer = new THREE.WebGLRenderer({
+    canvas: radarCanvas,
+    antialias: true,
+    alpha: true
+});
+radarRenderer.setSize(width, height * 0.3);
+radarRenderer.domElement.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: auto;
+`;
+
+// Camera for main view
+const camera = new THREE.PerspectiveCamera(46.4, (width / 2) / (height * 0.7), 0.1, 1000);
 camera.position.set(0, 5, 0);
 camera.lookAt(0, 0, 0);
 
+// Camera for LiDAR view
+const lidarCamera = new THREE.PerspectiveCamera(46.4, (width / 2) / (height * 0.7), 0.1, 1000);
+lidarCamera.position.set(0, 5, 10);
+lidarCamera.lookAt(0, 0, 0);
+
+// Camera for Radar view
+const radarCamera = new THREE.PerspectiveCamera(60, width / (height * 0.3), 0.1, 1000);
+radarCamera.position.set(0, 10, 0);
+radarCamera.lookAt(0, 0, 0);
+
+// Main scene (for camera view)
 const scene = new THREE.Scene();
 scene.background = null;
 
-// Create separate controls for LiDAR only
-const lidarControls = new OrbitControls(camera, renderer.domElement);
+// LiDAR scene
+const lidarScene = new THREE.Scene();
+lidarScene.background = new THREE.Color(0x111111);
+
+// Radar scene
+const radarScene = new THREE.Scene();
+radarScene.background = new THREE.Color(0x111111);
+
+// Create separate controls for each view
+const cameraControls = new OrbitControls(camera, renderer.domElement);
+cameraControls.enableDamping = true;
+cameraControls.dampingFactor = 0.05;
+cameraControls.screenSpacePanning = true;
+cameraControls.minDistance = 0;
+cameraControls.maxDistance = 100;
+cameraControls.maxPolarAngle = Math.PI;
+cameraControls.target.set(0, 0, 0);
+
+const lidarControls = new OrbitControls(lidarCamera, lidarRenderer.domElement);
 lidarControls.enableDamping = true;
 lidarControls.dampingFactor = 0.05;
 lidarControls.screenSpacePanning = true;
@@ -72,6 +145,15 @@ lidarControls.minDistance = 0;
 lidarControls.maxDistance = 100;
 lidarControls.maxPolarAngle = Math.PI;
 lidarControls.target.set(0, 0, 0);
+
+const radarControls = new OrbitControls(radarCamera, radarRenderer.domElement);
+radarControls.enableDamping = true;
+radarControls.dampingFactor = 0.05;
+radarControls.screenSpacePanning = true;
+radarControls.minDistance = 0;
+radarControls.maxDistance = 100;
+radarControls.maxPolarAngle = Math.PI;
+radarControls.target.set(0, 0, 0);
 
 // Create a fixed camera group that won't be affected by controls
 const fixedCameraGroup = new THREE.Group();
@@ -84,8 +166,8 @@ let lidar_points = null;
 let lidarBoxes = null;
 let lidarGroup = new THREE.Group();
 let radarGroup = new THREE.Group(); // Create radar group
-scene.add(lidarGroup);
-fixedCameraGroup.add(radarGroup); // Add radar group to fixed camera group
+lidarScene.add(lidarGroup); // Add LiDAR group to LiDAR scene
+radarScene.add(radarGroup); // Add radar group to radar scene
 
 let CAMERA_DRAW_PCD = "disabled"
 let CAMERA_PCD_LABEL = "disabled"
@@ -108,9 +190,9 @@ quad.scale(6, 6, 1);
 
 const pcdLoader = new PCDLoader();
 
-// Add group for 3D boxes
+// Add group for 3D boxes - moved from below to organize code better
 let lidarBoxesGroup = new THREE.Group();
-scene.add(lidarBoxesGroup);
+lidarScene.add(lidarBoxesGroup); // Add to lidar scene instead of main scene
 
 function makeCircularTexture() {
     const size = 128;
@@ -269,7 +351,9 @@ loader.load(
 
         if (show_stats) stats.showPanel([3]);
 
-        init_grid(scene, renderer, camera, config);
+        // Initialize grid in both LiDAR and radar scenes
+        init_grid(lidarScene, lidarRenderer, lidarCamera, config);
+        init_grid(radarScene, radarRenderer, radarCamera, config);
 
         h264Stream(socketUrlH264, 1920, 1080, 30, () => {
             fpsUpdate(cameraPanel)();
@@ -328,7 +412,7 @@ loader.load(
             radar_points.points = preprocessPoints(RANGE_BIN_LIMITS[0], RANGE_BIN_LIMITS[1], mirror, radar_points.points);
 
             // Update radar visualization
-            if (CAMERA_DRAW_PCD != "disabled" && radar_points.points.length > 0) {
+            if (radar_points.points.length > 0) {
                 let points = radar_points.points;
                 radarGroup.clear(); // Clear previous points
 
@@ -338,10 +422,10 @@ loader.load(
                 const colors = new Float32Array(points.length * 3);
 
                 points.forEach((point, i) => {
-                    // Transform points to match camera perspective
-                    positions[i * 3] = -point.y;     // Right (negated to match camera)
-                    positions[i * 3 + 1] = point.z;  // Up
-                    positions[i * 3 + 2] = point.x;  // Forward
+                    // Position points in the radar view
+                    positions[i * 3] = point.x;      // X position
+                    positions[i * 3 + 1] = point.z;  // Y position (height)
+                    positions[i * 3 + 2] = point.y;  // Z position
 
                     // Color based on range
                     const range = Math.sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
@@ -355,7 +439,7 @@ loader.load(
                 geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
                 const material = new THREE.PointsMaterial({
-                    size: 0.15,
+                    size: 0.25,
                     vertexColors: true,
                     transparent: true,
                     opacity: 0.8,
@@ -363,13 +447,50 @@ loader.load(
                 });
 
                 const pointCloud = new THREE.Points(geometry, material);
-                // Set the point cloud position to match the camera's view
-                pointCloud.position.set(0, 0, 50);
                 radarGroup.add(pointCloud);
+
+                // Also create points for the camera view if enabled
+                if (CAMERA_DRAW_PCD != "disabled") {
+                    // Create a separate group for camera view radar points
+                    const cameraRadarGroup = new THREE.Group();
+                    const cameraGeometry = new THREE.BufferGeometry();
+                    const cameraPositions = new Float32Array(points.length * 3);
+                    const cameraColors = new Float32Array(points.length * 3);
+
+                    points.forEach((point, i) => {
+                        // Transform points to match camera perspective
+                        cameraPositions[i * 3] = -point.y;     // Right (negated to match camera)
+                        cameraPositions[i * 3 + 1] = point.z;  // Up
+                        cameraPositions[i * 3 + 2] = point.x;  // Forward
+
+                        // Copy colors
+                        cameraColors[i * 3] = colors[i * 3];
+                        cameraColors[i * 3 + 1] = colors[i * 3 + 1];
+                        cameraColors[i * 3 + 2] = colors[i * 3 + 2];
+                    });
+
+                    cameraGeometry.setAttribute('position', new THREE.BufferAttribute(cameraPositions, 3));
+                    cameraGeometry.setAttribute('color', new THREE.BufferAttribute(cameraColors, 3));
+
+                    const cameraMaterial = new THREE.PointsMaterial({
+                        size: 0.15,
+                        vertexColors: true,
+                        transparent: true,
+                        opacity: 0.8,
+                        sizeAttenuation: true
+                    });
+
+                    const cameraPointCloud = new THREE.Points(cameraGeometry, cameraMaterial);
+                    cameraPointCloud.position.set(0, 0, 50);
+                    cameraRadarGroup.add(cameraPointCloud);
+                    fixedCameraGroup.add(cameraRadarGroup);
+                }
             }
+
+            // Update grid with radar points
+            grid_set_radarpoints(radar_points);
         }).then((pcd) => {
             radar_points = pcd;
-            grid_set_radarpoints(radar_points);
         });
     },
     function () { },
@@ -502,22 +623,22 @@ function init_config(config) {
     }
 
     if (config.LIDAR_BOXES_TOPIC) {
-        console.log('Updating LIDAR_BOXES_TOPIC to:', config.LIDAR_BOXES_TOPIC);  // Add this debug log
+        console.log('Updating LIDAR_BOXES_TOPIC to:', config.LIDAR_BOXES_TOPIC);
         socketUrlLidarBoxes = config.LIDAR_BOXES_TOPIC;
         // The boxes3dstream will handle reconnection automatically
         boxes3dstream(socketUrlLidarBoxes, (boxMsg) => {
-            console.log('Config: Received box message:', boxMsg);  // Add this debug log
+            console.log('Config: Received box message:', boxMsg);
             if (boxMsg && boxMsg.boxes) {
-                console.log('Config: Found boxes in message:', boxMsg.boxes);  // Add this debug log
+                console.log('Config: Found boxes in message:', boxMsg.boxes);
                 updateLidarBoxes(boxMsg.boxes);
             } else {
-                console.log('Config: No boxes found in message:', boxMsg);  // Add this debug log
+                console.log('Config: No boxes found in message:', boxMsg);
             }
         }).then((boxes3d) => {
-            console.log('Config: boxes3dstream initialized:', boxes3d);  // Add this debug log
+            console.log('Config: boxes3dstream initialized:', boxes3d);
             lidarBoxes = boxes3d;
         }).catch(error => {
-            console.error('Config: Error in boxes3dstream:', error);  // Add error handling
+            console.error('Config: Error in boxes3dstream:', error);
         });
     }
 
@@ -548,9 +669,13 @@ function init_config(config) {
 
 function animate() {
     requestAnimationFrame(animate);
-    lidarControls.update();
 
-    // Update fixed camera group to stay in view
+    // Update controls for all views
+    cameraControls.update();
+    lidarControls.update();
+    radarControls.update();
+
+    // Update fixed camera group to stay in view (camera view)
     const cameraDirection = new THREE.Vector3(0, 0, -1);
     cameraDirection.applyQuaternion(camera.quaternion);
     cameraDirection.multiplyScalar(12);
@@ -564,7 +689,72 @@ function animate() {
         material_mask.update(camera);
     }
 
+    // Render all three views
     renderer.render(scene, camera);
+    lidarRenderer.render(lidarScene, lidarCamera);
+    radarRenderer.render(radarScene, radarCamera);
 }
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Account for header height
+    const contentHeight = height - 64; // 64px is header height
+
+    // Update camera aspect ratios
+    camera.aspect = (width / 2) / (contentHeight * 0.7);
+    camera.updateProjectionMatrix();
+
+    lidarCamera.aspect = (width / 2) / (contentHeight * 0.7);
+    lidarCamera.updateProjectionMatrix();
+
+    radarCamera.aspect = width / (contentHeight * 0.3);
+    radarCamera.updateProjectionMatrix();
+
+    // Update renderer sizes
+    renderer.setSize(width / 2, contentHeight * 0.7);
+    lidarRenderer.setSize(width / 2, contentHeight * 0.7);
+    radarRenderer.setSize(width, contentHeight * 0.3);
+
+    // Update canvas sizes
+    playerCanvas.width = width / 2;
+    playerCanvas.height = contentHeight * 0.7;
+
+    boxCanvas.width = width / 2;
+    boxCanvas.height = contentHeight * 0.7;
+
+    lidarCanvas.width = width / 2;
+    lidarCanvas.height = contentHeight * 0.7;
+
+    radarCanvas.width = width;
+    radarCanvas.height = contentHeight * 0.3;
+
+    // Update for mobile view
+    if (width <= 768) {
+        // For small screens, stack the top views
+        camera.aspect = width / (contentHeight * 0.4); // Half of 80%
+        lidarCamera.aspect = width / (contentHeight * 0.4); // Half of 80%
+
+        camera.updateProjectionMatrix();
+        lidarCamera.updateProjectionMatrix();
+
+        renderer.setSize(width, contentHeight * 0.4);
+        lidarRenderer.setSize(width, contentHeight * 0.4);
+
+        playerCanvas.width = width;
+        playerCanvas.height = contentHeight * 0.4;
+
+        boxCanvas.width = width;
+        boxCanvas.height = contentHeight * 0.4;
+
+        lidarCanvas.width = width;
+        lidarCanvas.height = contentHeight * 0.4;
+    }
+});
+
+// Initial resize to set everything up correctly
+window.dispatchEvent(new Event('resize'));
 
 animate();
