@@ -413,47 +413,16 @@ loader.load(
 
             // Update radar visualization
             if (radar_points.points.length > 0) {
-                let points = radar_points.points;
-
-                // Completely clear the radar group by removing all children
+                // Clear our custom radar visualization
                 while (radarGroup.children.length > 0) {
                     radarGroup.remove(radarGroup.children[0]);
                 }
-                console.log("Radar points count:", points.length);
 
-                // Create geometry for radar points
-                const geometry = new THREE.BufferGeometry();
-                const positions = new Float32Array(points.length * 3);
-                const colors = new Float32Array(points.length * 3);
+                // Instead of creating our own visualization, use the grid system
+                // by sending the radar points to it
+                grid_set_radarpoints(radar_points);
 
-                points.forEach((point, i) => {
-                    // Position points in the radar view
-                    positions[i * 3] = point.x;      // X position
-                    positions[i * 3 + 1] = point.z;  // Y position (height)
-                    positions[i * 3 + 2] = point.y;  // Z position
-
-                    // Use white color for all points
-                    colors[i * 3] = 1.0;     // Red = 1.0
-                    colors[i * 3 + 1] = 1.0; // Green = 1.0
-                    colors[i * 3 + 2] = 1.0; // Blue = 1.0
-                });
-
-                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-                const material = new THREE.PointsMaterial({
-                    size: 0.5,
-                    vertexColors: true,
-                    transparent: true,
-                    opacity: 0.8,
-                    sizeAttenuation: true,
-                    map: makeCircularTexture()
-                });
-
-                const pointCloud = new THREE.Points(geometry, material);
-                radarGroup.add(pointCloud);
-
-                // Also create points for the camera view if enabled
+                // Remove camera view radar points if they exist
                 if (CAMERA_DRAW_PCD != "disabled") {
                     // Remove any existing camera radar points
                     for (let i = fixedCameraGroup.children.length - 1; i >= 0; i--) {
@@ -462,49 +431,8 @@ loader.load(
                             fixedCameraGroup.remove(child);
                         }
                     }
-
-                    // Create a separate group for camera view radar points
-                    const cameraRadarGroup = new THREE.Group();
-                    cameraRadarGroup.userData = { isRadarPoints: true }; // Mark for identification
-
-                    const cameraGeometry = new THREE.BufferGeometry();
-                    const cameraPositions = new Float32Array(points.length * 3);
-                    const cameraColors = new Float32Array(points.length * 3);
-
-                    points.forEach((point, i) => {
-                        // Transform points to match camera perspective
-                        cameraPositions[i * 3] = -point.y;     // Right (negated to match camera)
-                        cameraPositions[i * 3 + 1] = point.z;  // Up
-                        cameraPositions[i * 3 + 2] = point.x;  // Forward
-
-                        // Use white color for camera view points too
-                        cameraColors[i * 3] = 1.0;     // Red = 1.0
-                        cameraColors[i * 3 + 1] = 1.0; // Green = 1.0
-                        cameraColors[i * 3 + 2] = 1.0; // Blue = 1.0
-                    });
-
-                    cameraGeometry.setAttribute('position', new THREE.BufferAttribute(cameraPositions, 3));
-                    cameraGeometry.setAttribute('color', new THREE.BufferAttribute(cameraColors, 3));
-
-                    const cameraMaterial = new THREE.PointsMaterial({
-                        size: 0.3,
-                        vertexColors: true,
-                        transparent: true,
-                        opacity: 0.8,
-                        sizeAttenuation: true,
-                        map: makeCircularTexture()
-                    });
-
-                    const cameraPointCloud = new THREE.Points(cameraGeometry, cameraMaterial);
-                    cameraPointCloud.position.set(0, 0, 50);
-                    cameraRadarGroup.add(cameraPointCloud);
-                    fixedCameraGroup.add(cameraRadarGroup);
                 }
             }
-
-            // We'll use our own radar visualization, not the grid one
-            // Comment out grid_set_radarpoints to prevent duplicate points
-            // grid_set_radarpoints(radar_points);
         }).then((pcd) => {
             radar_points = pcd;
         });
