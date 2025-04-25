@@ -68,8 +68,8 @@ const lidarControls = new OrbitControls(camera, renderer.domElement);
 lidarControls.enableDamping = true;
 lidarControls.dampingFactor = 0.05;
 lidarControls.screenSpacePanning = true;
-lidarControls.minDistance = 1;
-lidarControls.maxDistance = 10;
+lidarControls.minDistance = 0;
+lidarControls.maxDistance = 100;
 lidarControls.maxPolarAngle = Math.PI;
 lidarControls.target.set(0, 0, 0);
 
@@ -139,36 +139,6 @@ function updateLidarScene(arrayBuffer) {
             lidar_points = points;
             points.children.forEach(child => {
                 if (child instanceof THREE.Points) {
-                    // Filter out points near axes
-                    const positions = child.geometry.attributes.position.array;
-                    const colors = child.geometry.attributes.color.array;
-                    const validIndices = [];
-
-                    for (let i = 0; i < positions.length; i += 3) {
-                        const x = positions[i];
-                        const y = positions[i + 1];
-                        const z = positions[i + 2];
-
-                        // Skip points that are too close to any axis
-                        const threshold = 0.05; // Adjust this value to control how close points can be to axes
-                        if (!(Math.abs(x) < threshold || Math.abs(y) < threshold || Math.abs(z) < threshold)) {
-                            validIndices.push(i, i + 1, i + 2);
-                        }
-                    }
-
-                    // Create new arrays with only valid points
-                    const newPositions = new Float32Array(validIndices.length);
-                    const newColors = new Float32Array(validIndices.length);
-
-                    for (let i = 0; i < validIndices.length; i++) {
-                        newPositions[i] = positions[validIndices[i]];
-                        newColors[i] = colors[validIndices[i]];
-                    }
-
-                    // Update geometry with filtered points
-                    child.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
-                    child.geometry.setAttribute('color', new THREE.BufferAttribute(newColors, 3));
-
                     const circularTexture = makeCircularTexture();
                     child.material.map = circularTexture;
                     child.material.alphaTest = 0.5;
@@ -180,7 +150,7 @@ function updateLidarScene(arrayBuffer) {
             });
             points.position.set(0, 0, 0);
             points.rotation.set(0, Math.PI / 2, 0);
-            points.scale.set(-1, 1, 1);
+            points.scale.set(1, 1, 1);
             lidarGroup.add(points);
         } else {
             console.warn('No valid points found in LiDAR data');
@@ -429,9 +399,9 @@ function createBox(box) {
     // Position the box - match LiDAR coordinate system exactly
     // The box coordinates need to match the LiDAR point transformation:
     // - LiDAR points are rotated by Math.PI/2 around Y and scaled by (-1, 1, 1)
-    const x = -box.distance;  // Forward distance
-    const y = box.height / 2;  // Up (half height to place bottom at ground)
-    const z = box.center_y;  // Right/Left position
+    const x = box.distance;  // Forward distance
+    const y = box.center_y;  // Up (half height to place bottom at ground)
+    const z = -box.center_x;  // Right/Left position
 
     mesh.position.set(x, y, z);
 
