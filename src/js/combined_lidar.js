@@ -10,7 +10,7 @@ import Stats, { fpsUpdate } from "./Stats.js"
 import droppedframes from './droppedframes.js'
 import { parseNumbersInObject } from './parseNumbersInObject.js';
 import { OrbitControls } from './OrbitControls.js'
-import { clearThree, color_points_class, color_points_field, mask_colors } from './utils.js'
+import { mask_colors } from './utils.js'
 import { grid_set_radarpoints, init_grid } from './grid_render.js'
 import { PCDLoader } from './PCDLoader.js'
 import boxes3dstream from './boxes3d.js'
@@ -217,7 +217,7 @@ function updateLidarScene(arrayBuffer) {
         lidarGroup.clear(); // Remove previous LiDAR
 
         const points = pcdLoader.parse(arrayBuffer);
-        if (points && points.children && points.children.length > 0) {
+        if (points?.children?.length > 0) {
             lidar_points = points;
             points.children.forEach(child => {
                 if (child instanceof THREE.Points) {
@@ -427,7 +427,7 @@ loader.load(
                     // Remove any existing camera radar points
                     for (let i = fixedCameraGroup.children.length - 1; i >= 0; i--) {
                         const child = fixedCameraGroup.children[i];
-                        if (child.userData && child.userData.isRadarPoints) {
+                        if (child.userData?.isRadarPoints) {
                             fixedCameraGroup.remove(child);
                         }
                     }
@@ -529,7 +529,7 @@ function updateLidarBoxes(boxes) {
 // Replace the lidarBoxesSocket setup with boxes3dstream
 boxes3dstream(socketUrlLidarBoxes, (boxMsg) => {
     console.log('Received box message:', boxMsg);
-    if (boxMsg && boxMsg.boxes) {
+    if (boxMsg.boxes) {
         console.log('Found boxes in message:', boxMsg.boxes);
         updateLidarBoxes(boxMsg.boxes);
     } else {
@@ -572,7 +572,7 @@ function init_config(config) {
         // The boxes3dstream will handle reconnection automatically
         boxes3dstream(socketUrlLidarBoxes, (boxMsg) => {
             console.log('Config: Received box message:', boxMsg);
-            if (boxMsg && boxMsg.boxes) {
+            if (boxMsg.boxes) {
                 console.log('Config: Found boxes in message:', boxMsg.boxes);
                 updateLidarBoxes(boxMsg.boxes);
             } else {
