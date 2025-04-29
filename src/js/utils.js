@@ -128,7 +128,7 @@ function combined_classes(points) {
 }
 
 export const mask_colors = [
-    new THREE.Color(1.0, 1.0, 1.0),
+    new THREE.Color(0.0, 0.0, 0.0), // this color doesn't matter, it's always set to be alpha = 0
     new THREE.Color(0., 1., 0.),
     new THREE.Color(0.50980392, 0.50980392, 0.72941176),
     new THREE.Color(0.00784314, 0.18823529, 0.29411765),
@@ -138,12 +138,11 @@ export const mask_colors = [
     new THREE.Color(1., 0.95686275, 0.51372549),
     new THREE.Color(0.35294118, 0.32156863, 0.),
     new THREE.Color(0.42352941, 0.62352941, 0.65098039),
-
     new THREE.Color(1., 0.55686275, 0.),
-
     new THREE.Color(0.0, 0.2706, 1.0),
     new THREE.Color(0.0, 0.0, 0.0),
     new THREE.Color(0.0, 0.5, 0.0),
     new THREE.Color(0.1333, 0.5451, 0.1333),
     new THREE.Color(0.1176, 0.4118, 0.8235),
+    new THREE.Color(1.0, 1.0, 1.0),
 ]

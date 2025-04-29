@@ -125,11 +125,12 @@ function transpose_mask(new_arr, mask, width, height, classes) {
     let col_stride = classes;
     for (let i = 0; i < height; i++) {
         for (let j = 0; j < width; j++) {
+            
             for (let k = 0; k < Math.ceil(classes / 4) * 4; k++) {
                 if (k >= classes) {
                     new_arr[n_layer_stride * Math.floor(k / 4) + i * n_row_stride + j * n_col_stride + k % 4] = 0;
                 } else {
-                    new_arr[n_layer_stride * Math.floor(k / 4) + (height - i) * n_row_stride + j * n_col_stride + k % 4] = mask[i * row_stride + j * col_stride + k];
+                    new_arr[n_layer_stride * Math.floor(k / 4) + (height - i - 1) * n_row_stride + j * n_col_stride + k % 4] = mask[i * row_stride + j * col_stride + k];
                 }
             }
         }

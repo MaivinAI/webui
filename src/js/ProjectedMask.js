@@ -11,12 +11,11 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
             throw new Error('Invalid camera passed to the ProjectedMask')
         }
 
-        if (!colors) {
+        if (!colors || colors.length == 0) {
             colors = [
-                new THREE.Color(0.0, 0.0, 0.0),
+                new THREE.Color(0.0, 0.0, 0.0), // this color doesn't matter, it's always set to be alpha = 0
                 new THREE.Color(0.25882353, 0.15294118, 0.13333333),
                 new THREE.Color(0., 1., 0.),
-                new THREE.Color(1., 1., 1.),
                 new THREE.Color(0.8, 0.76470588, 0.78039216),
                 new THREE.Color(0.31372549, 0.31372549, 0.31372549),
                 new THREE.Color(0.14117647, 0.30980392, 0.12156863),
@@ -31,9 +30,10 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
                 new THREE.Color(0.0, 0.5, 0.0),
                 new THREE.Color(0.1333, 0.5451, 0.1333),
                 new THREE.Color(0.1176, 0.4118, 0.8235),
-
+                new THREE.Color(1., 1., 1.),
             ]
         }
+
         if (!alphas || alphas.length != colors.length) {
             alphas = Array(colors.length).fill(default_alpha);
             alphas[0] = 0.0;
@@ -44,7 +44,7 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
             return [e.r, e.g, e.b, alphas[i]];
         }).flat();
 
-
+        
         // make sure the camera matrices are updated
         camera.updateProjectionMatrix()
         camera.updateMatrixWorld()
@@ -91,7 +91,7 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
 
                 uniform sampler2DArray tex;
                 uniform vec3 projPosition;
-                uniform vec4 colors[22];
+                uniform vec4 colors[${colors.length}];
 
                 in vec3 vNormal;
                 in vec4 vWorldPosition;
@@ -136,7 +136,8 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
                         if (max_ <= max_all) { continue; }
                         max_all = max_;
                         max_ind = i*4 + max_ind_;
-                    }                  
+                    }
+                    max_ind = clamp(max_ind, 0, ${colors.length-1});
                     pc_fragColor = colors[max_ind];
                 }`,
             glslVersion: THREE.GLSL3,
