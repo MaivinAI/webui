@@ -277,6 +277,11 @@
             </div>
 
             <div class="form-group">
+                <label for="model">The Radar model</label>
+                <input type="text" id="model" name="model" value="/usr/share/fusion/radarexp-ultra-short.tflite">
+            </div>
+
+            <div class="form-group">
                 <label for="threshold">Threshold:</label>
                 <input type="number" id="threshold" name="threshold" min="1" value="3">
             </div>
@@ -347,6 +352,7 @@
                 }).then(data => {
                     document.getElementById('rust_log').value = data.RUST_LOG || '';
                     document.getElementById('radar_input_topic').value = data.RADAR_INPUT_TOPIC || '';
+                    document.getElementById('model').value = data.MODEL || '';
                     document.getElementById('threshold').value = data.THRESHOLD || '';
                     document.getElementById('occ_angle_limit').value = data.OCC_ANGLE_LIMIT || '';
                     document.getElementById('occ_range_limit').value = data.OCC_RANGE_LIMIT || '';
@@ -372,6 +378,7 @@
                 fileName: "fusion",
                 rust_log: document.getElementById('rust_log').value,
                 radar_input_topic: document.getElementById('radar_input_topic').value,
+                model: document.getElementById('model').value,
                 threshold: document.getElementById('threshold').value,
                 occ_angle_limit: document.getElementById('occ_angle_limit').value,
                 occ_range_limit: document.getElementById('occ_range_limit').value,
