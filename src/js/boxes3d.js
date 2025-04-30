@@ -25,31 +25,14 @@ function parseDetectTrack(reader) {
 function parseDetectBoxes3D(reader) {
     let detectBox3D = {};
     try {
-        console.log('Reading center_x at offset:', reader.offset);
         detectBox3D.center_x = reader.float32()
-
-        console.log('Reading center_y at offset:', reader.offset);
         detectBox3D.center_y = reader.float32()
-
-        console.log('Reading width at offset:', reader.offset);
         detectBox3D.width = reader.float32()
-
-        console.log('Reading height at offset:', reader.offset);
         detectBox3D.height = reader.float32()
-
-        console.log('Reading label at offset:', reader.offset);
         detectBox3D.label = reader.string()
-
-        console.log('Reading score at offset:', reader.offset);
         detectBox3D.score = reader.float32()
-
-        console.log('Reading distance at offset:', reader.offset);
         detectBox3D.distance = reader.float32()
-
-        console.log('Reading speed at offset:', reader.offset);
         detectBox3D.speed = reader.float32()
-
-        console.log('Reading track at offset:', reader.offset);
         detectBox3D.track = parseDetectTrack(reader)
 
         return detectBox3D;
@@ -74,40 +57,24 @@ export default async function boxes3dstream(socketUrl, onMessage) {
 
     socket.onmessage = (event) => {
         const arrayBuffer = event.data;
-        console.log('Received binary data length:', arrayBuffer.byteLength);
         const firstBytes = new Uint8Array(arrayBuffer.slice(0, 16));
-        console.log('First bytes:', Array.from(firstBytes));
 
         const dataView = new DataView(arrayBuffer);
         const reader = new CdrReader(dataView);
         let boxmsg = {};
         try {
-            console.log('Starting to parse CDR message');
             boxmsg.header = parseHeader(reader);
-            console.log('Parsed header:', boxmsg.header);
-
-            console.log('Reading input_timestamp at offset:', reader.offset);
             boxmsg.input_timestamp = parseTime(reader);
-
-            console.log('Reading model_time at offset:', reader.offset);
             boxmsg.model_time = parseTime(reader);
-
-            console.log('Reading output_time at offset:', reader.offset);
             boxmsg.output_time = parseTime(reader);
-
-            console.log('Reading sequence length at offset:', reader.offset);
             const arrlen = reader.sequenceLength();
-            console.log('Number of boxes in message:', arrlen);
 
             boxmsg.boxes = [];
             for (let i = 0; i < arrlen; i++) {
-                console.log(`Parsing box ${i} at offset:`, reader.offset);
                 const box = parseDetectBoxes3D(reader);
-                console.log('Parsed box:', box);
                 boxmsg.boxes.push(box);
             }
             boxes.msg = boxmsg;
-            console.log('Successfully parsed message:', boxes.msg);
         } catch (error) {
             console.error("Failed to deserialize box data:", error);
             console.error("Error occurred at position:", reader.offset);

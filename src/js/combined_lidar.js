@@ -180,7 +180,8 @@ let socketUrlLidar = '/rt/lidar/points/'
 let socketUrlDetect = '/rt/detect/boxes2d/'
 let socketUrlMask = '/rt/detect/mask/'
 let socketUrlErrors = '/ws/dropped'
-let socketUrlLidarBoxes = '/rt/lidar/boxes/'
+let socketUrlLidarBoxes = '/rt/fusion/boxes3d/'
+let socketUrlTfstatic = '/rt/tf_static/'
 let RANGE_BIN_LIMITS = [0, 20]
 let mirror = false
 let show_stats = false
@@ -192,7 +193,133 @@ const pcdLoader = new PCDLoader();
 
 // Add group for 3D boxes - moved from below to organize code better
 let lidarBoxesGroup = new THREE.Group();
-lidarScene.add(lidarBoxesGroup); // Add to lidar scene instead of main scene
+let radarBoxesGroup = new THREE.Group(); // Add new group for radar boxes
+lidarScene.add(lidarBoxesGroup); // Add to lidar scene
+radarScene.add(radarBoxesGroup); // Add to radar scene
+
+// Add transform storage
+let transforms = {
+    lidar: {
+        position: new THREE.Vector3(0, 0, -0.19),
+        rotation: new THREE.Quaternion(0, 0, -0.9998157, 0.0191974)
+    },
+    radar: {
+        position: new THREE.Vector3(0, 0, 0),
+        rotation: new THREE.Quaternion(0, 0, 0, 1)
+    }
+};
+
+// Add TF static WebSocket connection
+let tfStaticSocket = new WebSocket(socketUrlTfstatic);
+tfStaticSocket.onmessage = function (event) {
+    try {
+        const data = JSON.parse(event.data);
+        if (data.frame_id === "base_link") {
+            const transform = {
+                position: new THREE.Vector3(data.x, data.y, data.z),
+                rotation: new THREE.Quaternion(data.qx, data.qy, data.qz, data.qw)
+            };
+
+            if (data.child_frame_id === "lidar") {
+                transforms.lidar = transform;
+            } else if (data.child_frame_id === "radar") {
+                transforms.radar = transform;
+            }
+
+            // Update box positions when transforms change
+            updateBoxPositions();
+        }
+    } catch (error) {
+        console.error('Error parsing TF static message:', error);
+    }
+};
+
+tfStaticSocket.onerror = function (error) {
+    console.error('TF static WebSocket error:', error);
+};
+
+tfStaticSocket.onclose = function () {
+    console.log('TF static WebSocket connection closed');
+    setTimeout(() => {
+        tfStaticSocket = new WebSocket(socketUrlTfstatic);
+        tfStaticSocket.onmessage = this.onmessage;
+        tfStaticSocket.onerror = this.onerror;
+        tfStaticSocket.onclose = this.onclose;
+    }, 3000);
+};
+
+// Add frame tracking for boxes
+let currentBoxFrame = "lidar"; // Default to lidar frame
+
+// Replace the boxes3dstream section with updated frame handling
+boxes3dstream(socketUrlLidarBoxes, (boxMsg) => {
+    if (boxMsg && boxMsg.boxes) {
+
+        if (boxMsg.header.frame_id) {
+            currentBoxFrame = boxMsg.header.frame_id;
+
+        }
+        updateLidarBoxes(boxMsg.boxes);
+    } else {
+        console.log('No boxes found in message:', boxMsg);
+    }
+}).then((boxes3d) => {
+    lidarBoxes = boxes3d;
+}).catch(error => {
+    console.error('Error in boxes3dstream:', error);
+});
+
+function updateBoxPositions() {
+    // Get the appropriate transform based on the box frame
+    const boxTransform = currentBoxFrame === "lidar" ? transforms.lidar : transforms.radar;
+
+    // Update LiDAR boxes
+    if (currentBoxFrame === "lidar") {
+        // If boxes are in lidar frame, apply lidar transform
+        lidarBoxesGroup.position.copy(transforms.lidar.position);
+        lidarBoxesGroup.quaternion.copy(transforms.lidar.rotation);
+        lidarBoxesGroup.scale.set(-1, 1, -1);
+
+        // For radar view, need to transform from lidar to radar frame
+        const lidarToRadar = new THREE.Matrix4();
+        lidarToRadar.makeRotationFromQuaternion(transforms.lidar.rotation);
+        lidarToRadar.setPosition(transforms.lidar.position);
+
+        const radarInverse = new THREE.Matrix4();
+        radarInverse.makeRotationFromQuaternion(transforms.radar.rotation);
+        radarInverse.setPosition(transforms.radar.position);
+        radarInverse.invert();
+
+        const finalTransform = new THREE.Matrix4();
+        finalTransform.multiplyMatrices(radarInverse, lidarToRadar);
+
+        radarBoxesGroup.matrix.copy(finalTransform);
+        radarBoxesGroup.matrix.decompose(radarBoxesGroup.position, radarBoxesGroup.quaternion, radarBoxesGroup.scale);
+        radarBoxesGroup.scale.set(-1, 1, -1);
+    } else {
+        // If boxes are in radar frame, apply radar transform
+        radarBoxesGroup.position.copy(transforms.radar.position);
+        radarBoxesGroup.quaternion.copy(transforms.radar.rotation);
+        radarBoxesGroup.scale.set(-1, 1, 1);
+
+        // For lidar view, need to transform from radar to lidar frame
+        const radarToLidar = new THREE.Matrix4();
+        radarToLidar.makeRotationFromQuaternion(transforms.radar.rotation);
+        radarToLidar.setPosition(transforms.radar.position);
+
+        const lidarInverse = new THREE.Matrix4();
+        lidarInverse.makeRotationFromQuaternion(transforms.lidar.rotation);
+        lidarInverse.setPosition(transforms.lidar.position);
+        lidarInverse.invert();
+
+        const finalTransform = new THREE.Matrix4();
+        finalTransform.multiplyMatrices(lidarInverse, radarToLidar);
+
+        lidarBoxesGroup.matrix.copy(finalTransform);
+        lidarBoxesGroup.matrix.decompose(lidarBoxesGroup.position, lidarBoxesGroup.quaternion, lidarBoxesGroup.scale);
+        lidarBoxesGroup.scale.set(1, 1, 1);
+    }
+}
 
 function makeCircularTexture() {
     const size = 128;
@@ -350,7 +477,6 @@ loader.load(
     '/config/webui/details',
     function (data) {
         const config = parseNumbersInObject(JSON.parse(data));
-        console.log("Parsed config:", config);
         init_config(config);
 
 
@@ -474,7 +600,6 @@ loader.load(
 
 // Add function to create and update 3D boxes
 function createBox(box) {
-    console.log("Creating box with data:", box);
 
     // Create box geometry - height is the vertical dimension, width and depth are the same
     const geometry = new THREE.BoxGeometry(box.width, box.height, box.width);
@@ -488,18 +613,19 @@ function createBox(box) {
         wireframeLinewidth: 4  // Thicker lines
     });
 
-    const mesh = new THREE.Mesh(geometry, material);
+    // Create two meshes - one for LiDAR view and one for radar view
+    const lidarMesh = new THREE.Mesh(geometry, material.clone());
+    const radarMesh = new THREE.Mesh(geometry, material.clone());
 
-    // Position the box - match LiDAR coordinate system exactly
-    // The box coordinates need to match the LiDAR point transformation:
-    // - LiDAR points are rotated by Math.PI/2 around Y and scaled by (-1, 1, 1)
-    const x = box.distance;  // Forward distance
-    const y = box.center_y;  // Up (half height to place bottom at ground)
-    const z = -box.center_x;  // Right/Left position
+    // Position boxes according to the current frame
+    const x = box.center_x;
+    const y = box.center_y;
+    const z = box.distance;
 
-    mesh.position.set(x, y, z);
+    lidarMesh.position.set(x, y, z);
+    radarMesh.position.set(x, y, z);
 
-    // Add text label using sprite - now with black background for better visibility
+    // Create text labels
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
@@ -517,59 +643,52 @@ function createBox(box) {
     }
 
     const texture = new THREE.CanvasTexture(canvas);
-    const spriteMaterial = new THREE.SpriteMaterial({
-        map: texture,
-        transparent: true
-    });
-    const sprite = new THREE.Sprite(spriteMaterial);
-    sprite.position.set(mesh.position.x, mesh.position.y + box.height / 2 + 0.2, mesh.position.z);
-    sprite.scale.set(1, 0.25, 1);
 
-    // Create a group to hold both box and label
-    const group = new THREE.Group();
-    group.add(mesh);
-    group.add(sprite);
+    // Create two sprites - one for each view
+    const lidarSpriteMaterial = new THREE.SpriteMaterial({ map: texture.clone(), transparent: true });
+    const radarSpriteMaterial = new THREE.SpriteMaterial({ map: texture.clone(), transparent: true });
 
-    return group;
+    const lidarSprite = new THREE.Sprite(lidarSpriteMaterial);
+    const radarSprite = new THREE.Sprite(radarSpriteMaterial);
+
+    lidarSprite.position.set(x, y + box.height / 2 + 0.2, z);
+    radarSprite.position.set(x, y + box.height / 2 + 0.2, z);
+
+    lidarSprite.scale.set(1, 0.25, 1);
+    radarSprite.scale.set(1, 0.25, 1);
+
+    // Create groups to hold both box and label for each view
+    const lidarGroup = new THREE.Group();
+    const radarGroup = new THREE.Group();
+
+    lidarGroup.add(lidarMesh);
+    lidarGroup.add(lidarSprite);
+
+    radarGroup.add(radarMesh);
+    radarGroup.add(radarSprite);
+
+    return { lidarGroup, radarGroup };
 }
 
 function updateLidarBoxes(boxes) {
-    console.log("Updating boxes:", boxes);
-
-    // Clear existing boxes
+    // Clear existing boxes from both views
     while (lidarBoxesGroup.children.length > 0) {
         lidarBoxesGroup.remove(lidarBoxesGroup.children[0]);
     }
+    while (radarBoxesGroup.children.length > 0) {
+        radarBoxesGroup.remove(radarBoxesGroup.children[0]);
+    }
 
-    // Add new boxes
+    // Add new boxes to both views
     boxes.forEach(box => {
-        const boxMesh = createBox(box);
-        lidarBoxesGroup.add(boxMesh);
+        const { lidarGroup, radarGroup } = createBox(box);
+        lidarBoxesGroup.add(lidarGroup);
+        radarBoxesGroup.add(radarGroup);
     });
 
-    // Match LiDAR point transformation exactly
-    lidarBoxesGroup.position.set(0, 0, 0);
-    lidarBoxesGroup.rotation.set(0, Math.PI / 2, 0);
-    lidarBoxesGroup.scale.set(-1, 1, 1);
-
-    console.log("LiDAR group after update:", lidarGroup);
+    // Update positions based on current transforms
+    updateBoxPositions();
 }
-
-// Replace the lidarBoxesSocket setup with boxes3dstream
-boxes3dstream(socketUrlLidarBoxes, (boxMsg) => {
-    console.log('Received box message:', boxMsg);
-    if (boxMsg && boxMsg.boxes) {
-        console.log('Found boxes in message:', boxMsg.boxes);
-        updateLidarBoxes(boxMsg.boxes);
-    } else {
-        console.log('No boxes found in message:', boxMsg);
-    }
-}).then((boxes3d) => {
-    console.log('boxes3dstream initialized:', boxes3d);
-    lidarBoxes = boxes3d;
-}).catch(error => {
-    console.error('Error in boxes3dstream:', error);
-});
 
 function init_config(config) {
     if (config.RANGE_BIN_LIMITS_MIN) {
@@ -596,19 +715,15 @@ function init_config(config) {
     }
 
     if (config.LIDAR_BOXES_TOPIC) {
-        console.log('Updating LIDAR_BOXES_TOPIC to:', config.LIDAR_BOXES_TOPIC);
         socketUrlLidarBoxes = config.LIDAR_BOXES_TOPIC;
         // The boxes3dstream will handle reconnection automatically
         boxes3dstream(socketUrlLidarBoxes, (boxMsg) => {
-            console.log('Config: Received box message:', boxMsg);
             if (boxMsg && boxMsg.boxes) {
-                console.log('Config: Found boxes in message:', boxMsg.boxes);
                 updateLidarBoxes(boxMsg.boxes);
             } else {
                 console.log('Config: No boxes found in message:', boxMsg);
             }
         }).then((boxes3d) => {
-            console.log('Config: boxes3dstream initialized:', boxes3d);
             lidarBoxes = boxes3d;
         }).catch(error => {
             console.error('Config: Error in boxes3dstream:', error);
