@@ -221,6 +221,35 @@ function updateLidarScene(arrayBuffer) {
             lidar_points = points;
             points.children.forEach(child => {
                 if (child instanceof THREE.Points) {
+                    const positions = child.geometry.attributes.position.array;
+                    const colors = child.geometry.attributes.color.array;
+                    const validIndices = [];
+
+                    for (let i = 0; i < positions.length; i += 3) {
+                        const x = positions[i];
+                        const y = positions[i + 1];
+                        const z = positions[i + 2];
+
+                        // Skip points that are too close to any axis
+                        const threshold = 0.01; // Adjust this value to control how close points can be to axes
+                        if (!(Math.abs(x) < threshold || Math.abs(y) < threshold || Math.abs(z) < threshold)) {
+                            validIndices.push(i, i + 1, i + 2);
+                        }
+                    }
+
+                    // Create new arrays with only valid points
+                    const newPositions = new Float32Array(validIndices.length);
+                    const newColors = new Float32Array(validIndices.length);
+
+                    for (let i = 0; i < validIndices.length; i++) {
+                        newPositions[i] = positions[validIndices[i]];
+                        newColors[i] = colors[validIndices[i]];
+                    }
+
+                    // Update geometry with filtered points
+                    child.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
+                    child.geometry.setAttribute('color', new THREE.BufferAttribute(newColors, 3));
+
                     const circularTexture = makeCircularTexture();
                     child.material.map = circularTexture;
                     child.material.alphaTest = 0.5;
