@@ -176,18 +176,35 @@ class PCDLoader extends Loader {
         // Now convert to Three.js geometry
         const positions = new Float32Array(points.length * 3);
         const colors = new Float32Array(points.length * 3);
+
+        // Find max distance for normalization
+        let maxDistance = 0;
+        for (let i = 0; i < points.length; i++) {
+            const pt = points[i];
+            const x = pt.x;
+            const y = pt.y;
+            const dist = Math.sqrt(x * x + y * y);
+            if (dist > maxDistance) maxDistance = dist;
+        }
+        maxDistance = Math.max(maxDistance, 1e-3); // Avoid divide by zero
+
         for (let i = 0; i < points.length; i++) {
             const pt = points[i];
             // Assume x, y, z fields exist
             positions[i * 3] = pt.x;
             positions[i * 3 + 1] = pt.z !== undefined ? pt.z : 0;
             positions[i * 3 + 2] = pt.y;
-            // Color: use reflect/intensity if available, else default
-            let intensity = pt.reflect !== undefined ? pt.reflect : (pt.intensity !== undefined ? pt.intensity : 100);
-            const normalizedIntensity = Math.min(Math.max(intensity / 100, 0), 1);
-            colors[i * 3] = 0.4 + normalizedIntensity * 0.6;
-            colors[i * 3 + 1] = 0.4 + normalizedIntensity * 0.6;
-            colors[i * 3 + 2] = 0.7 + normalizedIntensity * 0.3;
+
+            // Rainbow color by distance
+            const x = pt.x;
+            const y = pt.y;
+            const dist = Math.sqrt(x * x + y * y);
+            const t = Math.min(dist / maxDistance, 1.0);
+            const hue = (1.0 - t) * 240; // 0=red, 120=green, 240=blue
+            const rgb = this.hsvToRgb(hue, 1.0, 1.0);
+            colors[i * 3] = rgb.r;
+            colors[i * 3 + 1] = rgb.g;
+            colors[i * 3 + 2] = rgb.b;
         }
         // Create geometry
         const geometry = new BufferGeometry();
