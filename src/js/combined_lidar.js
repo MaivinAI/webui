@@ -10,7 +10,7 @@ import Stats, { fpsUpdate } from "./Stats.js"
 import droppedframes from './droppedframes.js'
 import { parseNumbersInObject } from './parseNumbersInObject.js';
 import { OrbitControls } from './OrbitControls.js'
-import { clearThree, color_points_class, color_points_field, mask_colors } from './utils.js'
+import { mask_colors } from './utils.js'
 import { grid_set_radarpoints, init_grid } from './grid_render.js'
 import { PCDLoader } from './PCDLoader.js'
 import boxes3dstream from './boxes3d.js'
@@ -586,13 +586,9 @@ loader.load(
                     radarGroup.remove(radarGroup.children[0]);
                 }
 
-                // Instead of creating our own visualization, use the grid system
-                // by sending the radar points to it
                 grid_set_radarpoints(radar_points);
 
-                // Remove camera view radar points if they exist
                 if (CAMERA_DRAW_PCD != "disabled") {
-                    // Remove any existing camera radar points
                     for (let i = fixedCameraGroup.children.length - 1; i >= 0; i--) {
                         const child = fixedCameraGroup.children[i];
                         if (child.userData && child.userData.isRadarPoints) {
