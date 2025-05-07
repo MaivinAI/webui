@@ -212,27 +212,42 @@ let transforms = {
 // Add TF static WebSocket connection
 let tfStaticSocket = new WebSocket(socketUrlTfstatic);
 tfStaticSocket.onmessage = function (event) {
-    try {
-        const data = JSON.parse(event.data);
-        if (data.frame_id === "base_link") {
-            const transform = {
-                position: new THREE.Vector3(data.x, data.y, data.z),
-                rotation: new THREE.Quaternion(data.qx, data.qy, data.qz, data.qw)
-            };
-
-            if (data.child_frame_id === "lidar") {
-                transforms.lidar = transform;
-            } else if (data.child_frame_id === "radar") {
-                transforms.radar = transform;
+    // If event.data is a Blob, read it as text first
+    if (event.data instanceof Blob) {
+        const reader = new FileReader();
+        reader.onload = function () {
+            try {
+                const data = JSON.parse(reader.result);
+                handleTfStaticData(data);
+            } catch (error) {
+                console.error('Error parsing TF static message:', error);
             }
-
-            // Update box positions when transforms change
-            updateBoxPositions();
+        };
+        reader.readAsText(event.data);
+    } else {
+        try {
+            const data = JSON.parse(event.data);
+            handleTfStaticData(data);
+        } catch (error) {
+            console.error('Error parsing TF static message:', error);
         }
-    } catch (error) {
-        console.error('Error parsing TF static message:', error);
     }
 };
+
+function handleTfStaticData(data) {
+    if (data.frame_id === "base_link") {
+        const transform = {
+            position: new THREE.Vector3(data.x, data.y, data.z),
+            rotation: new THREE.Quaternion(data.qx, data.qy, data.qz, data.qw)
+        };
+        if (data.child_frame_id === "lidar") {
+            transforms.lidar = transform;
+        } else if (data.child_frame_id === "radar") {
+            transforms.radar = transform;
+        }
+        updateBoxPositions();
+    }
+}
 
 tfStaticSocket.onerror = function (error) {
     console.error('TF static WebSocket error:', error);
@@ -449,7 +464,7 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points, drawBoxSettings) {
         }
         if (drawBoxSettings.drawBox) {
             ctx.beginPath();
-            let y = box.center_y - 0.3;
+            let y = box.center_y;
             ctx.rect((x - box.width / 2) * canvas.width, (y - box.height / 2) * canvas.height, box.width * canvas.width, box.height * canvas.height);
             ctx.strokeStyle = color_box;
             ctx.lineWidth = 4;
@@ -463,7 +478,7 @@ function drawBoxesSpeedDistance(canvas, boxes, radar_points, drawBoxSettings) {
             ctx.strokeStyle = color_box
             ctx.fillStyle = color_text;
             ctx.lineWidth = 1;
-            let y = box.center_y - 0.3;
+            let y = box.center_y;
             for (let i = 0; i < lines.length; i++) {
                 ctx.fillText(lines[i], (x - box.width / 2) * canvas.width, (y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
                 ctx.strokeText(lines[i], (x - box.width / 2) * canvas.width, (y - box.height / 2) * canvas.height + (lines.length - 1 - i * lineheight));
@@ -506,8 +521,6 @@ loader.load(
 
         if (show_stats) stats.showPanel([3]);
 
-        // Initialize grid in both LiDAR and radar scenes
-        init_grid(lidarScene, lidarRenderer, lidarCamera, config);
         init_grid(radarScene, radarRenderer, radarCamera, config);
 
         h264Stream(socketUrlH264, 1920, 1080, 30, () => {
@@ -638,9 +651,6 @@ function createBox(box) {
     context.fillStyle = '#ffffff';
     context.font = '24px Arial';
     context.fillText(`${box.label} ${box.distance.toFixed(1)}m`, 0, 24);
-    if (box.score) {
-        context.fillText(`${(box.score * 100).toFixed(0)}%`, 0, 48);
-    }
 
     const texture = new THREE.CanvasTexture(canvas);
 
