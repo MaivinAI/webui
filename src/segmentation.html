@@ -509,6 +509,11 @@
             }
         }
 
+        // Initialize MCAP functionality on page load
+        window.addEventListener('load', () => {
+            connectMcapWebSocket();
+        });
+
         // Define updateRecordingUI first since it's used by other functions
         function updateRecordingUI(isRecording) {
             const recorderIndicator = document.getElementById('recorderIndicator');
