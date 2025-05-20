@@ -8,6 +8,8 @@
     <link href="../css/styles.css" rel="stylesheet">
     <link href="../css/full.css" rel="stylesheet" type="text/css" />
     <script src="../js/tailwind.js"></script>
+    <script src="../js/navbar.js"></script>
+    <script src="../js/status.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -490,175 +492,147 @@
 </head>
 
 <body>
-    <header class="navbar bg-base-100">
-        <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="../assets/auzoneLogo.svg"
-                    alt=""></a>
-        </div>
-        <div class="navbar-center">
-            <span class="text-xl">MCAP Configuration</span>
-        </div>
-        <div class="navbar-end">
-            <ul class="menu menu-horizontal px-1">
+    <div class="container">
+        <h2>MCAP Recorder Configuration</h2>
 
-                </li>
-                <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="w-8 h-8">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <div class="form-group">
+            <label for="storage">Storage Location:</label>
+            <input type="text" id="storage" name="storage" placeholder="/home/torizon/recordings">
+        </div>
+
+        <div class="form-group">
+            <label for="compression">Compression Level:</label>
+            <select id="compression" name="compression">
+                <option value="none">None</option>
+                <option value="lz4">LZ4</option>
+                <option value="zstd">ZSTD</option>
+            </select>
+        </div>
+
+        <div class="topics-container">
+            <!-- Localization Group -->
+            <div class="topic-group">
+                <div class="topic-group-header">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="topic_localization" name="topics" disabled
+                            title="Localization topics are automatically configured on the device settings">
+                    </label>
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                </a>
-            </ul>
-        </div>
-    </header>
-    <main>
-        <div class="container">
-            <h2>MCAP Recorder Configuration</h2>
-
-            <div class="form-group">
-                <label for="storage">Storage Location:</label>
-                <input type="text" id="storage" name="storage" placeholder="/home/torizon/recordings">
-            </div>
-
-            <div class="form-group">
-                <label for="compression">Compression Level:</label>
-                <select id="compression" name="compression">
-                    <option value="none">None</option>
-                    <option value="lz4">LZ4</option>
-                    <option value="zstd">ZSTD</option>
-                </select>
-            </div>
-
-            <div class="topics-container">
-                <!-- Localization Group -->
-                <div class="topic-group">
-                    <div class="topic-group-header">
-                        <label class="checkbox-wrapper">
-                            <input type="checkbox" id="topic_localization" name="topics" disabled
-                                title="Localization topics are automatically configured on the device settings">
-                        </label>
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        Localization Topics
-                    </div>
-                </div>
-
-                <!-- Camera Group -->
-                <div class="topic-group">
-                    <div class="topic-group-header">
-                        <label class="checkbox-wrapper">
-                            <input type="checkbox" id="topic_camera_parent" name="topics" disabled
-                                title="Camera topics are automatically configured based on device settings">
-                        </label>
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        Camera Topics
-                    </div>
-                    <!-- Hidden camera checkboxes -->
-                    <input type="checkbox" id="topic_camera_info" name="topics" value="/camera/info"
-                        style="display: none;">
-                    <input type="checkbox" id="topic_camera_h264" name="topics" value="/camera/h264"
-                        style="display: none;">
-                    <input type="checkbox" id="topic_camera_jpeg" name="topics" value="/camera/jpeg"
-                        style="display: none;">
-                </div>
-
-                <!-- Radar Group -->
-                <div class="topic-group">
-                    <div class="topic-group-header">
-                        <label class="checkbox-wrapper">
-                            <input type="checkbox" id="topic_radar_parent" name="topics" disabled
-                                title="Radar topics are automatically configured based on device settings">
-                        </label>
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 13v-1m4 1v-3m4 3V8M12 21a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Radar Topics
-                    </div>
-                    <div class="topic-list">
-                        <div class="topic-item">
-                            <label class="checkbox-wrapper">
-                                <input type="checkbox" id="topic_radarcube" name="topics" value="/radar/cube" disabled
-                                    title="Radar cube topic is automatically configured based on device settings">
-                            </label>
-                            <span>/radar/cube</span>
-                            <div class="fps-slider">
-                                <input type="range" id="cube_fps" min="1" max=19" value="18" step="1" disabled
-                                    title="Enable radar cube topic to adjust FPS" oninput="updateFpsLabel(this.value)">
-                                <span id="fps_value" class="fps-label">18 FPS</span>
-                            </div>
-                        </div>
-                        <!-- Hidden checkboxes for other radar topics -->
-                        <input type="checkbox" id="topic_radarclusters" name="topics" value="/radar/clusters"
-                            style="display: none;">
-                        <input type="checkbox" id="topic_radartargets" name="topics" value="/radar/targets"
-                            style="display: none;">
-                        <input type="checkbox" id="topic_radarinfo" name="topics" value="/radar/info"
-                            style="display: none;">
-                    </div>
-                </div>
-
-                <!-- Model Group -->
-                <div class="topic-group">
-                    <div class="topic-group-header">
-                        <label class="checkbox-wrapper">
-                            <input type="checkbox" id="topic_all_models_parent" name="topics"
-                                title="Select all model topics">
-                        </label>
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                        </svg>
-                        Model Topics
-                    </div>
-                    <div class="topic-list">
-                        <!-- Model Parent -->
-                        <div class="topic-item">
-                            <label class="checkbox-wrapper">
-                                <input type="checkbox" id="topic_model_parent" name="topics">
-                            </label>
-                            <span>/model</span>
-                        </div>
-                        <!-- Hidden Model Children -->
-                        <input type="checkbox" id="topic_model_info" name="topics" value="/model/info"
-                            style="display: none;">
-                        <input type="checkbox" id="topic_model_boxes2d" name="topics" value="/model/boxes2d"
-                            style="display: none;">
-                        <input type="checkbox" id="topic_model_mask" name="topics" value="/model/mask_compressed"
-                            style="display: none;">
-
-                        <!-- Fusion Parent -->
-                        <div class="topic-item">
-                            <label class="checkbox-wrapper">
-                                <input type="checkbox" id="topic_fusion_parent" name="topics">
-                            </label>
-                            <span>/fusion</span>
-                        </div>
-                        <!-- Hidden Fusion Children -->
-                        <input type="checkbox" id="topic_fusion_targets" name="topics" value="/fusion/targets"
-                            style="display: none;">
-                        <input type="checkbox" id="topic_fusion_occupancy" name="topics" value="/fusion/occupancy"
-                            style="display: none;">
-                    </div>
+                    Localization Topics
                 </div>
             </div>
 
-            <div class="button-container">
-                <button id="saveConfig">
-                    Save Configuration
-                </button>
+            <!-- Camera Group -->
+            <div class="topic-group">
+                <div class="topic-group-header">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="topic_camera_parent" name="topics" disabled
+                            title="Camera topics are automatically configured based on device settings">
+                    </label>
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Camera Topics
+                </div>
+                <!-- Hidden camera checkboxes -->
+                <input type="checkbox" id="topic_camera_info" name="topics" value="/camera/info" style="display: none;">
+                <input type="checkbox" id="topic_camera_h264" name="topics" value="/camera/h264" style="display: none;">
+                <input type="checkbox" id="topic_camera_jpeg" name="topics" value="/camera/jpeg" style="display: none;">
+            </div>
+
+            <!-- Radar Group -->
+            <div class="topic-group">
+                <div class="topic-group-header">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="topic_radar_parent" name="topics" disabled
+                            title="Radar topics are automatically configured based on device settings">
+                    </label>
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 13v-1m4 1v-3m4 3V8M12 21a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Radar Topics
+                </div>
+                <div class="topic-list">
+                    <div class="topic-item">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="topic_radarcube" name="topics" value="/radar/cube" disabled
+                                title="Radar cube topic is automatically configured based on device settings">
+                        </label>
+                        <span>/radar/cube</span>
+                        <div class="fps-slider">
+                            <input type="range" id="cube_fps" min="1" max=19" value="18" step="1" disabled
+                                title="Enable radar cube topic to adjust FPS" oninput="updateFpsLabel(this.value)">
+                            <span id="fps_value" class="fps-label">18 FPS</span>
+                        </div>
+                    </div>
+                    <!-- Hidden checkboxes for other radar topics -->
+                    <input type="checkbox" id="topic_radarclusters" name="topics" value="/radar/clusters"
+                        style="display: none;">
+                    <input type="checkbox" id="topic_radartargets" name="topics" value="/radar/targets"
+                        style="display: none;">
+                    <input type="checkbox" id="topic_radarinfo" name="topics" value="/radar/info"
+                        style="display: none;">
+                </div>
+            </div>
+
+            <!-- Model Group -->
+            <div class="topic-group">
+                <div class="topic-group-header">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="topic_all_models_parent" name="topics"
+                            title="Select all model topics">
+                    </label>
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                    Model Topics
+                </div>
+                <div class="topic-list">
+                    <!-- Model Parent -->
+                    <div class="topic-item">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="topic_model_parent" name="topics">
+                        </label>
+                        <span>/model</span>
+                    </div>
+                    <!-- Hidden Model Children -->
+                    <input type="checkbox" id="topic_model_info" name="topics" value="/model/info"
+                        style="display: none;">
+                    <input type="checkbox" id="topic_model_boxes2d" name="topics" value="/model/boxes2d"
+                        style="display: none;">
+                    <input type="checkbox" id="topic_model_mask" name="topics" value="/model/mask_compressed"
+                        style="display: none;">
+
+                    <!-- Fusion Parent -->
+                    <div class="topic-item">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="topic_fusion_parent" name="topics">
+                        </label>
+                        <span>/fusion</span>
+                    </div>
+                    <!-- Hidden Fusion Children -->
+                    <input type="checkbox" id="topic_fusion_targets" name="topics" value="/fusion/targets"
+                        style="display: none;">
+                    <input type="checkbox" id="topic_fusion_occupancy" name="topics" value="/fusion/occupancy"
+                        style="display: none;">
+                </div>
             </div>
         </div>
-    </main>
+
+        <div class="button-container">
+            <button id="saveConfig">
+                Save Configuration
+            </button>
+        </div>
+    </div>
 
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
@@ -1156,6 +1130,10 @@
 
         // Remove or update this line at the bottom of the file
         document.querySelector('.fps-slider input[type="range"]').max = "19"; // Changed from 25 to 19
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initNavbar('Recorder');
+        });
     </script>
 </body>
 
