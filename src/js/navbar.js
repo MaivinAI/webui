@@ -233,25 +233,129 @@ function initNavbar(pageTitle) {
     // Insert the navbar at the beginning of the body
     document.body.insertBefore(navbar, document.body.firstChild);
 
-    // Wait for the next tick to ensure DOM is updated
+    // Add recording toggle logic
     setTimeout(() => {
-        // Initialize status checks
-        checkReplayStatus();
-        checkRecorderStatus();
-        updateQuickStatus();
-
+        // Recording toggle event
+        const recordingToggle = document.getElementById('recordingToggle');
+        if (recordingToggle) {
+            recordingToggle.addEventListener('change', function () {
+                console.log("Toggled recording:", this.checked);
+                if (this.checked) {
+                    startRecording();
+                } else {
+                    stopRecording();
+                }
+            });
+        }
+        // Initial status check
+        checkRecordingStatus();
         // Set up interval for status checks
         const statusCheckInterval = setInterval(() => {
             checkReplayStatus();
             checkRecorderStatus();
             updateQuickStatus();
+            checkRecordingStatus();
         }, 5000);
-
         // Clean up interval when page is unloaded
         window.addEventListener('beforeunload', () => {
             clearInterval(statusCheckInterval);
         });
     }, 0);
+}
+
+let currentRecordingFile = null;
+
+function checkRecordingStatus() {
+    fetch('/recorder-status')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(statusText => {
+            const isRecording = statusText.trim() === "Recorder is running";
+            if (isRecording) {
+                return fetch('/current-recording')
+                    .then(response => response.json())
+                    .then(data => {
+                        currentRecordingFile = data.status === "recording" ? data.filename : null;
+                        updateRecordingUI(isRecording);
+                    });
+            } else {
+                currentRecordingFile = null;
+                updateRecordingUI(false);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking recording status:', error);
+            currentRecordingFile = null;
+            updateRecordingUI(false);
+        });
+}
+
+function updateRecordingUI(isRecording) {
+    const toggle = document.getElementById('recordingToggle');
+    const recorderIndicator = document.getElementById('recorderIndicator');
+    if (toggle) toggle.checked = isRecording;
+    if (recorderIndicator) {
+        if (isRecording) {
+            recorderIndicator.classList.remove('hidden');
+            recorderIndicator.className = "text-red-600 animate-pulse relative group";
+        } else {
+            recorderIndicator.classList.add('hidden');
+        }
+    }
+}
+
+function startRecording() {
+    console.log("startRecording called");
+    fetch('/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    })
+        .then(response => {
+            console.log("/start response status:", response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(text => {
+            console.log('Recording started:', text);
+            currentRecordingFile = null;
+            updateRecordingUI(true);
+        })
+        .catch(error => {
+            console.error('Error starting recording:', error);
+            alert(`Error starting recording: ${error.message}`);
+            updateRecordingUI(false);
+        });
+}
+
+function stopRecording() {
+    console.log("stopRecording called");
+    fetch('/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    })
+        .then(response => {
+            console.log("/stop response status:", response.status);
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            return response.text();
+        })
+        .then(text => {
+            console.log('Recording stopped:', text);
+            currentRecordingFile = null;
+            updateRecordingUI(false);
+        })
+        .catch(error => {
+            console.error('Error stopping recording:', error);
+            alert(`Error stopping recording: ${error.message}`);
+            updateRecordingUI(true);
+        });
 }
 
 function ensureFileDetailsModal() {
