@@ -104,11 +104,27 @@ async function checkRecorderStatus() {
 }
 
 window.showServiceStatus = async function () {
-    const dialog = document.getElementById('serviceStatusDialog');
-    const content = document.getElementById('serviceStatusContent');
-
-    // Show dialog
-    dialog.classList.remove('hidden');
+    let dialog = document.getElementById('serviceStatusDialog');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'serviceStatusDialog';
+        dialog.className = 'modal';
+        dialog.innerHTML = `
+            <div class="modal-box">
+                <h3 class="font-bold text-lg mb-4">Service Status</h3>
+                <div id="serviceStatusContent" class="space-y-2">
+                    <div class="flex items-center justify-center">
+                        <span class="loading loading-spinner loading-md"></span>
+                    </div>
+                </div>
+                <div class="modal-action">
+                    <button class="btn" onclick="hideServiceStatus()">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+    }
+    dialog.showModal();
 
     try {
         // First get device type
@@ -131,6 +147,7 @@ window.showServiceStatus = async function () {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const serviceStatuses = await response.json();
+        const content = document.getElementById('serviceStatusContent');
         content.innerHTML = '';
 
         serviceStatuses.forEach(({ service, status, enabled }) => {
@@ -165,6 +182,7 @@ window.showServiceStatus = async function () {
         });
     } catch (error) {
         console.error('Error fetching service status:', error);
+        const content = document.getElementById('serviceStatusContent');
         content.innerHTML = `
             <div class="flex items-center gap-2 p-3 text-red-800 bg-red-50 rounded-lg">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

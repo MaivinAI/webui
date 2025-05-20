@@ -47,19 +47,26 @@ function createNavbar(pageTitle) {
                         <span id="modeText">Loading...</span>
                     </div>
                     <!-- Quick Status Container -->
-                    <div id="statusContainer" class="relative">
-                        <button class="btn btn-ghost btn-circle" onclick="showServiceStatus()">
+                    <div id="statusContainer" class="relative flex items-center gap-2">
+                        <div class="relative">
+                            <!-- Info Button for Service Status (moved before gear) -->
+                            <button class="btn btn-ghost btn-circle" title="Service Info" onclick="showServiceStatus()">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                            </button>
+                            <!-- Quick Status Tooltip -->
+                            <div id="serviceStatusTooltip" class="hidden absolute" style="">
+                                <div id="quickStatusContent" class="text-sm">
+                                    Loading status...
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Settings Gear Button (outside .relative) -->
+                        <button class="btn btn-ghost btn-circle" onclick="window.location.href='/settings'">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                         </button>
-                        <!-- Quick Status Tooltip -->
-                        <div id="serviceStatusTooltip" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg p-4 z-50">
-                            <div id="quickStatusContent" class="text-sm">
-                                Loading status...
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -166,13 +173,46 @@ function createNavbar(pageTitle) {
         }
 
         #serviceStatusTooltip {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            left: auto;
+            transform: none;
+            margin-top: 0.75rem;
+            width: 16rem;
+            max-width: 90vw;
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            padding: 1rem;
+            z-index: 50;
+            display: none;
             transition: all 0.2s ease;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .relative:hover #serviceStatusTooltip {
+            display: block;
         }
 
-        #statusContainer:hover #serviceStatusTooltip {
-            display: block;
+        .mcap-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 9999px;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 1rem;
+            padding: 0;
+        }
+        .mcap-btn-blue {
+            background: #4285f4;
+            color: #fff;
+        }
+        .mcap-btn-blue:hover {
+            background: #1a73e8;
         }
     `;
     document.head.appendChild(style);
