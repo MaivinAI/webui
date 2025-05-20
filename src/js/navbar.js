@@ -207,4 +207,14 @@ function initNavbar(pageTitle) {
             clearInterval(statusCheckInterval);
         });
     }, 0);
+}
+
+function ensureFileDetailsModal() {
+    if (!document.getElementById('myModal')) {
+        const dialog = document.createElement('dialog');
+        dialog.id = 'myModal';
+        dialog.className = 'bg-white rounded-lg shadow-lg p-6 w-[600px]';
+        dialog.innerHTML = '<div id="modalDetails"></div>';
+        document.body.appendChild(dialog);
+    }
 } 

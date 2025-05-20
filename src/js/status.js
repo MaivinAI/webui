@@ -461,7 +461,58 @@ function deleteFile(fileName, directory) {
 }
 window.deleteFile = deleteFile;
 
-function showModal(topics) {
-    // ...existing code...
+function ensureFileDetailsModal() {
+    if (!document.getElementById('myModal')) {
+        const dialog = document.createElement('dialog');
+        dialog.id = 'myModal';
+        dialog.className = 'bg-white rounded-lg shadow-lg p-6 w-[600px]';
+        dialog.innerHTML = '<div id="modalDetails"></div>';
+        document.body.appendChild(dialog);
+    }
 }
-window.showModal = showModal; 
+
+function showModal(topics) {
+    ensureFileDetailsModal();
+    console.log('showModal called', topics); // Debug log
+    const modal = document.getElementById('myModal');
+    const modalDetails = document.getElementById('modalDetails');
+
+    if (!modal || !modalDetails) {
+        console.error('Modal elements not found');
+        return;
+    }
+
+    modalDetails.innerHTML = `
+        <div class="mb-4">
+            <h3 class="text-xl font-semibold text-gray-800">File Details</h3>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            ${Object.entries(topics).map(([topic, details]) => `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="font-medium text-gray-800 mb-2">${topic}</div>
+                    <div class="grid grid-cols-[80px,1fr] gap-y-2">
+                        <span class="text-gray-600">FPS:</span>
+                        <span class="text-gray-800">${details.average_fps !== undefined ? details.average_fps.toFixed(2) : '--'}</span>
+                        <span class="text-gray-600">Frames:</span>
+                        <span class="text-gray-800">${details.message_count !== undefined ? details.message_count : '--'}</span>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="flex justify-end mt-6">
+            <button onclick="closeModal()" 
+                class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600">
+                CLOSE
+            </button>
+        </div>
+    `;
+
+    modal.showModal(); // Ensure the modal is shown
+}
+window.showModal = showModal;
+
+function closeModal() {
+    const modal = document.getElementById('myModal');
+    if (modal) modal.close();
+}
+window.closeModal = closeModal; 
