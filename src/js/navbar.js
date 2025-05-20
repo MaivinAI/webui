@@ -48,9 +48,9 @@ function createNavbar(pageTitle) {
                     </div>
                     <!-- Quick Status Container -->
                     <div id="statusContainer" class="relative flex items-center gap-2">
-                        <div class="relative">
+                        <div class="service-info-btn-wrapper relative">
                             <!-- Info Button for Service Status (moved before gear) -->
-                            <button class="btn btn-ghost btn-circle" title="Service Info" onclick="showServiceStatus()">
+                            <button class="btn btn-ghost btn-circle service-info-btn" title="Service Info" onclick="showServiceStatus()">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                             </button>
                             <!-- Quick Status Tooltip -->
@@ -188,8 +188,13 @@ function createNavbar(pageTitle) {
             z-index: 50;
             display: none;
             transition: all 0.2s ease;
+            pointer-events: none;
         }
-        .relative:hover #serviceStatusTooltip {
+        #serviceStatusTooltip * {
+            pointer-events: auto;
+        }
+        .service-info-btn:hover + #serviceStatusTooltip,
+        .service-info-btn:focus + #serviceStatusTooltip {
             display: block;
         }
 
