@@ -13,106 +13,198 @@ function createNavbar(pageTitle) {
             </div>
             <div class="navbar-end">
                 <div class="flex items-center gap-4">
-                    <!-- Recorder Indicator -->
-                    <div id="recorderIndicator" class="hidden">
-                        <div class="relative group">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    <!-- Add recording toggle -->
+                    <div class="recording-toggle">
+                        <span class="toggle-label text-white">Recording</span>
+                        <label class="switch">
+                            <input type="checkbox" id="recordingToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <!-- Add MCAP Files button -->
+                    <div class="relative">
+                        <button class="btn btn-ghost btn-circle" onclick="showMcapDialog()" id="mcapDialogBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                             </svg>
-                            <div class="absolute bottom-full right-0 mb-2 w-48 p-2 bg-white rounded-lg shadow-lg text-sm hidden group-hover:block">
-                                Recording in progress
-                            </div>
+                        </button>
+                    </div>
+                    <!-- Add the recorder indicator -->
+                    <div id="recorderIndicator" class="hidden relative group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 96 96" fill="currentColor">
+                            <circle cx="48" cy="48" r="32" />
+                        </svg>
+                        <!-- Tooltip -->
+                        <div
+                            class="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                            Recording
                         </div>
                     </div>
-
-                    <!-- Status Container -->
-                    <div class="flex items-center gap-2">
-                        <div id="modeIndicator" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2">
-                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <!-- Mode Indicator with Tooltip -->
+                    <div id="modeIndicator" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2">
+                        <span id="modeText">Loading...</span>
+                    </div>
+                    <!-- Quick Status Container -->
+                    <div id="statusContainer" class="relative">
+                        <button class="btn btn-ghost btn-circle" onclick="showServiceStatus()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
-                            <span id="modeText">Checking Status...</span>
-                        </div>
-
-                        <!-- Service Status Button -->
-                        <div class="relative group">
-                            <button onclick="showServiceStatus()" class="p-2 text-white hover:text-gray-200 rounded-full hover:bg-[#3a1bb4] transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-                                    <line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    <circle cx="12" cy="8" r="1" fill="currentColor"/>
-                                </svg>
-                            </button>
-                            <div class="absolute top-full right-0 mt-2 w-64 p-4 bg-white rounded-lg shadow-lg text-sm hidden group-hover:block">
-                                <div id="quickStatusContent" class="text-center">
-                                    <div class="animate-pulse flex items-center justify-center gap-2">
-                                        <div class="h-2 w-2 bg-gray-400 rounded-full"></div>
-                                        <div class="h-2 w-2 bg-gray-400 rounded-full"></div>
-                                        <div class="h-2 w-2 bg-gray-400 rounded-full"></div>
-                                    </div>
-                                </div>
+                        </button>
+                        <!-- Quick Status Tooltip -->
+                        <div id="serviceStatusTooltip" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg p-4 z-50">
+                            <div id="quickStatusContent" class="text-sm">
+                                Loading status...
                             </div>
                         </div>
-
-                        <!-- Settings Button -->
-                        <a href="/settings" class="p-2 text-white hover:text-gray-200 rounded-full hover:bg-[#3a1bb4] transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </a>
                     </div>
                 </div>
             </div>
         </nav>
     `;
 
-    // Add service status dialog
-    const dialog = document.createElement('div');
-    dialog.id = 'serviceStatusDialog';
-    dialog.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden';
-    dialog.innerHTML = `
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="text-lg font-semibold text-gray-900">Service Status</h3>
-                <button onclick="hideServiceStatus()" class="text-gray-400 hover:text-gray-500">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <div id="serviceStatusContent" class="p-4 max-h-[60vh] overflow-y-auto">
-                <div class="animate-pulse space-y-3">
-                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div class="h-4 bg-gray-200 rounded"></div>
-                    <div class="h-4 bg-gray-200 rounded w-5/6"></div>
-                </div>
-            </div>
-        </div>
-    `;
+    // Add styles for recording toggle
+    const style = document.createElement('style');
+    style.textContent = `
+        .recording-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 16px;
+        }
 
-    document.body.insertBefore(navbar, document.body.firstChild);
-    document.body.appendChild(dialog);
+        .recording-toggle .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .recording-toggle .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .recording-toggle .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .recording-toggle .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .recording-toggle input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        .recording-toggle input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        .recording-toggle .toggle-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        #modeIndicator {
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .navbar-end .btn-circle svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .navbar-end .btn-circle:hover svg {
+            color: #e2e8f0;
+        }
+
+        .navbar-end .menu {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-end .btn-circle.btn-lg {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .navbar-end .btn-circle.btn-lg svg {
+            margin-top: -5px;
+            width: 25px;
+            height: 25px;
+            color: white;
+        }
+
+        .navbar-end .btn-circle.btn-lg:hover svg {
+            color: #e2e8f0;
+        }
+
+        #serviceStatusTooltip {
+            transition: all 0.2s ease;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        #statusContainer:hover #serviceStatusTooltip {
+            display: block;
+        }
+    `;
+    document.head.appendChild(style);
+
+    return navbar;
 }
 
 // Function to initialize the navbar
 function initNavbar(pageTitle) {
     // Create the navbar
-    createNavbar(pageTitle);
+    const navbar = createNavbar(pageTitle);
 
-    // Initialize status checks
-    checkReplayStatus();
-    checkRecorderStatus();
+    // Insert the navbar at the beginning of the body
+    document.body.insertBefore(navbar, document.body.firstChild);
 
-    // Set up interval for status checks
-    const statusCheckInterval = setInterval(() => {
+    // Wait for the next tick to ensure DOM is updated
+    setTimeout(() => {
+        // Initialize status checks
         checkReplayStatus();
         checkRecorderStatus();
-    }, 5000);
+        updateQuickStatus();
 
-    // Clean up interval when page is unloaded
-    window.addEventListener('beforeunload', () => {
-        clearInterval(statusCheckInterval);
-    });
+        // Set up interval for status checks
+        const statusCheckInterval = setInterval(() => {
+            checkReplayStatus();
+            checkRecorderStatus();
+            updateQuickStatus();
+        }, 5000);
+
+        // Clean up interval when page is unloaded
+        window.addEventListener('beforeunload', () => {
+            clearInterval(statusCheckInterval);
+        });
+    }, 0);
 } 

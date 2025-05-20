@@ -179,8 +179,17 @@ window.showServiceStatus = async function () {
 
 window.hideServiceStatus = function () {
     const dialog = document.getElementById('serviceStatusDialog');
-    dialog.classList.add('hidden');
-}
+    if (dialog) {
+        dialog.close();
+    }
+
+    // Close WebSocket connection when dialog is closed
+    if (mcapSocket) {
+        mcapSocket.close();
+        mcapSocket = null;
+        window.mcapSocket = null;
+    }
+};
 
 async function updateQuickStatus() {
     try {
@@ -254,4 +263,205 @@ async function updateQuickStatus() {
             </div>
         `;
     }
-} 
+}
+
+let mcapSocket = null;
+window.mcapSocket = mcapSocket;
+
+window.showMcapDialog = async function () {
+    const dialog = document.getElementById('serviceStatusDialog');
+    if (!dialog) {
+        // Create the dialog if it doesn't exist
+        const newDialog = document.createElement('dialog');
+        newDialog.id = 'serviceStatusDialog';
+        newDialog.className = 'modal';
+        newDialog.innerHTML = `
+            <div class="modal-box" style="padding: 0; min-width: 350px; max-width: 400px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem 0.5rem 1.5rem; border-bottom: 1px solid #eee;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; color: #888;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75A4.5 4.5 0 008 6.75v3.75m8.25 0a2.25 2.25 0 11-4.5 0m4.5 0h-4.5m-2.25 0a2.25 2.25 0 11-4.5 0m4.5 0h-4.5" /></svg>
+                        <span class="font-bold text-lg">MCAP Files</span>
+                    </div>
+                    <button onclick="hideServiceStatus()" style="background: none; border: none; cursor: pointer; padding: 0.25rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: #888;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <div id="serviceStatusContent" class="space-y-2" style="padding: 1rem 1.5rem 1.5rem 1.5rem;"></div>
+            </div>
+        `;
+        document.body.appendChild(newDialog);
+    }
+
+    // Show the dialog
+    const dialogElement = document.getElementById('serviceStatusDialog');
+    const content = document.getElementById('serviceStatusContent');
+
+    // Close existing socket if any
+    if (mcapSocket) {
+        mcapSocket.close();
+        mcapSocket = null;
+        window.mcapSocket = null;
+    }
+
+    try {
+        // Create WebSocket connection
+        mcapSocket = new WebSocket('/mcap/');
+        window.mcapSocket = mcapSocket;
+
+        mcapSocket.onopen = () => {
+            mcapSocket.send(JSON.stringify({ action: 'list_files' }));
+        };
+
+        mcapSocket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.error) {
+                    content.innerHTML = `<div class="text-red-600">Error: ${data.error}</div>`;
+                    return;
+                }
+                const files = data.files || [];
+                if (files.length === 0) {
+                    content.innerHTML = `<div class="text-gray-600 text-center py-4">No MCAP files found</div>`;
+                    return;
+                }
+                files.sort((a, b) => new Date(b.created) - new Date(a.created));
+                content.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        ${files.map(file => `
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                                <button class="mcap-btn mcap-btn-gray" style="margin-right: 0.75rem;" title="Play" onclick="playMcap('${file.name}')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M8 5v14l11-7z"/></svg>
+                                </button>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${file.name}</div>
+                                    <div style="font-size: 0.95em; color: #888;">${file.size} MB &bull; ${file.average_video_length ? file.average_video_length.toFixed(2) : '--'}s</div>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="mcap-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)})'>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                    </button>
+                                    <a class="mcap-btn mcap-btn-green" href="/download/${data.dir_name || ''}/${file.name}" title="Download">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                    </a>
+                                    <button class="mcap-btn mcap-btn-red" title="Delete" onclick="deleteFile('${file.name}', '${data.dir_name || ''}')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                content.innerHTML = `<div class="text-red-600">Error parsing server response</div>`;
+            }
+        };
+        mcapSocket.onerror = () => {
+            content.innerHTML = `<div class="text-red-600">Error connecting to server</div>`;
+        };
+        mcapSocket.onclose = () => { mcapSocket = null; window.mcapSocket = null; };
+        dialogElement.showModal();
+    } catch (error) {
+        content.innerHTML = `<div class="text-red-600">Error connecting to server</div>`;
+    }
+};
+
+// Add styles for the MCAP dialog buttons
+(function () {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .mcap-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 9999px;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 1rem;
+            padding: 0;
+        }
+        .mcap-btn-gray {
+            background: #f3f4f6;
+            color: #888;
+        }
+        .mcap-btn-gray:hover {
+            background: #e5e7eb;
+        }
+        .mcap-btn-green {
+            background: #34a853;
+            color: #fff;
+        }
+        .mcap-btn-green:hover {
+            background: #2d9248;
+        }
+        .mcap-btn-red {
+            background: #dc3545;
+            color: #fff;
+        }
+        .mcap-btn-red:hover {
+            background: #b52a37;
+        }
+        .mcap-btn-blue {
+            background: #4285f4;
+            color: #fff;
+        }
+        .mcap-btn-blue:hover {
+            background: #1a73e8;
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+window.playMcap = function (fileName) {
+    // Implement MCAP playback functionality
+    console.log('Playing MCAP file:', fileName);
+    // Add your MCAP playback logic here
+};
+
+function deleteFile(fileName, directory) {
+    console.log('deleteFile called', fileName, directory); // Debug log
+    if (fileName === window.currentRecordingFile) {
+        alert('Cannot delete file while it is being recorded');
+        return;
+    }
+    const confirmDelete = confirm(`Are you sure you want to delete: ${fileName}?`);
+    const params = {
+        directory: directory,
+        file: fileName
+    }
+    if (confirmDelete) {
+        fetch('/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(params)
+        }).then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`HTTP error ${response.status}: ${text}`);
+                });
+            }
+            return response.text();
+        }).then(text => {
+            console.log('File deleted:', text);
+            if (window.mcapSocket && window.mcapSocket.readyState === WebSocket.OPEN) {
+                window.mcapSocket.send(JSON.stringify({ action: 'list_files' }));
+            }
+            if (typeof startPolling === 'function') startPolling();
+            if (typeof listMcapFiles === 'function') listMcapFiles();
+        }).catch(error => {
+            console.error('Error deleting file:', error);
+            alert(`Error deleting file: ${error.message}`);
+        });
+    }
+}
+window.deleteFile = deleteFile;
+
+function showModal(topics) {
+    // ...existing code...
+}
+window.showModal = showModal; 
