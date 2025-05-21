@@ -790,21 +790,43 @@
             const toggle = document.getElementById('recordingToggle');
             const recordingIndicator = document.getElementById('recordingIndicator');
             const recorderIndicator = document.getElementById('recorderIndicator');
-
-            toggle.checked = isRecording;
-
+            // Update local toggle and indicator
+            if (toggle) toggle.checked = isRecording;
             if (recordingIndicator) {
                 recordingIndicator.textContent = isRecording ?
                     (currentRecordingFile ? `Recording in progress: ${currentRecordingFile}` : 'Starting recording...') : '';
                 recordingIndicator.style.color = isRecording ? '#e74c3c' : 'inherit';
             }
-
             if (recorderIndicator) {
                 if (isRecording) {
                     recorderIndicator.classList.remove('hidden');
                     recorderIndicator.className = "text-red-600 animate-pulse relative group";
                 } else {
                     recorderIndicator.classList.add('hidden');
+                }
+            }
+            // Update navbar REC button if present
+            const recordingButton = document.getElementById('recordingButton');
+            if (recordingButton) {
+                const recText = recordingButton.querySelector('.rec-text');
+                const recDot = recordingButton.querySelector('.rec-dot');
+                const tooltip = recordingButton.querySelector('.rec-tooltip');
+                if (isRecording) {
+                    recordingButton.classList.add('recording');
+                    recordingButton.setAttribute('aria-pressed', 'true');
+                    recordingButton.setAttribute('aria-label', 'Stop Recording');
+                    if (recText) recText.textContent = 'REC';
+                    if (tooltip) tooltip.textContent = 'Stop Recording';
+                    if (recDot) recDot.style.background = 'white';
+                    localStorage.setItem('recordingStatus', 'recording');
+                } else {
+                    recordingButton.classList.remove('recording');
+                    recordingButton.setAttribute('aria-pressed', 'false');
+                    recordingButton.setAttribute('aria-label', 'Start Recording');
+                    if (recText) recText.textContent = 'REC';
+                    if (tooltip) tooltip.textContent = 'Start Recording';
+                    if (recDot) recDot.style.background = '#111';
+                    localStorage.setItem('recordingStatus', 'not-recording');
                 }
             }
         }

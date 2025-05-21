@@ -58,19 +58,13 @@ async function checkRecorderStatus() {
         }
         const statusText = await response.text();
         const isRecording = statusText.trim() === "Recorder is running";
-
-        const recorderIndicator = document.getElementById('recorderIndicator');
-
-        if (isRecording) {
-            recorderIndicator.classList.remove('hidden');
-            recorderIndicator.className = "text-red-600 animate-pulse relative group";
-        } else {
-            recorderIndicator.classList.add('hidden');
+        if (typeof window.updateRecordingUI === 'function') {
+            window.updateRecordingUI(isRecording);
         }
     } catch (error) {
-        console.error('Error checking recorder status:', error);
-        const recorderIndicator = document.getElementById('recorderIndicator');
-        recorderIndicator.classList.add('hidden');
+        if (typeof window.updateRecordingUI === 'function') {
+            window.updateRecordingUI(false);
+        }
     }
 }
 
