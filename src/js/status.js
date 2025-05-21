@@ -1,24 +1,8 @@
 async function checkReplayStatus() {
     try {
-        const deviceResponse = await fetch('/config/webui/details');
-        if (!deviceResponse.ok) throw new Error(`HTTP error! status: ${deviceResponse.status}`);
-        const deviceData = await deviceResponse.json();
+        const deviceData = await window.serviceCache.getDeviceData();
+        const serviceStatuses = await window.serviceCache.getServiceStatuses();
         const isRaivin = deviceData.DEVICE?.toLowerCase().includes('raivin');
-        console.log(isRaivin);
-        // Check services status
-        const services = isRaivin ?
-            ["camera", "imu", "navsat", "radarpub"] :
-            ["camera", "imu", "navsat"];
-        const serviceResponse = await fetch('/config/service/status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ services })
-        });
-
-        if (!serviceResponse.ok) throw new Error(`HTTP error! status: ${serviceResponse.status}`);
-        const serviceStatuses = await serviceResponse.json();
 
         // Check critical services
         const statusMap = serviceStatuses.reduce((acc, { service, status }) => {
@@ -26,11 +10,7 @@ async function checkReplayStatus() {
             return acc;
         }, {});
 
-        // Check replay status
-        const replayResponse = await fetch('/replay-status');
-        if (!replayResponse.ok) throw new Error(`HTTP error! status: ${replayResponse.status}`);
-        const statusText = await replayResponse.text();
-        const isReplay = statusText.trim() === "Replay is running";
+        const isReplay = await window.serviceCache.getReplayStatus();
 
         const modeIndicator = document.getElementById('modeIndicator');
         const modeText = document.getElementById('modeText');
@@ -38,8 +18,8 @@ async function checkReplayStatus() {
         if (loadingSpinner) {
             loadingSpinner.remove();
         }
-        const allSensorsInactive = services.every(service => statusMap[service] !== 'running');
-        const allSensorActive = services.every(service => statusMap[service] === 'running');
+        const allSensorsInactive = Object.values(statusMap).every(status => status !== 'running');
+        const allSensorActive = Object.values(statusMap).every(status => status === 'running');
         if (allSensorsInactive && !isReplay) {
             modeText.textContent = "Stopped";
             modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
@@ -53,8 +33,8 @@ async function checkReplayStatus() {
                 modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-2";
             }
         } else {
-            const isCameraDown = !statusMap['camera'] || statusMap['camera'] !== 'running';
             const isradarpubDown = !statusMap['radarpub'] || statusMap['radarpub'] !== 'running';
+            const isCameraDown = !statusMap['camera'] || statusMap['camera'] !== 'running';
             const isDegraded = (isRaivin && isradarpubDown) || isCameraDown;
 
             if (!allSensorActive) {
@@ -65,17 +45,8 @@ async function checkReplayStatus() {
                 modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 flex items-center gap-2";
             }
         }
-
-        // Update quick status
-        await updateQuickStatus();
     } catch (error) {
         console.error('Error checking replay status:', error);
-        const modeIndicator = document.getElementById('modeIndicator');
-        const modeText = document.getElementById('modeText');
-        const loadingSpinner = modeIndicator.querySelector('svg.animate-spin');
-        if (loadingSpinner) loadingSpinner.remove();
-        modeText.textContent = "Status Unknown";
-        modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2";
     }
 }
 
@@ -211,25 +182,7 @@ window.hideServiceStatus = function () {
 
 async function updateQuickStatus() {
     try {
-        const deviceResponse = await fetch('/config/webui/details');
-        if (!deviceResponse.ok) throw new Error(`HTTP error! status: ${deviceResponse.status}`);
-        const deviceData = await deviceResponse.json();
-        const isRaivin = deviceData.DEVICE?.toLowerCase().includes('raivin');
-
-        const baseServices = ["camera", "imu", "navsat", "model"];
-        const raivinServices = ["radarpub", "fusion"];
-        const services = isRaivin ? [...baseServices, ...raivinServices] : baseServices;
-
-        const response = await fetch('/config/service/status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ services })
-        });
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const serviceStatuses = await response.json();
+        const serviceStatuses = await window.serviceCache.getServiceStatuses();
         const quickStatusContent = document.getElementById('quickStatusContent');
         const nonRunningServices = serviceStatuses.filter(({ status }) => status !== 'running');
 
@@ -242,7 +195,7 @@ async function updateQuickStatus() {
             `;
         } else {
             quickStatusContent.innerHTML = `
-                <div class="text-red-600 mb-2">
+                <div class="flex items-center justify-center text-red-600 mb-2">
                     <span class="h-2 w-2 rounded-full bg-red-500 mr-2 inline-block"></span>
                     Inactive Services:
                 </div>
@@ -274,12 +227,6 @@ async function updateQuickStatus() {
         `;
     } catch (error) {
         console.error('Error updating quick status:', error);
-        const quickStatusContent = document.getElementById('quickStatusContent');
-        quickStatusContent.innerHTML = `
-            <div class="text-red-600">
-                Error checking service status
-            </div>
-        `;
     }
 }
 
@@ -533,4 +480,26 @@ function closeModal() {
     const modal = document.getElementById('myModal');
     if (modal) modal.close();
 }
-window.closeModal = closeModal; 
+window.closeModal = closeModal;
+
+// Register callbacks for cache updates
+if (window.serviceCache) {
+    window.serviceCache.registerUpdateCallback(checkReplayStatus);
+    window.serviceCache.registerUpdateCallback(updateQuickStatus);
+
+    // Clean up callbacks when page is unloaded
+    window.addEventListener('beforeunload', () => {
+        window.serviceCache.unregisterUpdateCallback(checkReplayStatus);
+        window.serviceCache.unregisterUpdateCallback(updateQuickStatus);
+    });
+} else {
+    console.warn('Service cache not initialized yet');
+    // Try to register callbacks when service cache becomes available
+    const checkServiceCache = setInterval(() => {
+        if (window.serviceCache) {
+            window.serviceCache.registerUpdateCallback(checkReplayStatus);
+            window.serviceCache.registerUpdateCallback(updateQuickStatus);
+            clearInterval(checkServiceCache);
+        }
+    }, 100);
+} 

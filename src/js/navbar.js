@@ -247,15 +247,44 @@ function initNavbar(pageTitle) {
                 }
             });
         }
-        // Initial status check
-        checkRecordingStatus();
+
+        // Initialize service cache if not already initialized
+        if (window.serviceCache && !window.serviceCache.isInitialized) {
+            window.serviceCache.startBackgroundUpdates();
+        } else if (!window.serviceCache) {
+            console.warn('Service cache not initialized yet');
+            // Try to initialize when service cache becomes available
+            const checkServiceCache = setInterval(() => {
+                if (window.serviceCache) {
+                    window.serviceCache.startBackgroundUpdates();
+                    clearInterval(checkServiceCache);
+                }
+            }, 100);
+        }
+
+        // Initial status check using cached data
+        const updateUIFromCache = () => {
+            if (!window.serviceCache) return;
+
+            const serviceStatuses = window.serviceCache.serviceStatuses;
+            const replayStatus = window.serviceCache.replayStatus;
+            if (serviceStatuses) {
+                updateQuickStatus();
+            }
+            if (replayStatus !== null) {
+                checkReplayStatus();
+            }
+            checkRecordingStatus();
+        };
+
+        // Update UI immediately with cached data if available
+        updateUIFromCache();
+
         // Set up interval for status checks
         const statusCheckInterval = setInterval(() => {
-            checkReplayStatus();
-            checkRecorderStatus();
-            updateQuickStatus();
-            checkRecordingStatus();
-        }, 5000);
+            updateUIFromCache();
+        }, 1000); // Check more frequently but use cached data
+
         // Clean up interval when page is unloaded
         window.addEventListener('beforeunload', () => {
             clearInterval(statusCheckInterval);
