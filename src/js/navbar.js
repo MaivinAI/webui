@@ -35,7 +35,7 @@ function createNavbar(pageTitle) {
                             <span id="modeText">Loading...</span>
                             <div class="mode-tooltip-custom absolute left-1/2 -translate-x-1/2 mt-4 px-4 py-3 rounded-lg bg-white text-black text-sm opacity-0 pointer-events-none transition-opacity min-w-[220px] z-50 shadow-lg border border-gray-200" style="box-shadow: 0 4px 16px rgba(0,0,0,0.10); top: 2.5rem;">
                                 <div class="font-semibold mb-2">Service Status</div>
-                                <div id="modeTooltipContent" class="mb-2 flex items-center gap-2">
+                                <div id="modeTooltipContent" class="mb-2 flex flex-col gap-1">
                                     Loading services...
                                 </div>
                                 <div>
@@ -543,7 +543,7 @@ function updateModeTooltipCustom() {
     if (Array.isArray(serviceStatuses)) {
         const allRunning = serviceStatuses.every(s => (typeof s.status === 'string' ? s.status : s.status?.status) === 'running');
         if (allRunning) {
-            tooltipContent.innerHTML = '<span style="color:#22c55e;font-size:1.2em;">●</span> <span class="text-green-700">All Services Running</span>';
+            tooltipContent.innerHTML = '<div class="flex items-center gap-2"><span style="color:#22c55e;font-size:1.2em;">●</span> <span class="text-green-700">All Services Running</span></div>';
         } else {
             let html = '';
             serviceStatuses.filter(s => (typeof s.status === 'string' ? s.status : s.status?.status) !== 'running').forEach(s => {
@@ -561,7 +561,7 @@ function updateModeTooltipCustom() {
     } else {
         const allRunning = Object.values(serviceStatuses).every(s => s === 'running');
         if (allRunning) {
-            tooltipContent.innerHTML = '<span style="color:#22c55e;font-size:1.2em;">●</span> <span class="text-green-700">All Services Running</span>';
+            tooltipContent.innerHTML = '<div class="flex items-center gap-2"><span style="color:#22c55e;font-size:1.2em;">●</span> <span class="text-green-700">All Services Running</span></div>';
         } else {
             let html = '';
             for (const [service, status] of Object.entries(serviceStatuses)) {
