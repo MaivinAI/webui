@@ -13,14 +13,12 @@ function createNavbar(pageTitle) {
             </div>
             <div class="navbar-end">
                 <div class="flex items-center gap-4">
-                    <!-- Add recording toggle -->
-                    <div class="recording-toggle">
-                        <span class="toggle-label text-white">Recording</span>
-                        <label class="switch">
-                            <input type="checkbox" id="recordingToggle">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
+                    <!-- Minimalist recording button with tooltip -->
+                    <button id="recordingButton" class="rec-btn flex items-center gap-2 px-4 py-1 rounded-full bg-gray-200 text-red-600 font-semibold transition-colors duration-200 focus:outline-none" aria-pressed="false" aria-label="Start Recording">
+                        <span class="rec-dot inline-block w-3 h-3 rounded-full bg-red-600"></span>
+                        <span class="rec-text">REC</span>
+                        <span class="rec-tooltip absolute left-1/2 -translate-x-1/2 top-110% mt-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 pointer-events-none transition-opacity">Start Recording</span>
+                    </button>
                     <!-- Add MCAP Files button -->
                     <div class="relative">
                         <button class="btn btn-ghost btn-circle" onclick="showMcapDialog()" id="mcapDialogBtn">
@@ -30,17 +28,6 @@ function createNavbar(pageTitle) {
                                     d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                             </svg>
                         </button>
-                    </div>
-                    <!-- Add the recorder indicator -->
-                    <div id="recorderIndicator" class="hidden relative group">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 96 96" fill="currentColor">
-                            <circle cx="48" cy="48" r="32" />
-                        </svg>
-                        <!-- Tooltip -->
-                        <div
-                            class="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                            Recording
-                        </div>
                     </div>
                     <!-- Mode Indicator with Tooltip -->
                     <div id="modeIndicator" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2">
@@ -73,64 +60,74 @@ function createNavbar(pageTitle) {
         </nav>
     `;
 
-    // Add styles for recording toggle
+    // Add styles for recording button
     const style = document.createElement('style');
     style.textContent = `
-        .recording-toggle {
+        .rec-btn {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-right: 16px;
-        }
-
-        .recording-toggle .switch {
-            position: relative;
-            display: inline-block;
-            width: 48px;
-            height: 24px;
-        }
-
-        .recording-toggle .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .recording-toggle .slider {
-            position: absolute;
+            font-size: 15px;
+            font-weight: 600;
+            background: #e5e7eb;
+            color: #111;
+            border: none;
+            border-radius: 9999px;
+            padding: 0.25rem 1.1rem;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
+            transition: background 0.2s, color 0.2s;
+            position: relative;
+            outline: none;
+            box-shadow: none;
         }
-
-        .recording-toggle .slider:before {
+        .rec-btn.recording {
+            background: #dc2626;
+            color: white;
+        }
+        .rec-btn .rec-dot {
+            background: #111;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 9999px;
+            transition: background 0.2s;
+        }
+        .rec-btn.recording .rec-dot {
+            background: white;
+            animation: rec-pulse-minimal 1s infinite;
+        }
+        @keyframes rec-pulse-minimal {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .rec-btn .rec-tooltip {
             position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 110%;
+            margin-top: 0.5rem;
+            background: #111827;
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 10;
+            transition: opacity 0.2s;
         }
-
-        .recording-toggle input:checked+.slider {
-            background-color: #2196F3;
+        .rec-btn:hover .rec-tooltip,
+        .rec-btn:focus .rec-tooltip {
+            opacity: 1;
         }
-
-        .recording-toggle input:checked+.slider:before {
-            transform: translateX(24px);
+        .rec-btn .rec-text {
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: opacity 0.3s;
         }
-
-        .recording-toggle .toggle-label {
-            font-size: 14px;
-            font-weight: 500;
+        .rec-btn .rec-icon {
+            color: inherit;
         }
 
         #modeIndicator {
@@ -233,20 +230,47 @@ function initNavbar(pageTitle) {
     // Insert the navbar at the beginning of the body
     document.body.insertBefore(navbar, document.body.firstChild);
 
-    // Add recording toggle logic
+    // Add recording button logic
     setTimeout(() => {
-        // Recording toggle event
-        const recordingToggle = document.getElementById('recordingToggle');
-        if (recordingToggle) {
-            recordingToggle.addEventListener('change', function () {
-                console.log("Toggled recording:", this.checked);
-                if (this.checked) {
-                    startRecording();
-                } else {
+        const recordingButton = document.getElementById('recordingButton');
+        if (recordingButton) {
+            // Tooltip logic
+            recordingButton.addEventListener('mouseenter', function () {
+                const tooltip = recordingButton.querySelector('.rec-tooltip');
+                if (tooltip) tooltip.style.opacity = 1;
+            });
+            recordingButton.addEventListener('mouseleave', function () {
+                const tooltip = recordingButton.querySelector('.rec-tooltip');
+                if (tooltip) tooltip.style.opacity = 0;
+            });
+            // Click event
+            recordingButton.addEventListener('click', function () {
+                if (recordingButton.classList.contains('recording')) {
                     stopRecording();
+                } else {
+                    startRecording();
                 }
             });
         }
+
+        // --- NEW: Set UI from localStorage cache immediately ---
+        const cachedStatus = localStorage.getItem('recordingStatus');
+        if (cachedStatus === 'recording') {
+            updateRecordingUI(true);
+        } else if (cachedStatus === 'not-recording') {
+            updateRecordingUI(false);
+        }
+
+        // Listen for storage events to sync across tabs
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'recordingStatus') {
+                if (event.newValue === 'recording') {
+                    updateRecordingUI(true);
+                } else if (event.newValue === 'not-recording') {
+                    updateRecordingUI(false);
+                }
+            }
+        });
 
         // Initialize service cache if not already initialized
         if (window.serviceCache && !window.serviceCache.isInitialized) {
@@ -321,15 +345,40 @@ function checkRecordingStatus() {
 }
 
 function updateRecordingUI(isRecording) {
-    const toggle = document.getElementById('recordingToggle');
-    const recorderIndicator = document.getElementById('recorderIndicator');
-    if (toggle) toggle.checked = isRecording;
-    if (recorderIndicator) {
+    const recordingButton = document.getElementById('recordingButton');
+    if (recordingButton) {
+        const recText = recordingButton.querySelector('.rec-text');
+        const recDot = recordingButton.querySelector('.rec-dot');
+        const tooltip = recordingButton.querySelector('.rec-tooltip');
         if (isRecording) {
-            recorderIndicator.classList.remove('hidden');
-            recorderIndicator.className = "text-red-600 animate-pulse relative group";
+            recordingButton.classList.add('recording');
+            recordingButton.setAttribute('aria-pressed', 'true');
+            recordingButton.setAttribute('aria-label', 'Stop Recording');
+            if (recText) recText.textContent = 'REC';
+            if (tooltip) tooltip.textContent = 'Stop Recording';
+            if (recDot) recDot.style.background = 'white';
+            localStorage.setItem('recordingStatus', 'recording');
         } else {
-            recorderIndicator.classList.add('hidden');
+            recordingButton.classList.remove('recording');
+            recordingButton.setAttribute('aria-pressed', 'false');
+            recordingButton.setAttribute('aria-label', 'Start Recording');
+            if (recText) recText.textContent = 'REC';
+            if (tooltip) tooltip.textContent = 'Start Recording';
+            if (recDot) recDot.style.background = '#111';
+            localStorage.setItem('recordingStatus', 'not-recording');
+        }
+    }
+}
+
+function showRecCheckmark() {
+    const recordingButton = document.getElementById('recordingButton');
+    if (recordingButton) {
+        const recCheck = recordingButton.querySelector('.rec-check');
+        if (recCheck) {
+            recCheck.classList.remove('hidden');
+            setTimeout(() => {
+                recCheck.classList.add('hidden');
+            }, 900);
         }
     }
 }
@@ -352,6 +401,7 @@ function startRecording() {
             console.log('Recording started:', text);
             navbarRecordingFile = null;
             updateRecordingUI(true);
+            showRecCheckmark();
         })
         .catch(error => {
             console.error('Error starting recording:', error);
@@ -376,6 +426,7 @@ function stopRecording() {
             console.log('Recording stopped:', text);
             navbarRecordingFile = null;
             updateRecordingUI(false);
+            showRecCheckmark();
         })
         .catch(error => {
             console.error('Error stopping recording:', error);

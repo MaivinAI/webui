@@ -244,7 +244,6 @@ window.showMcapDialog = async function () {
             <div class="modal-box" style="padding: 0; min-width: 350px; max-width: 400px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem 0.5rem 1.5rem; border-bottom: 1px solid #eee;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; color: #888;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75A4.5 4.5 0 008 6.75v3.75m8.25 0a2.25 2.25 0 11-4.5 0m4.5 0h-4.5m-2.25 0a2.25 2.25 0 11-4.5 0m4.5 0h-4.5" /></svg>
                         <span class="font-bold text-lg">MCAP Files</span>
                     </div>
                     <button onclick="hideServiceStatus()" style="background: none; border: none; cursor: pointer; padding: 0.25rem;">
