@@ -461,10 +461,8 @@ function ensureFileDetailsModal() {
 
 function showModal(topics, fileInfo = {}) {
     ensureFileDetailsModal();
-    console.log('showModal called', topics, fileInfo); // Debug log
     const modal = document.getElementById('myModal');
     const modalDetails = document.getElementById('modalDetails');
-
     if (!modal || !modalDetails) {
         console.error('Modal elements not found');
         return;
@@ -475,9 +473,6 @@ function showModal(topics, fileInfo = {}) {
     let totalDuration = 0;
     Object.values(topics).forEach(details => {
         Object.entries(details).forEach(([key, value]) => {
-            if (key.toLowerCase() === 'average fps' || key.toLowerCase() === 'average_fps' || key === 'FPS:') {
-                totalFrames += Number(value) || 0;
-            }
             if (key.toLowerCase() === 'message count' || key.toLowerCase() === 'message_count' || key === 'FRAMES:') {
                 totalFrames += Number(value) || 0;
             }
@@ -487,35 +482,39 @@ function showModal(topics, fileInfo = {}) {
         });
     });
     const durationStr = totalDuration > 0 ? `${totalDuration.toLocaleString(undefined, { maximumFractionDigits: 2 })} s` : '--';
-
     modalDetails.innerHTML = `
         <style>
-            @media (min-width: 640px) {
-                .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-            }
+            .fd-header { font-size: 2rem; font-weight: 700; color: #1a237e; margin-bottom: 0.5rem; letter-spacing: -1px; }
+            .fd-subheader { font-size: 1.1rem; color: #374151; margin-bottom: 1.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90vw; }
+            .fd-summary-card { background: #e9f1fb; border-radius: 1rem; padding: 1.5rem 2rem; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 2.5rem 2.5rem; align-items: center; justify-content: flex-start; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+            .fd-summary-item { display: flex; align-items: center; gap: 0.5rem; min-width: 160px; }
+            .fd-summary-icon { font-size: 1.3rem; color: #1976d2; }
+            .fd-summary-label { color: #3b3b3b; font-weight: 500; margin-right: 0.25rem; }
+            .fd-summary-value { color: #1a237e; font-weight: 600; font-size: 1.08rem; }
+            .fd-summary-copy { background: none; border: none; color: #1976d2; cursor: pointer; font-size: 1.1rem; margin-left: 0.25rem; }
+            .fd-summary-copy:hover { color: #0d47a1; }
+            .fd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+            .fd-topic-card { background: #f7fafc; border-radius: 0.75rem; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); transition: box-shadow 0.2s, transform 0.2s; position: relative; }
+            .fd-topic-card:hover { box-shadow: 0 4px 16px rgba(25, 118, 210, 0.10); transform: translateY(-2px) scale(1.01); }
+            .fd-topic-title { font-weight: 600; color: #222; margin-bottom: 0.75rem; font-size: 1.08rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .fd-topic-title[title] { cursor: help; }
+            .fd-topic-table { width: 100%; font-size: 1.05rem; color: #222; }
+            .fd-topic-table td { padding: 0.15rem 0.5rem 0.15rem 0; }
+            .fd-key { color: #555; font-weight: 500; }
+            .fd-value { color: #222; text-align: right; }
+            .fd-sticky-footer { position: sticky; bottom: 0; background: #fff; padding-top: 2rem; margin-top: 2rem; display: flex; justify-content: flex-end; z-index: 10; }
             @media (max-width: 639px) {
-                .details-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+                .fd-summary-card { flex-direction: column; align-items: flex-start; gap: 1.2rem; padding: 1.2rem 1rem; }
+                .fd-header { font-size: 1.3rem; }
             }
-            .details-card { background: #f7fafc; border-radius: 0.75rem; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-            .details-topic { font-weight: 600; color: #222; margin-bottom: 0.75rem; font-size: 1.08rem; }
-            .details-table { width: 100%; font-size: 1.05rem; color: #222; }
-            .details-table td { padding: 0.15rem 0.5rem 0.15rem 0; }
-            .details-key { color: #555; font-weight: 500; }
-            .details-value { color: #222; text-align: right; }
-            .file-summary-card { background: #e9f1fb; border-radius: 0.75rem; padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 2.5rem 2.5rem; align-items: center; justify-content: flex-start; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-            .file-summary-label { color: #3b3b3b; font-weight: 500; margin-right: 0.5rem; }
-            .file-summary-value { color: #1a237e; font-weight: 600; font-size: 1.08rem; }
         </style>
-        <div class="mb-4">
-            <h3 class="text-xl font-semibold text-gray-800">File Details</h3>
+        <div class="fd-header">File Details</div>
+        <div class="fd-summary-card">
+            <div class="fd-summary-item"><span class="fd-summary-icon">📄</span><span class="fd-summary-label">File Name:</span> <span class="fd-summary-value" title="${fileName}">${fileName.length > 24 ? fileName.slice(0, 21) + '...' : fileName}</span> <button class="fd-summary-copy" title="Copy file name" onclick="navigator.clipboard.writeText('${fileName.replace(/'/g, '\'')}')">⧉</button></div>
+            <div class="fd-summary-item"><span class="fd-summary-icon">📦</span><span class="fd-summary-label">File Size:</span> <span class="fd-summary-value">${fileSize}</span></div>
+            <div class="fd-summary-item"><span class="fd-summary-icon">⏱️</span><span class="fd-summary-label">Total Duration:</span> <span class="fd-summary-value">${durationStr}</span></div>
         </div>
-        <div class="file-summary-card">
-            <div><span class="file-summary-label">File Name:</span> <span class="file-summary-value">${fileName}</span></div>
-            <div><span class="file-summary-label">Total Frames:</span> <span class="file-summary-value">${totalFrames}</span></div>
-            <div><span class="file-summary-label">Total Duration:</span> <span class="file-summary-value">${durationStr}</span></div>
-            <div><span class="file-summary-label">File Size:</span> <span class="file-summary-value">${fileSize}</span></div>
-        </div>
-        <div class="details-grid">
+        <div class="fd-grid">
             ${Object.entries(topics).map(([topic, details]) => {
         const filtered = Object.entries(details)
             .filter(([key]) => key.toLowerCase() !== 'video length' && key.toLowerCase() !== 'video_length')
@@ -530,14 +529,14 @@ function showModal(topics, fileInfo = {}) {
                 return [displayKey, value];
             });
         return `
-                <div class="details-card">
-                    <div class="details-topic">${topic}</div>
-                    <table class="details-table">
+                <div class="fd-topic-card">
+                    <div class="fd-topic-title" title="${topic}">${topic.length > 32 ? topic.slice(0, 29) + '...' : topic}</div>
+                    <table class="fd-topic-table">
                         <tbody>
                             ${filtered.map(([key, value]) => `
                                 <tr>
-                                    <td class="details-key">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
-                                    <td class="details-value">${typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 3 }) : value}</td>
+                                    <td class="fd-key">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
+                                    <td class="fd-value">${typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 3 }) : value}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -546,20 +545,17 @@ function showModal(topics, fileInfo = {}) {
                 `;
     }).join('')}
         </div>
-        <div class="flex justify-end mt-6">
-            <button id="closeModalBtn" class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600">
+        <div class="fd-sticky-footer">
+            <button id="closeModalBtn" class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600 text-base font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
                 CLOSE
             </button>
         </div>
     `;
-
-    // Make the close button work
     setTimeout(() => {
         const closeBtn = document.getElementById('closeModalBtn');
         if (closeBtn) {
             closeBtn.onclick = () => { modal.close(); };
         }
     }, 0);
-
-    modal.showModal(); // Ensure the modal is shown
+    modal.showModal();
 }
