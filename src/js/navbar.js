@@ -21,12 +21,13 @@ function createNavbar(pageTitle) {
                     </button>
                     <!-- Add MCAP Files button -->
                     <div class="relative">
-                        <button class="btn btn-ghost btn-circle" onclick="showMcapDialog()" id="mcapDialogBtn">
+                        <button class="btn btn-ghost btn-circle group" onclick="showMcapDialog()" id="mcapDialogBtn" aria-label="Show MCAP Details">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="w-6 h-6">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                             </svg>
+                            <span class="mcap-tooltip absolute left-1/2 -translate-x-1/2 top-110% mt-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-focus:opacity-100" style="white-space:nowrap;z-index:20;">MCAP Details</span>
                         </button>
                     </div>
                     <!-- Mode Indicator with Tooltip -->
@@ -244,6 +245,27 @@ function createNavbar(pageTitle) {
         }
         .mcap-btn-blue:hover {
             background: #1a73e8;
+        }
+        .mcap-tooltip {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 110%;
+            margin-top: 0.5rem;
+            background: #111827;
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 20;
+            transition: opacity 0.2s;
+        }
+        .group:hover .mcap-tooltip,
+        .group:focus .mcap-tooltip {
+            opacity: 1;
         }
     `;
     document.head.appendChild(style);
