@@ -263,7 +263,7 @@ function initNavbar(pageTitle) {
     }, 0);
 }
 
-let currentRecordingFile = null;
+let navbarRecordingFile = null;
 
 function checkRecordingStatus() {
     fetch('/recorder-status')
@@ -279,17 +279,17 @@ function checkRecordingStatus() {
                 return fetch('/current-recording')
                     .then(response => response.json())
                     .then(data => {
-                        currentRecordingFile = data.status === "recording" ? data.filename : null;
+                        navbarRecordingFile = data.status === "recording" ? data.filename : null;
                         updateRecordingUI(isRecording);
                     });
             } else {
-                currentRecordingFile = null;
+                navbarRecordingFile = null;
                 updateRecordingUI(false);
             }
         })
         .catch(error => {
             console.error('Error checking recording status:', error);
-            currentRecordingFile = null;
+            navbarRecordingFile = null;
             updateRecordingUI(false);
         });
 }
@@ -324,7 +324,7 @@ function startRecording() {
         })
         .then(text => {
             console.log('Recording started:', text);
-            currentRecordingFile = null;
+            navbarRecordingFile = null;
             updateRecordingUI(true);
         })
         .catch(error => {
@@ -348,7 +348,7 @@ function stopRecording() {
         })
         .then(text => {
             console.log('Recording stopped:', text);
-            currentRecordingFile = null;
+            navbarRecordingFile = null;
             updateRecordingUI(false);
         })
         .catch(error => {
