@@ -310,7 +310,7 @@ window.showMcapDialog = async function () {
                                         <td style="padding:0.5rem 0.5rem; color:#b0b0b0;">${dateStr} <span style='color:#888;'>${timeStr}</span></td>
                                         <td style="padding:0.5rem 0.5rem; text-align:center;">
                                             <div style="display:flex; gap:0.5rem; justify-content:center; align-items:center;">
-                                                <button class="mcap-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)})'>
+                                                <button class="mcap-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)}, ${JSON.stringify({ name: file.name, size: file.size })})'>
                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                                                 </button>
                                                 <a class="mcap-btn mcap-btn-green" href="/download/${dirName}/${file.name}" title="Download">
@@ -459,9 +459,9 @@ function ensureFileDetailsModal() {
     }
 }
 
-function showModal(topics) {
+function showModal(topics, fileInfo = {}) {
     ensureFileDetailsModal();
-    console.log('showModal called', topics); // Debug log
+    console.log('showModal called', topics, fileInfo); // Debug log
     const modal = document.getElementById('myModal');
     const modalDetails = document.getElementById('modalDetails');
 
@@ -469,8 +469,25 @@ function showModal(topics) {
         console.error('Modal elements not found');
         return;
     }
+    const fileName = fileInfo.name || fileInfo.fileName || '--';
+    const fileSize = fileInfo.size ? `${fileInfo.size} MB` : '0 MB';
+    let totalFrames = 0;
+    let totalDuration = 0;
+    Object.values(topics).forEach(details => {
+        Object.entries(details).forEach(([key, value]) => {
+            if (key.toLowerCase() === 'average fps' || key.toLowerCase() === 'average_fps' || key === 'FPS:') {
+                totalFrames += Number(value) || 0;
+            }
+            if (key.toLowerCase() === 'message count' || key.toLowerCase() === 'message_count' || key === 'FRAMES:') {
+                totalFrames += Number(value) || 0;
+            }
+            if (key.toLowerCase() === 'video length' || key.toLowerCase() === 'video_length') {
+                totalDuration += Number(value) || 0;
+            }
+        });
+    });
+    const durationStr = totalDuration > 0 ? `${totalDuration.toLocaleString(undefined, { maximumFractionDigits: 2 })} s` : '--';
 
-    // Responsive grid: 2 columns on desktop, 1 on mobile
     modalDetails.innerHTML = `
         <style>
             @media (min-width: 640px) {
@@ -485,34 +502,47 @@ function showModal(topics) {
             .details-table td { padding: 0.15rem 0.5rem 0.15rem 0; }
             .details-key { color: #555; font-weight: 500; }
             .details-value { color: #222; text-align: right; }
+            .file-summary-card { background: #e9f1fb; border-radius: 0.75rem; padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 2.5rem 2.5rem; align-items: center; justify-content: flex-start; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+            .file-summary-label { color: #3b3b3b; font-weight: 500; margin-right: 0.5rem; }
+            .file-summary-value { color: #1a237e; font-weight: 600; font-size: 1.08rem; }
         </style>
         <div class="mb-4">
             <h3 class="text-xl font-semibold text-gray-800">File Details</h3>
         </div>
+        <div class="file-summary-card">
+            <div><span class="file-summary-label">File Name:</span> <span class="file-summary-value">${fileName}</span></div>
+            <div><span class="file-summary-label">Total Frames:</span> <span class="file-summary-value">${totalFrames}</span></div>
+            <div><span class="file-summary-label">Total Duration:</span> <span class="file-summary-value">${durationStr}</span></div>
+            <div><span class="file-summary-label">File Size:</span> <span class="file-summary-value">${fileSize}</span></div>
+        </div>
         <div class="details-grid">
             ${Object.entries(topics).map(([topic, details]) => {
-        // Prepare filtered details: rename 'Message Count' to 'Frames', remove 'Video Length' and 'video_length'
         const filtered = Object.entries(details)
             .filter(([key]) => key.toLowerCase() !== 'video length' && key.toLowerCase() !== 'video_length')
             .map(([key, value]) => {
                 let displayKey = key;
-                if (key.toLowerCase() === 'message count' || key.toLowerCase() === 'message_count') displayKey = 'Frames';
+                if (key.toLowerCase() === 'average fps' || key.toLowerCase() === 'average_fps') displayKey = 'FPS:';
+                return [displayKey, value];
+            })
+            .map(([key, value]) => {
+                let displayKey = key;
+                if (key.toLowerCase() === 'message count' || key.toLowerCase() === 'message_count') displayKey = 'FRAMES:';
                 return [displayKey, value];
             });
         return `
-                    <div class="details-card">
-                        <div class="details-topic">${topic}</div>
-                        <table class="details-table">
-                            <tbody>
-                                ${filtered.map(([key, value]) => `
-                                    <tr>
-                                        <td class="details-key">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
-                                        <td class="details-value">${typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 3 }) : value}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="details-card">
+                    <div class="details-topic">${topic}</div>
+                    <table class="details-table">
+                        <tbody>
+                            ${filtered.map(([key, value]) => `
+                                <tr>
+                                    <td class="details-key">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
+                                    <td class="details-value">${typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 3 }) : value}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
                 `;
     }).join('')}
         </div>
