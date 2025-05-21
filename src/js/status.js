@@ -228,31 +228,28 @@ let mcapSocket = null;
 window.mcapSocket = mcapSocket;
 
 window.showMcapDialog = async function () {
-    const dialog = document.getElementById('serviceStatusDialog');
+    let dialog = document.getElementById('mcapDialog');
     if (!dialog) {
-        // Create the dialog if it doesn't exist
-        const newDialog = document.createElement('dialog');
-        newDialog.id = 'serviceStatusDialog';
-        newDialog.className = 'modal';
-        newDialog.innerHTML = `
+        dialog = document.createElement('dialog');
+        dialog.id = 'mcapDialog';
+        dialog.className = 'modal';
+        dialog.innerHTML = `
             <div class="modal-box" style="padding: 0; min-width: 350px; max-width: 400px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem 0.5rem 1.5rem; border-bottom: 1px solid #eee;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span class="font-bold text-lg">MCAP Files</span>
                     </div>
-                    <button onclick="hideServiceStatus()" style="background: none; border: none; cursor: pointer; padding: 0.25rem;">
+                    <button onclick="hideMcapDialog()" style="background: none; border: none; cursor: pointer; padding: 0.25rem;">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: #888;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
-                <div id="serviceStatusContent" class="space-y-2" style="padding: 1rem 1.5rem 1.5rem 1.5rem;"></div>
+                <div id="mcapDialogContent" class="space-y-2" style="padding: 1rem 1.5rem 1.5rem 1.5rem;"></div>
             </div>
         `;
-        document.body.appendChild(newDialog);
+        document.body.appendChild(dialog);
     }
-
-    // Show the dialog
-    const dialogElement = document.getElementById('serviceStatusDialog');
-    const content = document.getElementById('serviceStatusContent');
+    dialog.showModal();
+    const content = document.getElementById('mcapDialogContent');
 
     // Close existing socket if any
     if (mcapSocket) {
@@ -298,7 +295,7 @@ window.showMcapDialog = async function () {
                                     <button class="mcap-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)})'>
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                                     </button>
-                                    <a class="mcap-btn mcap-btn-green" href="/download/${data.dir_name || ''}/${file.name}" title="Download">
+                                    <a class="mcap-btn mcap-btn-green" href="/download/${data.dir_name || ''}/${file.name}">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                                     </a>
                                     <button class="mcap-btn mcap-btn-red" title="Delete" onclick="deleteFile('${file.name}', '${data.dir_name || ''}')">
@@ -317,9 +314,20 @@ window.showMcapDialog = async function () {
             content.innerHTML = `<div class="text-red-600">Error connecting to server</div>`;
         };
         mcapSocket.onclose = () => { mcapSocket = null; window.mcapSocket = null; };
-        dialogElement.showModal();
     } catch (error) {
         content.innerHTML = `<div class="text-red-600">Error connecting to server</div>`;
+    }
+};
+
+window.hideMcapDialog = function () {
+    const dialog = document.getElementById('mcapDialog');
+    if (dialog) {
+        dialog.close();
+    }
+    if (mcapSocket) {
+        mcapSocket.close();
+        mcapSocket = null;
+        window.mcapSocket = null;
     }
 };
 
@@ -440,59 +448,5 @@ function showModal(topics) {
         return;
     }
 
-    modalDetails.innerHTML = `
-        <div class="mb-4">
-            <h3 class="text-xl font-semibold text-gray-800">File Details</h3>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-            ${Object.entries(topics).map(([topic, details]) => `
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="font-medium text-gray-800 mb-2">${topic}</div>
-                    <div class="grid grid-cols-[80px,1fr] gap-y-2">
-                        <span class="text-gray-600">FPS:</span>
-                        <span class="text-gray-800">${details.average_fps !== undefined ? details.average_fps.toFixed(2) : '--'}</span>
-                        <span class="text-gray-600">Frames:</span>
-                        <span class="text-gray-800">${details.message_count !== undefined ? details.message_count : '--'}</span>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-        <div class="flex justify-end mt-6">
-            <button onclick="closeModal()" 
-                class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600">
-                CLOSE
-            </button>
-        </div>
-    `;
-
-    modal.showModal(); // Ensure the modal is shown
+    modalDetails.innerHTML = `<div>No details available.</div>`;
 }
-window.showModal = showModal;
-
-function closeModal() {
-    const modal = document.getElementById('myModal');
-    if (modal) modal.close();
-}
-window.closeModal = closeModal;
-
-// Register callbacks for cache updates
-if (window.serviceCache) {
-    window.serviceCache.registerUpdateCallback(checkReplayStatus);
-    window.serviceCache.registerUpdateCallback(updateQuickStatus);
-
-    // Clean up callbacks when page is unloaded
-    window.addEventListener('beforeunload', () => {
-        window.serviceCache.unregisterUpdateCallback(checkReplayStatus);
-        window.serviceCache.unregisterUpdateCallback(updateQuickStatus);
-    });
-} else {
-    console.warn('Service cache not initialized yet');
-    // Try to register callbacks when service cache becomes available
-    const checkServiceCache = setInterval(() => {
-        if (window.serviceCache) {
-            window.serviceCache.registerUpdateCallback(checkReplayStatus);
-            window.serviceCache.registerUpdateCallback(updateQuickStatus);
-            clearInterval(checkServiceCache);
-        }
-    }, 100);
-} 
