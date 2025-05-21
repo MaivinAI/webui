@@ -285,7 +285,7 @@ window.showMcapDialog = async function () {
                     <div style="overflow-x:auto; width:100%;">
                         <table style="width:100%; border-collapse:separate; border-spacing:0 0.5rem; font-size:1.05rem;">
                             <thead>
-                                <tr style="text-align:left; color:#fff; background:#23272f;">
+                                <tr style="text-align:left; color:#222; background:#f3f4f6;">
                                     <th style="padding:0.5rem 0.5rem;">Play</th>
                                     <th style="padding:0.5rem 0.5rem;">File Name</th>
                                     <th style="padding:0.5rem 0.5rem;">Size</th>
@@ -298,16 +298,21 @@ window.showMcapDialog = async function () {
                     const date = file.created ? new Date(file.created) : null;
                     const dateStr = date ? date.toLocaleDateString() : '--';
                     const timeStr = date ? date.toLocaleTimeString() : '';
+                    const isCurrentlyPlaying = window.currentPlayingFile === file.name && window.isPlaying;
                     return `
-                                    <tr style="background:#23272f; border-radius:0.5rem;">
+                                    <tr style="background:#fff; border-radius:0.5rem; color:#222;">
                                         <td style="padding:0.5rem 0.5rem; text-align:center;">
-                                            <button class="mcap-btn mcap-btn-gray" title="Play" onclick="playMcap('${file.name}')">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M8 5v14l11-7z"/></svg>
+                                            <button class="mcap-btn ${isCurrentlyPlaying ? 'mcap-btn-red' : 'mcap-btn-blue'}" title="${isCurrentlyPlaying ? 'Stop' : 'Play'}" onclick="togglePlayMcap('${file.name}', '${dirName}')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;">
+                                                    ${isCurrentlyPlaying
+                            ? '<rect x="7" y="7" width="10" height="10" rx="2"/>'
+                            : '<path d="M8 5v14l11-7z"/>'}
+                                                </svg>
                                             </button>
                                         </td>
-                                        <td style="padding:0.5rem 0.5rem; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#fff; font-weight:600;">${file.name}</td>
-                                        <td style="padding:0.5rem 0.5rem; color:#b0b0b0;">${file.size} MB</td>
-                                        <td style="padding:0.5rem 0.5rem; color:#b0b0b0;">${dateStr} <span style='color:#888;'>${timeStr}</span></td>
+                                        <td style="padding:0.5rem 0.5rem; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#222; font-weight:600;">${file.name}</td>
+                                        <td style="padding:0.5rem 0.5rem; color:#555;">${file.size} MB</td>
+                                        <td style="padding:0.5rem 0.5rem; color:#555;">${dateStr} <span style='color:#888;'>${timeStr}</span></td>
                                         <td style="padding:0.5rem 0.5rem; text-align:center;">
                                             <div style="display:flex; gap:0.5rem; justify-content:center; align-items:center;">
                                                 <button class="mcap-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)}, ${JSON.stringify({ name: file.name, size: file.size })})'>
@@ -403,10 +408,85 @@ window.hideMcapDialog = function () {
     document.head.appendChild(style);
 })();
 
-window.playMcap = function (fileName) {
-    // Implement MCAP playback functionality
-    console.log('Playing MCAP file:', fileName);
-    // Add your MCAP playback logic here
+window.togglePlayMcap = function (fileName, directory, options = null) {
+    if (!window.isPlaying) window.isPlaying = false;
+    if (!window.currentPlayingFile) window.currentPlayingFile = null;
+    const refreshTable = () => {
+        if (typeof showMcapDialog === 'function') showMcapDialog();
+        else if (typeof listMcapFiles === 'function') listMcapFiles();
+    };
+    if (window.isPlaying && window.currentPlayingFile === fileName) {
+        fetch('/config/replay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: "replay", MCAP: "", IGNORE_TOPICS: "" })
+        })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                return response.text();
+            })
+            .then(() => {
+                return fetch('/replay-end', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file: fileName, directory: directory })
+                });
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                return response.text();
+            })
+            .then(() => {
+                window.isPlaying = false;
+                window.currentPlayingFile = null;
+                refreshTable();
+            })
+            .catch(error => {
+                console.error('Error stopping replay:', error);
+                alert(`Error stopping replay: ${error.message}`);
+                refreshTable();
+            });
+    } else if (!window.isPlaying) {
+        fetch('/config/replay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fileName: "replay",
+                MCAP: `${directory}/${fileName}`,
+                IGNORE_TOPICS: ""
+            })
+        })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                return response.text();
+            })
+            .then(() => {
+                return fetch('/replay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file: fileName,
+                        directory: directory,
+                        dataSource: 'mcap',
+                        model: 'mcap'
+                    })
+                });
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                return response.text();
+            })
+            .then(() => {
+                window.isPlaying = true;
+                window.currentPlayingFile = fileName;
+                refreshTable();
+            })
+            .catch(error => {
+                console.error('Error starting replay:', error);
+                alert(`Error starting replay: ${error.message}`);
+                refreshTable();
+            });
+    }
 };
 
 function deleteFile(fileName, directory) {
@@ -477,7 +557,7 @@ function showModal(topics, fileInfo = {}) {
                 totalFrames += Number(value) || 0;
             }
             if (key.toLowerCase() === 'video length' || key.toLowerCase() === 'video_length') {
-                totalDuration += Number(value) || 0;
+                totalDuration = Number(value) || 0;
             }
         });
     });
@@ -494,15 +574,16 @@ function showModal(topics, fileInfo = {}) {
             .fd-summary-copy { background: none; border: none; color: #1976d2; cursor: pointer; font-size: 1.1rem; margin-left: 0.25rem; }
             .fd-summary-copy:hover { color: #0d47a1; }
             .fd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
-            .fd-topic-card { background: #f7fafc; border-radius: 0.75rem; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); transition: box-shadow 0.2s, transform 0.2s; position: relative; }
+            .fd-topic-card { background: #f7fafc; border-radius: 0.75rem; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); transition: box-shadow 0.2s, transform 0.2s; position: relative; color: #222; }
             .fd-topic-card:hover { box-shadow: 0 4px 16px rgba(25, 118, 210, 0.10); transform: translateY(-2px) scale(1.01); }
             .fd-topic-title { font-weight: 600; color: #222; margin-bottom: 0.75rem; font-size: 1.08rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .fd-topic-title[title] { cursor: help; }
-            .fd-topic-table { width: 100%; font-size: 1.05rem; color: #222; }
+            .fd-topic-table { width: 100%; font-size: 1.05rem; color: #222; background: transparent; }
             .fd-topic-table td { padding: 0.15rem 0.5rem 0.15rem 0; }
             .fd-key { color: #555; font-weight: 500; }
             .fd-value { color: #222; text-align: right; }
             .fd-sticky-footer { position: sticky; bottom: 0; background: #fff; padding-top: 2rem; margin-top: 2rem; display: flex; justify-content: flex-end; z-index: 10; }
+            dialog#myModal, dialog#myModal * { background: #f8fafc !important; color: #222 !important; }
             @media (max-width: 639px) {
                 .fd-summary-card { flex-direction: column; align-items: flex-start; gap: 1.2rem; padding: 1.2rem 1rem; }
                 .fd-header { font-size: 1.3rem; }
