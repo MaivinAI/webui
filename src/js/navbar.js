@@ -30,31 +30,29 @@ function createNavbar(pageTitle) {
                         </button>
                     </div>
                     <!-- Mode Indicator with Tooltip -->
-                    <div id="modeIndicator" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2">
-                        <span id="modeText">Loading...</span>
+                    <div class="flex flex-col items-center">
+                        <div id="modeIndicator" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2 cursor-pointer relative" title="Show Service Status">
+                            <span id="modeText">Loading...</span>
+                            <span class="mode-tooltip absolute left-1/2 -translate-x-1/2 top-110% mt-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 pointer-events-none transition-opacity">Show Service Status</span>
+                        </div>
+                        <div id="quickStatusBar" class="mt-1 text-xs flex items-center gap-2"></div>
                     </div>
                     <!-- Quick Status Container -->
                     <div id="statusContainer" class="relative flex items-center gap-2">
-                        <div class="service-info-btn-wrapper relative">
-                            <!-- Info Button for Service Status (moved before gear) -->
-                            <button class="btn btn-ghost btn-circle service-info-btn" title="Service Info" onclick="showServiceStatus()">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                            </button>
-                            <!-- Quick Status Tooltip -->
-                            <div id="serviceStatusTooltip" class="hidden absolute" style="">
-                                <div id="quickStatusContent" class="text-sm">
-                                    Loading status...
-                                </div>
+                        <!-- Quick Status Tooltip (still present for service status dialog) -->
+                        <div id="serviceStatusTooltip" class="hidden absolute" style="">
+                            <div id="quickStatusContent" class="text-sm">
+                                Loading status...
                             </div>
                         </div>
-                        <!-- Settings Gear Button (outside .relative) -->
-                        <button class="btn btn-ghost btn-circle" onclick="window.location.href='/settings'">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </button>
                     </div>
+                    <!-- Settings Button -->
+                    <a href="/settings" class="btn btn-ghost btn-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </a>
                 </div>
             </div>
         </nav>
@@ -133,6 +131,29 @@ function createNavbar(pageTitle) {
         #modeIndicator {
             transition: all 0.3s ease;
             white-space: nowrap;
+            cursor: pointer;
+            position: relative;
+        }
+        #modeIndicator .mode-tooltip {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 110%;
+            margin-top: 0.5rem;
+            background: #111827;
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 10;
+            transition: opacity 0.2s;
+        }
+        #modeIndicator:hover .mode-tooltip,
+        #modeIndicator:focus .mode-tooltip {
+            opacity: 1;
         }
 
         .navbar-end .btn-circle svg {
@@ -310,6 +331,16 @@ function initNavbar(pageTitle) {
         if (window.serviceCache) {
             window.serviceCache.registerUpdateCallback(updateUIFromCache);
         }
+
+        // Make modeIndicator clickable to open service status
+        const modeIndicator = document.getElementById('modeIndicator');
+        if (modeIndicator) {
+            modeIndicator.addEventListener('click', function () {
+                if (typeof showServiceStatus === 'function') {
+                    showServiceStatus();
+                }
+            });
+        }
     }, 0);
 }
 
@@ -443,4 +474,4 @@ function ensureFileDetailsModal() {
         dialog.innerHTML = '<div id="modalDetails"></div>';
         document.body.appendChild(dialog);
     }
-} 
+}
