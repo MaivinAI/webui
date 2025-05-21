@@ -31,9 +31,17 @@ function createNavbar(pageTitle) {
                     </div>
                     <!-- Mode Indicator with Tooltip -->
                     <div class="flex flex-col items-center">
-                        <div id="modeIndicator" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2 cursor-pointer relative" title="Show Service Status">
+                        <div id="modeIndicator" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 flex items-center gap-2 cursor-pointer relative">
                             <span id="modeText">Loading...</span>
-                            <span class="mode-tooltip absolute left-1/2 -translate-x-1/2 top-110% mt-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 pointer-events-none transition-opacity">Show Service Status</span>
+                            <div class="mode-tooltip-custom absolute left-1/2 -translate-x-1/2 mt-4 px-4 py-3 rounded-lg bg-white text-black text-sm opacity-0 pointer-events-none transition-opacity min-w-[220px] z-50 shadow-lg border border-gray-200" style="box-shadow: 0 4px 16px rgba(0,0,0,0.10); top: 2.5rem;">
+                                <div class="font-semibold mb-2">Service Status</div>
+                                <div id="modeTooltipContent" class="mb-2 flex items-center gap-2">
+                                    Loading services...
+                                </div>
+                                <div>
+                                    <a id="modeTooltipDetailsLink" href="#" class="text-blue-600 hover:underline flex items-center gap-1">Click for more details <span style="font-size:1.1em">&#8594;</span></a>
+                                </div>
+                            </div>
                         </div>
                         <div id="quickStatusBar" class="mt-1 text-xs flex items-center gap-2"></div>
                     </div>
@@ -293,7 +301,6 @@ function initNavbar(pageTitle) {
             }
         });
 
-        // Initialize service cache if not already initialized
         if (window.serviceCache && !window.serviceCache.isInitialized) {
             window.serviceCache.startBackgroundUpdates();
         } else if (!window.serviceCache) {
@@ -307,14 +314,13 @@ function initNavbar(pageTitle) {
             }, 100);
         }
 
-        // Initial status check using cached data
         const updateUIFromCache = () => {
             if (!window.serviceCache) return;
 
             const serviceStatuses = window.serviceCache.serviceStatuses;
             const replayStatus = window.serviceCache.replayStatus;
 
-            // Update UI with cached data immediately
+
             if (serviceStatuses) {
                 updateQuickStatus();
             }
@@ -324,22 +330,70 @@ function initNavbar(pageTitle) {
             checkRecordingStatus();
         };
 
-        // Update UI immediately with cached data
         updateUIFromCache();
 
-        // Register for updates when new data arrives
         if (window.serviceCache) {
             window.serviceCache.registerUpdateCallback(updateUIFromCache);
         }
-
-        // Make modeIndicator clickable to open service status
         const modeIndicator = document.getElementById('modeIndicator');
         if (modeIndicator) {
-            modeIndicator.addEventListener('click', function () {
+            const tooltip = modeIndicator.querySelector('.mode-tooltip-custom');
+            let tooltipHover = false;
+            let indicatorHover = false;
+
+            function showTooltip() {
+                updateModeTooltipCustom();
+                tooltip.style.opacity = '1';
+                tooltip.style.pointerEvents = 'auto';
+            }
+            function hideTooltip() {
+                tooltip.style.opacity = '0';
+                tooltip.style.pointerEvents = 'none';
+            }
+
+            modeIndicator.addEventListener('mouseenter', function () {
+                indicatorHover = true;
+                showTooltip();
+            });
+            modeIndicator.addEventListener('mouseleave', function () {
+                indicatorHover = false;
+                setTimeout(() => {
+                    if (!tooltipHover && !indicatorHover) hideTooltip();
+                }, 50);
+            });
+            tooltip.addEventListener('mouseenter', function () {
+                tooltipHover = true;
+                showTooltip();
+            });
+            tooltip.addEventListener('mouseleave', function () {
+                tooltipHover = false;
+                setTimeout(() => {
+                    if (!tooltipHover && !indicatorHover) hideTooltip();
+                }, 50);
+            });
+            if (window.serviceCache) {
+                window.serviceCache.registerUpdateCallback(() => {
+                    if (indicatorHover || tooltipHover) {
+                        updateModeTooltipCustom();
+                    }
+                });
+            }
+            modeIndicator.addEventListener('click', function (e) {
+                // Prevent click on the link from firing twice
+                if (e.target.closest('#modeTooltipDetailsLink')) return;
                 if (typeof showServiceStatus === 'function') {
                     showServiceStatus();
                 }
             });
+            const detailsLink = tooltip.querySelector('#modeTooltipDetailsLink');
+            if (detailsLink) {
+                detailsLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (typeof showServiceStatus === 'function') {
+                        showServiceStatus();
+                    }
+                });
+            }
         }
     }, 0);
 }
@@ -473,5 +527,49 @@ function ensureFileDetailsModal() {
         dialog.className = 'bg-white rounded-lg shadow-lg p-6 w-[600px]';
         dialog.innerHTML = '<div id="modalDetails"></div>';
         document.body.appendChild(dialog);
+    }
+}
+
+function updateModeTooltipCustom() {
+    if (!window.serviceCache) return;
+    const tooltipContent = document.getElementById('modeTooltipContent');
+    if (!tooltipContent) return;
+    const serviceStatuses = window.serviceCache.serviceStatuses;
+    console.log('serviceStatuses:', serviceStatuses); // DEBUG LOG
+    if (!serviceStatuses) {
+        tooltipContent.innerHTML = '<span>Loading services...</span>';
+        return;
+    }
+    if (Array.isArray(serviceStatuses)) {
+        const allRunning = serviceStatuses.every(s => (typeof s.status === 'string' ? s.status : s.status?.status) === 'running');
+        if (allRunning) {
+            tooltipContent.innerHTML = '<span style="color:#22c55e;font-size:1.2em;">●</span> <span class="text-green-700">All Services Running</span>';
+        } else {
+            let html = '';
+            serviceStatuses.filter(s => (typeof s.status === 'string' ? s.status : s.status?.status) !== 'running').forEach(s => {
+                const serviceName = (s.service || s.name || 'Unknown')
+                    .replace('.service', '')
+                    .split('-')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                let statusStr = typeof s.status === 'string' ? s.status : (s.status?.status || JSON.stringify(s.status));
+                statusStr = statusStr.charAt(0).toUpperCase() + statusStr.slice(1);
+                html += `<div class="flex items-center gap-2"><span style=\"color:#ef4444;font-size:1.2em;\">●</span> <span class=\"text-red-700\">${serviceName}: ${statusStr}</span></div>`;
+            });
+            tooltipContent.innerHTML = html || '<span>Unknown status</span>';
+        }
+    } else {
+        const allRunning = Object.values(serviceStatuses).every(s => s === 'running');
+        if (allRunning) {
+            tooltipContent.innerHTML = '<span style="color:#22c55e;font-size:1.2em;">●</span> <span class="text-green-700">All Services Running</span>';
+        } else {
+            let html = '';
+            for (const [service, status] of Object.entries(serviceStatuses)) {
+                if (status !== 'running') {
+                    html += `<div class=\"flex items-center gap-2\"><span style=\"color:#ef4444;font-size:1.2em;\">●</span> <span class=\"text-red-700\">${service}: ${status}</span></div>`;
+                }
+            }
+            tooltipContent.innerHTML = html || '<span>Unknown status</span>';
+        }
     }
 }
