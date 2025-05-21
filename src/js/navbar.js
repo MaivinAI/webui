@@ -268,6 +268,8 @@ function initNavbar(pageTitle) {
 
             const serviceStatuses = window.serviceCache.serviceStatuses;
             const replayStatus = window.serviceCache.replayStatus;
+
+            // Update UI with cached data immediately
             if (serviceStatuses) {
                 updateQuickStatus();
             }
@@ -277,18 +279,13 @@ function initNavbar(pageTitle) {
             checkRecordingStatus();
         };
 
-        // Update UI immediately with cached data if available
+        // Update UI immediately with cached data
         updateUIFromCache();
 
-        // Set up interval for status checks
-        const statusCheckInterval = setInterval(() => {
-            updateUIFromCache();
-        }, 1000); // Check more frequently but use cached data
-
-        // Clean up interval when page is unloaded
-        window.addEventListener('beforeunload', () => {
-            clearInterval(statusCheckInterval);
-        });
+        // Register for updates when new data arrives
+        if (window.serviceCache) {
+            window.serviceCache.registerUpdateCallback(updateUIFromCache);
+        }
     }, 0);
 }
 

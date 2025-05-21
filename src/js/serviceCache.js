@@ -1,6 +1,7 @@
 // Service status cache implementation
 const CACHE_DURATION = 2000; // 2 seconds cache duration
 const BACKGROUND_UPDATE_INTERVAL = 5000; // 5 seconds between background updates
+const STORAGE_KEY = 'serviceCacheData';
 
 // Initialize the cache object immediately
 window.serviceCache = {
@@ -21,6 +22,39 @@ window.serviceCache = {
     registerUpdateCallback: () => { },
     unregisterUpdateCallback: () => { }
 };
+
+// Load cached data from localStorage
+function loadFromStorage() {
+    try {
+        const cachedData = localStorage.getItem(STORAGE_KEY);
+        if (cachedData) {
+            const { deviceData, serviceStatuses, replayStatus, lastUpdate } = JSON.parse(cachedData);
+            window.serviceCache.deviceData = deviceData;
+            window.serviceCache.serviceStatuses = serviceStatuses;
+            window.serviceCache.replayStatus = replayStatus;
+            window.serviceCache.lastUpdate = lastUpdate;
+            return true;
+        }
+    } catch (error) {
+        console.error('Error loading from localStorage:', error);
+    }
+    return false;
+}
+
+// Save cache data to localStorage
+function saveToStorage() {
+    try {
+        const dataToStore = {
+            deviceData: window.serviceCache.deviceData,
+            serviceStatuses: window.serviceCache.serviceStatuses,
+            replayStatus: window.serviceCache.replayStatus,
+            lastUpdate: window.serviceCache.lastUpdate
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToStore));
+    } catch (error) {
+        console.error('Error saving to localStorage:', error);
+    }
+}
 
 // Function to perform background updates
 async function performBackgroundUpdate() {
@@ -59,6 +93,9 @@ async function performBackgroundUpdate() {
             window.serviceCache.replayStatus = replayStatus;
             window.serviceCache.lastUpdate = Date.now();
 
+            // Save to localStorage when data changes
+            saveToStorage();
+
             // Notify all registered callbacks
             window.serviceCache.updateCallbacks.forEach(callback => callback());
         }
@@ -70,8 +107,12 @@ async function performBackgroundUpdate() {
 // Function to start background updates
 function startBackgroundUpdates() {
     if (!window.serviceCache.backgroundUpdateTimer) {
+        // Load cached data first
+        loadFromStorage();
+
         // Perform initial update immediately
         performBackgroundUpdate();
+
         // Then set up interval for subsequent updates
         window.serviceCache.backgroundUpdateTimer = setInterval(performBackgroundUpdate, BACKGROUND_UPDATE_INTERVAL);
         window.serviceCache.isInitialized = true;
@@ -132,6 +173,7 @@ function clearCache() {
         backgroundUpdateTimer: null,
         updateCallbacks: new Set()
     };
+    localStorage.removeItem(STORAGE_KEY);
     startBackgroundUpdates();
 }
 
