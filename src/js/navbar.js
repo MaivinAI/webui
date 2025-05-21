@@ -557,7 +557,6 @@ function updateModeTooltipCustom() {
     const tooltipContent = document.getElementById('modeTooltipContent');
     if (!tooltipContent) return;
     const serviceStatuses = window.serviceCache.serviceStatuses;
-    console.log('serviceStatuses:', serviceStatuses); // DEBUG LOG
     if (!serviceStatuses) {
         tooltipContent.innerHTML = '<span>Loading services...</span>';
         return;

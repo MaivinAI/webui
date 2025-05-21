@@ -234,7 +234,7 @@ window.showMcapDialog = async function () {
         dialog.id = 'mcapDialog';
         dialog.className = 'modal';
         dialog.innerHTML = `
-            <div class="modal-box" style="padding: 0; min-width: 350px; max-width: 400px;">
+            <div class="modal-box" style="padding: 0; min-width: 60vw; max-width: 90vw; width: 100%;">
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem 0.5rem 1.5rem; border-bottom: 1px solid #eee;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span class="font-bold text-lg">MCAP Files</span>
@@ -243,7 +243,7 @@ window.showMcapDialog = async function () {
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: #888;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
-                <div id="mcapDialogContent" class="space-y-2" style="padding: 1rem 1.5rem 1.5rem 1.5rem;"></div>
+                <div id="mcapDialogContent" class="space-y-2" style="padding: 1rem 1.5rem 1.5rem 1.5rem; max-height: 70vh; overflow-y: auto;"></div>
             </div>
         `;
         document.body.appendChild(dialog);
@@ -280,30 +280,52 @@ window.showMcapDialog = async function () {
                     return;
                 }
                 files.sort((a, b) => new Date(b.created) - new Date(a.created));
+                const dirName = data.dir_name || '';
                 content.innerHTML = `
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        ${files.map(file => `
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                                <button class="mcap-btn mcap-btn-gray" style="margin-right: 0.75rem;" title="Play" onclick="playMcap('${file.name}')">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M8 5v14l11-7z"/></svg>
-                                </button>
-                                <div style="flex: 1; min-width: 0;">
-                                    <div style="font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${file.name}</div>
-                                    <div style="font-size: 0.95em; color: #888;">${file.size} MB &bull; ${file.average_video_length ? file.average_video_length.toFixed(2) : '--'}s</div>
-                                </div>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button class="mcap-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)})'>
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                                    </button>
-                                    <a class="mcap-btn mcap-btn-green" href="/download/${data.dir_name || ''}/${file.name}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                                    </a>
-                                    <button class="mcap-btn mcap-btn-red" title="Delete" onclick="deleteFile('${file.name}', '${data.dir_name || ''}')">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('')}
+                    <div style="overflow-x:auto; width:100%;">
+                        <table style="width:100%; border-collapse:separate; border-spacing:0 0.5rem; font-size:1.05rem;">
+                            <thead>
+                                <tr style="text-align:left; color:#fff; background:#23272f;">
+                                    <th style="padding:0.5rem 0.5rem;">Play</th>
+                                    <th style="padding:0.5rem 0.5rem;">File Name</th>
+                                    <th style="padding:0.5rem 0.5rem;">Size</th>
+                                    <th style="padding:0.5rem 0.5rem;">Date/Time</th>
+                                    <th style="padding:0.5rem 0.5rem; text-align:center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${files.map(file => {
+                    const date = file.created ? new Date(file.created) : null;
+                    const dateStr = date ? date.toLocaleDateString() : '--';
+                    const timeStr = date ? date.toLocaleTimeString() : '';
+                    return `
+                                    <tr style="background:#23272f; border-radius:0.5rem;">
+                                        <td style="padding:0.5rem 0.5rem; text-align:center;">
+                                            <button class="mcap-btn mcap-btn-gray" title="Play" onclick="playMcap('${file.name}')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M8 5v14l11-7z"/></svg>
+                                            </button>
+                                        </td>
+                                        <td style="padding:0.5rem 0.5rem; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#fff; font-weight:600;">${file.name}</td>
+                                        <td style="padding:0.5rem 0.5rem; color:#b0b0b0;">${file.size} MB</td>
+                                        <td style="padding:0.5rem 0.5rem; color:#b0b0b0;">${dateStr} <span style='color:#888;'>${timeStr}</span></td>
+                                        <td style="padding:0.5rem 0.5rem; text-align:center;">
+                                            <div style="display:flex; gap:0.5rem; justify-content:center; align-items:center;">
+                                                <button class="mcap-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)})'>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                                </button>
+                                                <a class="mcap-btn mcap-btn-green" href="/download/${dirName}/${file.name}" title="Download">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                                </a>
+                                                <button class="mcap-btn mcap-btn-red" title="Delete" onclick="deleteFile('${file.name}', '${dirName}')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    `;
+                }).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 `;
             } catch (error) {
@@ -448,5 +470,66 @@ function showModal(topics) {
         return;
     }
 
-    modalDetails.innerHTML = `<div>No details available.</div>`;
+    // Responsive grid: 2 columns on desktop, 1 on mobile
+    modalDetails.innerHTML = `
+        <style>
+            @media (min-width: 640px) {
+                .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+            }
+            @media (max-width: 639px) {
+                .details-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+            }
+            .details-card { background: #f7fafc; border-radius: 0.75rem; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+            .details-topic { font-weight: 600; color: #222; margin-bottom: 0.75rem; font-size: 1.08rem; }
+            .details-table { width: 100%; font-size: 1.05rem; color: #222; }
+            .details-table td { padding: 0.15rem 0.5rem 0.15rem 0; }
+            .details-key { color: #555; font-weight: 500; }
+            .details-value { color: #222; text-align: right; }
+        </style>
+        <div class="mb-4">
+            <h3 class="text-xl font-semibold text-gray-800">File Details</h3>
+        </div>
+        <div class="details-grid">
+            ${Object.entries(topics).map(([topic, details]) => {
+        // Prepare filtered details: rename 'Message Count' to 'Frames', remove 'Video Length' and 'video_length'
+        const filtered = Object.entries(details)
+            .filter(([key]) => key.toLowerCase() !== 'video length' && key.toLowerCase() !== 'video_length')
+            .map(([key, value]) => {
+                let displayKey = key;
+                if (key.toLowerCase() === 'message count' || key.toLowerCase() === 'message_count') displayKey = 'Frames';
+                return [displayKey, value];
+            });
+        return `
+                    <div class="details-card">
+                        <div class="details-topic">${topic}</div>
+                        <table class="details-table">
+                            <tbody>
+                                ${filtered.map(([key, value]) => `
+                                    <tr>
+                                        <td class="details-key">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
+                                        <td class="details-value">${typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 3 }) : value}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+    }).join('')}
+        </div>
+        <div class="flex justify-end mt-6">
+            <button id="closeModalBtn" class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600">
+                CLOSE
+            </button>
+        </div>
+    `;
+
+    // Make the close button work
+    setTimeout(() => {
+        const closeBtn = document.getElementById('closeModalBtn');
+        if (closeBtn) {
+            closeBtn.onclick = () => { modal.close(); };
+        }
+    }, 0);
+
+    modal.showModal(); // Ensure the modal is shown
 }
