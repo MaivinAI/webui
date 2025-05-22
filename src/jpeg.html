@@ -8,8 +8,10 @@
     <title>JPEG Viewer</title>
     <link href="./css/styles.css" rel="stylesheet">
     <link href="./css/full.css" rel="stylesheet" type="text/css" />
-
     <script src="./js/tailwind.js"></script>
+    <script src="./js/serviceCache.js"></script>
+    <script src="./js/navbar.js"></script>
+    <script src="./js/status.js"></script>
     <style>
         body {
             margin: 0;
@@ -22,134 +24,22 @@
             align-items: center;
             height: 100%;
         }
-
-        .navbar-end .btn-circle svg {
-            width: 24px;
-            height: 24px;
-            color: white;
-        }
-
-        .navbar-end .btn-circle:hover svg {
-            color: #e2e8f0;
-        }
-
-        .navbar-end .menu {
-            display: flex;
-            align-items: center;
-        }
-
-        .navbar-end .btn-circle.btn-lg {
-            width: 3rem;
-            height: 3rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .navbar-end .btn-circle.btn-lg svg {
-            margin-top: -5px;
-            width: 25px;
-            height: 25px;
-            color: white;
-        }
-
-        .navbar-end .btn-circle.btn-lg:hover svg {
-            color: #e2e8f0;
-        }
     </style>
 </head>
 
 <body>
-    <header class="navbar bg-base-100">
-        <div class="navbar-start">
-            <a href="/" class="btn btn-ghost text-xl"><img class="header__logo me-2" src="assets/auzoneLogo.svg"
-                    alt=""></a>
-        </div>
-        <div class="navbar-center">
-            <span class="text-xl">JPEG</span>
-        </div>
-        <div class="navbar-end">
-            <ul class="menu menu-horizontal px-1">
-                </li>
-                <a href="/settings" class="btn btn-ghost btn-circle btn-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="w-8 h-8">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </a>
-            </ul>
-        </div>
-    </header>
-    <!-- <h1>JPEG Viewer</h1> -->
+    <script>
+        window.addEventListener('load', () => {
+            initNavbar('JPEG');
+        });
+    </script>
     <main>
         <p id="timeout" style="color: red;"></p>
         <div id="image-container">
             <img id="jpeg-image" src="" alt="JPEG Image">
         </div>
     </main>
-
-    <!-- Import CdrReader for deserialization -->
-    <script type="module">
-        import { CdrReader } from './js/Cdr.js';
-
-        const imageElement = document.getElementById('jpeg-image');
-        let timeoutId;
-
-        function resetTimeout() {
-            clearTimeout(timeoutId);
-            document.getElementById('timeout').innerText = '';
-            timeoutId = setTimeout(() => {
-                document.getElementById('timeout').innerText = 'Timeout: Verify if camera service is running';
-            }, 15000);
-        }
-
-        let socket = new WebSocket('/rt/camera/jpeg');
-
-        socket.binaryType = 'arraybuffer'; // Receive data as ArrayBuffer
-
-        socket.onopen = function (event) {
-            console.log('WebSocket connection opened');
-            resetTimeout();
-        };
-
-        socket.onmessage = function (event) {
-            const arrayBuffer = event.data;
-            const dataView = new DataView(arrayBuffer);
-            const reader = new CdrReader(dataView);
-
-            try {
-                const header_stamp_sec = reader.uint32(); // Read header.stamp.sec
-                const header_stamp_nsec = reader.uint32(); // Read header.stamp.nsec
-                const header_frame_id = reader.string(); // Read header.frame_id
-                const format = reader.string(); // Read header.format
-
-                const data_length = reader.uint32(); // Read data length
-                const image_data = arrayBuffer.slice(reader.offset, reader.offset + data_length); // Read image data
-                const blob = new Blob([image_data], { type: 'image/jpeg' });
-                const imageUrl = URL.createObjectURL(blob);
-                imageElement.src = imageUrl;
-
-                resetTimeout();
-            } catch (error) {
-                console.error("Failed to deserialize image data:", error);
-            }
-        };
-
-        socket.onerror = function (error) {
-            console.error(`WebSocket error: ${error}`);
-            document.getElementById('timeout').innerText = 'Error: WebSocket connection failed';
-        };
-
-        socket.onclose = function (event) {
-            console.log('WebSocket connection closed');
-            document.getElementById('timeout').innerText = 'WebSocket connection closed';
-        };
-
-        // Initialize timeout when the script loads
-        resetTimeout();
-    </script>
+    <script type="module" src="./js/jpeg.js"></script>
 </body>
 
 </html>

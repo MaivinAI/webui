@@ -627,7 +627,7 @@ function createBox(box) {
     const radarMesh = new THREE.Mesh(geometry, material.clone());
 
     // Position boxes according to the current frame
-    const x = box.center_x;
+    const x = -box.center_x;
     const y = box.center_y;
     const z = box.distance;
 
