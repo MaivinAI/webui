@@ -13,28 +13,32 @@ export default async function h264stream(socketUrl, width, height, fps, onMessag
     texture_canvas.needsUpdate = false
     let start = performance.now()
     function handleVideoFrame(videoFrame, ctx, canvas, texture_canvas, timing, start, onMessage) {
-        const width = videoFrame.displayWidth || videoFrame.codedWidth || 0;
-        const height = videoFrame.displayHeight || videoFrame.codedHeight || 0;
+        try {
+            const width = videoFrame.displayWidth || videoFrame.codedWidth || 0;
+            const height = videoFrame.displayHeight || videoFrame.codedHeight || 0;
 
-        if (width > 0 && height > 0) {
-            if (canvas.width !== width || canvas.height !== height) {
-                canvas.width = width;
-                canvas.height = height;
-                console.log('Canvas resized to:', width, height);
+            if (width > 0 && height > 0) {
+                if (canvas.width !== width || canvas.height !== height) {
+                    canvas.width = width;
+                    canvas.height = height;
+                    console.log('Canvas resized to:', width, height);
+                }
+                ctx.drawImage(videoFrame, 0, 0);
+
+                texture_canvas.dispose();
+                texture_canvas.needsUpdate = true;
+
+                if (onMessage) {
+                    timing.decode_time = performance.now() - start;
+                    onMessage(timing);
+                }
+            } else {
+                console.warn('Invalid video frame dimensions:', width, height);
             }
-            ctx.drawImage(videoFrame, 0, 0);
-
-            texture_canvas.dispose();
-            texture_canvas.needsUpdate = true;
-
-            if (onMessage) {
-                timing.decode_time = performance.now() - start;
-                onMessage(timing);
-            }
-        } else {
-            console.warn('Invalid video frame dimensions:', width, height);
+        } finally {
+            // Ensure VideoFrame is closed even if an error occurs
+            videoFrame.close();
         }
-        videoFrame.close();
     }
 
     let h264decoder = new VideoDecoder({
@@ -112,4 +116,3 @@ export default async function h264stream(socketUrl, width, height, fps, onMessag
     };
     return texture_canvas;
 }
-
