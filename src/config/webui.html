@@ -406,13 +406,6 @@
                 <input type="checkbox" id="use_box" name="use_box">
             </div>
 
-            <!-- Occlusion Filter Limit -->
-            <div class="form-group">
-                <label for="occlusion_filter_limit_degrees">Occlusion Filter Limit Degrees:</label>
-                <input type="number" id="occlusion_filter_limit_degrees" name="occlusion_filter_limit_degrees"
-                    placeholder="20">
-            </div>
-
             <!-- Grid Draw PCD Options -->
             <div class="form-group">
                 <label for="grid_draw_pcd">Grid Draw PCD:</label>
@@ -563,7 +556,6 @@
                     document.getElementById('window_length').value = data.WINDOW_LENGTH || 18;
                     document.getElementById('bin_threshold').value = data.BIN_THRESHOLD || 3;
                     document.getElementById('use_box').checked = data.USE_BOX === 'true' || data.USE_BOX === true;
-                    document.getElementById('occlusion_filter_limit_degrees').value = data.OCCLUSION_FILTER_LIMIT_DEGREES || 20;
                     document.getElementById('grid_draw_pcd').value = data.GRID_DRAW_PCD.replace(/"/g, '') || 'rcs';
                     document.getElementById('combined_grid_draw_pcd').value = data.COMBINED_GRID_DRAW_PCD.replace(/"/g, '') || 'disabled';
                     document.getElementById('combined_camera_draw_pcd').value = data.COMBINED_CAMERA_DRAW_PCD.replace(/"/g, '') || 'disabled';
@@ -611,7 +603,6 @@
                 WINDOW_LENGTH: document.getElementById('window_length').value,
                 BIN_THRESHOLD: document.getElementById('bin_threshold').value,
                 USE_BOX: document.getElementById('use_box').checked.toString(),
-                OCCLUSION_FILTER_LIMIT_DEGREES: document.getElementById('occlusion_filter_limit_degrees').value,
                 GRID_DRAW_PCD: document.getElementById('grid_draw_pcd').value,
                 COMBINED_GRID_DRAW_PCD: document.getElementById('combined_grid_draw_pcd').value,
                 COMBINED_CAMERA_DRAW_PCD: document.getElementById('combined_camera_draw_pcd').value,
