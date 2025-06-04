@@ -424,6 +424,9 @@ function initNavbar(pageTitle) {
 
 let navbarRecordingFile = null;
 
+window.wasRecording = false;
+window.lowDiskDialogShown = false;
+
 function checkRecordingStatus() {
     fetch('/recorder-status')
         .then(response => {
@@ -435,21 +438,47 @@ function checkRecordingStatus() {
         .then(statusText => {
             const isRecording = statusText.trim() === "Recorder is running";
             if (isRecording) {
+                window.lowDiskDialogShown = false;
                 return fetch('/current-recording')
                     .then(response => response.json())
                     .then(data => {
                         navbarRecordingFile = data.status === "recording" ? data.filename : null;
-                        updateRecordingUI(isRecording);
+                        updateRecordingUI(true);
+                        window.wasRecording = true;
                     });
             } else {
                 navbarRecordingFile = null;
-                updateRecordingUI(false);
+                fetch('/check-storage')
+                    .then(resp => resp.ok ? resp.json() : null)
+                    .then(info => {
+                        let availValue = 0;
+                        if (info && info.available_space && typeof info.available_space === 'object') {
+                            const availObj = info.available_space;
+                            const unit = (availObj.unit || '').toUpperCase();
+                            if (unit === 'GB') availValue = availObj.value;
+                            else if (unit === 'MB') availValue = availObj.value / 1024;
+                            else if (unit === 'TB') availValue = availObj.value * 1024;
+                            else availValue = availObj.value; // fallback
+                        }
+                        updateRecordingUI(false);
+                        if (window.wasRecording && availValue < 0.5 && !window.lowDiskDialogShown) {
+                            showLowDiskDialog('Recording stopped because there is less than 500MB free disk space.');
+                            window.lowDiskDialogShown = true;
+                            updateRecordingButtonForStorage();
+                        }
+                        window.wasRecording = false;
+                    })
+                    .catch(() => {
+                        updateRecordingUI(false);
+                        window.wasRecording = false;
+                    });
             }
         })
         .catch(error => {
             console.error('Error checking recording status:', error);
             navbarRecordingFile = null;
             updateRecordingUI(false);
+            window.wasRecording = false;
         });
 }
 
@@ -604,13 +633,20 @@ async function updateRecordingButtonForStorage() {
         if (!response.ok) return;
         const info = await response.json();
         const availObj = info.available_space;
-        const availValue = availObj && typeof availObj === 'object' ? availObj.value : 0;
+        let availValueGB = 0;
+        if (availObj && typeof availObj === 'object') {
+            const unit = (availObj.unit || '').toUpperCase();
+            if (unit === 'GB') availValueGB = availObj.value;
+            else if (unit === 'MB') availValueGB = availObj.value / 1024;
+            else if (unit === 'TB') availValueGB = availObj.value * 1024;
+            else availValueGB = availObj.value; // fallback
+        }
         const recordingButton = document.getElementById('recordingButton');
         if (recordingButton) {
-            if (availValue < 2) {
+            if (availValueGB < 0.5) {
                 recordingButton.classList.add('opacity-50');
                 recordingButton.setAttribute('disabled', 'disabled');
-                recordingButton.title = 'Not enough space to record (less than 2GB free)';
+                recordingButton.title = 'Not enough space to record (less than 500MB free)';
             } else {
                 recordingButton.classList.remove('opacity-50');
                 recordingButton.removeAttribute('disabled');
@@ -620,6 +656,32 @@ async function updateRecordingButtonForStorage() {
     } catch (e) { }
 }
 
-// Call on page load and periodically
 setTimeout(updateRecordingButtonForStorage, 0);
 setInterval(updateRecordingButtonForStorage, 30000);
+
+function showLowDiskDialog(message) {
+    let dialog = document.getElementById('lowDiskDialog');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'lowDiskDialog';
+        dialog.style.padding = '0';
+        dialog.innerHTML = `
+            <form method="dialog" style="margin:0;">
+                <div style="padding: 2rem 2.5rem; background: #181a2a; color: #fff; border-radius: 1rem; min-width: 320px; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18); display: flex; flex-direction: column; align-items: center;">
+                    <div style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: #facc15; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg style='width:1.5em;height:1.5em;vertical-align:-0.2em;' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' stroke='#facc15' stroke-width='2' fill='none'/><path d='M12 8v4m0 4h.01' stroke='#facc15' stroke-width='2' stroke-linecap='round'/></svg>
+                        Low Disk Space
+                    </div>
+                    <div style="margin-bottom: 1.5rem; text-align: center; font-size: 1.08rem; color: #fff;">${message}</div>
+                    <button type="submit" style="background: #fab010; color: #222; font-weight: 600; border: none; border-radius: 0.5rem; padding: 0.6rem 2.2rem; font-size: 1.08rem; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">OK</button>
+                </div>
+            </form>
+        `;
+        document.body.appendChild(dialog);
+    } else {
+        dialog.querySelector('div[style*="margin-bottom: 1.5rem;"]').textContent = message;
+    }
+    dialog.showModal();
+}
+
+setInterval(checkRecordingStatus, 10000);
