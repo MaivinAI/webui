@@ -394,10 +394,27 @@ window.showMcapDialog = async function () {
         const availUnit = availObj && typeof availObj === 'object' ? availObj.unit : '';
         const totalValue = totalObj && typeof totalObj === 'object' ? totalObj.value : 0;
         const totalUnit = totalObj && typeof totalObj === 'object' ? totalObj.unit : '';
-        let percent = totalValue > 0 ? (availValue / totalValue) * 100 : 0;
-        let usedPercent = 100 - percent;
-        let usedValue = totalValue - availValue;
-        let barColor = usedPercent < 60 ? '#22c55e' : usedPercent < 80 ? '#facc15' : '#dc2626';
+        let availValueConverted = availValue;
+        if (availUnit !== totalUnit) {
+            const unitMap = { MB: 1, GB: 1024, TB: 1024 * 1024 };
+            const aUnit = availUnit.toUpperCase();
+            const tUnit = totalUnit.toUpperCase();
+            if (unitMap[aUnit] && unitMap[tUnit]) {
+                availValueConverted = availValue * (unitMap[aUnit] / unitMap[tUnit]);
+            } else {
+                console.warn('Unknown disk space units, cannot convert', { availUnit, totalUnit });
+                availValueConverted = 0;
+            }
+        }
+        let usedValue = totalValue - availValueConverted;
+        if (usedValue < 0) {
+            console.log('Available space is greater than total space. Clamping usedValue to 0.', { totalValue, availValue: availValueConverted, usedValue });
+            usedValue = 0;
+        }
+        let usedPercent = totalValue > 0 ? (usedValue / totalValue) * 100 : 0;
+        if (usedPercent < 0) usedPercent = 0;
+        if (usedPercent > 100) usedPercent = 100;
+        let barColor = usedPercent < 60 ? '#22c55e' : usedPercent < 80 ? '#fab010' : '#dc2626';
         const warning = usedPercent > 80 ? `<span class='ml-1 text-red-600 font-semibold' title='Low disk space'>⚠️</span>` : '';
 
         el.innerHTML = `
