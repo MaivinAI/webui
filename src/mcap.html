@@ -400,23 +400,13 @@
     </script>
     <main class="container mt-8">
         <div class="card">
-            <h2 class="text-2xl font-bold mb-4">Recording Controls</h2>
+            <h2 class="text-2xl font-bold mb-4">Playback Controls</h2>
             <div class="recording-controls">
-                <div class="flex items-center space-x-8">
-                    <div class="flex items-center">
-                        <span id="recordingStatus" class="font-bold mr-2">Recording</span>
-                        <label class="switch mr-4">
-                            <input type="checkbox" id="recordingToggle">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="flex items-center">
-                        <button id="liveToggle" class="btn btn-primary" onclick="switchToLive()"
-                            title="Pressing the button will restart the device in live mode, regardless of its current mode.">
-                            Live Mode
-                        </button>
-                    </div>
+                <div class="flex items-center">
+                    <button id="liveToggle" class="btn btn-primary" onclick="switchToLive()"
+                        title="Pressing the button will restart the device in live mode, regardless of its current mode.">
+                        Live Mode
+                    </button>
                 </div>
                 <div class="recording-indicator" id="recordingIndicator"></div>
             </div>
@@ -748,14 +738,6 @@
                     alert('An error occurred during the upload process.');
                 });
         }
-
-        document.getElementById('recordingToggle').addEventListener('change', function () {
-            if (this.checked) {
-                startRecording();
-            } else {
-                stopRecording();
-            }
-        });
 
         function checkRecordingStatus() {
             fetch('/recorder-status')
