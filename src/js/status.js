@@ -243,6 +243,7 @@ window.showMcapDialog = async function () {
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: #888;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
+                <div id="mcapStorageInfoBar" class="p-4"></div>
                 <div id="mcapDialogContent" class="space-y-2" style="padding: 1rem 1.5rem 1.5rem 1.5rem; max-height: 70vh; overflow-y: auto;"></div>
             </div>
         `;
@@ -275,38 +276,59 @@ window.showMcapDialog = async function () {
                     return;
                 }
                 const files = data.files || [];
-                if (files.length === 0) {
-                    content.innerHTML = `<div class="text-gray-600 text-center py-4">No MCAP files found</div>`;
-                    return;
-                }
-                files.sort((a, b) => new Date(b.created) - new Date(a.created));
                 const dirName = data.dir_name || '';
-                content.innerHTML = `
-                    <div style="overflow-x:auto; width:100%;">
-                        <table style="width:100%; border-collapse:separate; border-spacing:0 0.5rem; font-size:1.05rem;">
-                            <thead>
-                                <tr style="text-align:left; color:#222; background:#f3f4f6;">
-                                    <th style="padding:0.5rem 0.5rem;">Play</th>
-                                    <th style="padding:0.5rem 0.5rem;">File Name</th>
-                                    <th style="padding:0.5rem 0.5rem;">Size</th>
-                                    <th style="padding:0.5rem 0.5rem;">Date/Time</th>
-                                    <th style="padding:0.5rem 0.5rem; text-align:center;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${files.map(file => {
-                    const date = file.created ? new Date(file.created) : null;
-                    const dateStr = date ? date.toLocaleDateString() : '--';
-                    const timeStr = date ? date.toLocaleTimeString() : '';
-                    const isCurrentlyPlaying = window.currentPlayingFile === file.name && window.isPlaying;
-                    return `
+                // Add a custom CSS rule to force no margin/padding above the directory label
+                if (!document.getElementById('mcap-dir-label-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'mcap-dir-label-style';
+                    style.innerHTML = `
+                        .mcap-dir-label { margin-top: 0 !important; padding-top: 0 !important; margin-bottom: 0.25rem !important; font-size: 1.08rem !important; font-weight: 500 !important; }
+                        #mcapDialogContent { margin-top: 0 !important; padding-top: 0 !important; }
+                    `;
+                    document.head.appendChild(style);
+                }
+                const header = dialog.querySelector('div[style*="border-bottom"]');
+                if (header) {
+                    header.style.paddingBottom = '0';
+                    header.style.marginBottom = '0';
+                }
+                content.style.marginTop = '0';
+                content.style.paddingTop = '0';
+                let dirLabelHTML = '';
+                if (dirName) {
+                    dirLabelHTML = `<div class='mcap-dir-label text-xs text-gray-500' style='margin-left:2px;'>Directory: <span class='font-mono text-gray-700'>${dirName}</span></div>`;
+                }
+                let tableHTML = '';
+                if (files.length === 0) {
+                    tableHTML = `<div class=\"text-gray-600 text-center py-4\">No MCAP files found</div>`;
+                } else {
+                    files.sort((a, b) => new Date(b.created) - new Date(a.created));
+                    tableHTML = `
+                        <div style=\"overflow-x:auto; width:100%;\">
+                            <table style=\"width:100%; border-collapse:separate; border-spacing:0 0.5rem; font-size:1.05rem;\">
+                                <thead>
+                                    <tr style=\"text-align:left; color:#222; background:#f3f4f6;\">
+                                        <th style=\"padding:0.5rem 0.5rem;\">Play</th>
+                                        <th style=\"padding:0.5rem 0.5rem;\">File Name</th>
+                                        <th style=\"padding:0.5rem 0.5rem;\">Size</th>
+                                        <th style=\"padding:0.5rem 0.5rem;\">Date/Time</th>
+                                        <th style=\"padding:0.5rem 0.5rem; text-align:center;\">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${files.map(file => {
+                        const date = file.created ? new Date(file.created) : null;
+                        const dateStr = date ? date.toLocaleDateString() : '--';
+                        const timeStr = date ? date.toLocaleTimeString() : '';
+                        const isCurrentlyPlaying = window.currentPlayingFile === file.name && window.isPlaying;
+                        return `
                                     <tr style="background:#fff; border-radius:0.5rem; color:#222;">
                                         <td style="padding:0.5rem 0.5rem; text-align:center;">
                                             <button class="mcap-btn ${isCurrentlyPlaying ? 'mcap-btn-red' : 'mcap-btn-blue'}" title="${isCurrentlyPlaying ? 'Stop' : 'Play'}" onclick="togglePlayMcap('${file.name}', '${dirName}')">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;">
                                                     ${isCurrentlyPlaying
-                            ? '<rect x="7" y="7" width="10" height="10" rx="2"/>'
-                            : '<path d="M8 5v14l11-7z"/>'}
+                                ? '<rect x="7" y="7" width="10" height="10" rx="2"/>'
+                                : '<path d="M8 5v14l11-7z"/>'}
                                                 </svg>
                                             </button>
                                         </td>
@@ -328,11 +350,14 @@ window.showMcapDialog = async function () {
                                         </td>
                                     </tr>
                                     `;
-                }).join('')}
+                    }).join('')}
                             </tbody>
                         </table>
                     </div>
                 `;
+                }
+                content.innerHTML = `${dirLabelHTML}${tableHTML}`;
+                return;
             } catch (error) {
                 content.innerHTML = `<div class="text-red-600">Error parsing server response</div>`;
             }
@@ -344,6 +369,60 @@ window.showMcapDialog = async function () {
     } catch (error) {
         content.innerHTML = `<div class="text-red-600">Error connecting to server</div>`;
     }
+
+    // --- Storage Info Bar Logic ---
+    async function fetchStorageInfo() {
+        try {
+            const response = await fetch(`/check-storage`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching storage info:', error);
+            return null;
+        }
+    }
+    function renderStorageBar(info) {
+        const el = document.getElementById('mcapStorageInfoBar');
+        if (!el) return;
+        if (!info || !info.exists) {
+            return;
+        }
+        const availObj = info.available_space;
+        const totalObj = info.total_space;
+        const availValue = availObj && typeof availObj === 'object' ? availObj.value : 0;
+        const availUnit = availObj && typeof availObj === 'object' ? availObj.unit : '';
+        const totalValue = totalObj && typeof totalObj === 'object' ? totalObj.value : 0;
+        const totalUnit = totalObj && typeof totalObj === 'object' ? totalObj.unit : '';
+        let percent = totalValue > 0 ? (availValue / totalValue) * 100 : 0;
+        let usedPercent = 100 - percent;
+        let usedValue = totalValue - availValue;
+        let barColor = usedPercent < 60 ? '#22c55e' : usedPercent < 80 ? '#facc15' : '#dc2626';
+        const warning = usedPercent > 80 ? `<span class='ml-1 text-red-600 font-semibold' title='Low disk space'>⚠️</span>` : '';
+
+        el.innerHTML = `
+          <div class="flex items-center gap-2 bg-white/90 rounded-full px-3 py-1 border border-gray-200 shadow-sm"
+               style="position:absolute; top:18px; right:60px; z-index:10; min-width:180px; max-width:320px; font-size:13px;"
+               title="${usedValue.toFixed(2)} ${availUnit} used of ${totalValue.toFixed(2)} ${totalUnit} total">
+            <span class="inline-flex items-center justify-center bg-blue-100 text-blue-700 rounded-full" style="width:1.1rem;height:1.1rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:0.95rem;height:0.95rem;">
+                <path d="M3 3v18h18V7.83L16.17 3H3zm2 2h10v4H5V5zm0 6h14v8H5v-8zm2 2v4h2v-4H7zm4 0v4h2v-4h-2z"/>
+              </svg>
+            </span>
+            <span class="font-semibold text-gray-800">Disk</span>
+            <span class="text-gray-500" style="font-size:11px;">(${usedPercent.toFixed(1)}% used)</span>
+            <div class="relative h-2 w-20 bg-gray-200 rounded-full overflow-hidden mx-1">
+              <div style="width:${usedPercent}%;background:${barColor};transition:width 0.7s cubic-bezier(.4,2,.6,1);" class="absolute left-0 top-0 h-2 rounded-full"></div>
+            </div>
+            <span class="text-[11px] font-medium text-gray-700" style="white-space:nowrap;">
+              <span style="color:${barColor};font-weight:600;">${usedValue.toFixed(2)} ${availUnit}</span>
+            </span>
+          </div>
+        `;
+    }
+    const info = await fetchStorageInfo();
+    renderStorageBar(info);
+    // --- End Storage Info Bar Logic ---
 };
 
 window.hideMcapDialog = function () {
@@ -362,49 +441,49 @@ window.hideMcapDialog = function () {
 (function () {
     const style = document.createElement('style');
     style.innerHTML = `
-        .mcap-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.25rem;
-            height: 2.25rem;
-            border-radius: 9999px;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            transition: background 0.15s;
-            font-size: 1rem;
-            padding: 0;
-        }
-        .mcap-btn-gray {
-            background: #f3f4f6;
-            color: #888;
-        }
-        .mcap-btn-gray:hover {
-            background: #e5e7eb;
-        }
-        .mcap-btn-green {
-            background: #34a853;
-            color: #fff;
-        }
-        .mcap-btn-green:hover {
-            background: #2d9248;
-        }
-        .mcap-btn-red {
-            background: #dc3545;
-            color: #fff;
-        }
-        .mcap-btn-red:hover {
-            background: #b52a37;
-        }
-        .mcap-btn-blue {
-            background: #4285f4;
-            color: #fff;
-        }
-        .mcap-btn-blue:hover {
-            background: #1a73e8;
-        }
-    `;
+    .mcap-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 9999px;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        transition: background 0.15s;
+        font-size: 1rem;
+        padding: 0;
+    }
+    .mcap-btn-gray {
+        background: #f3f4f6;
+        color: #888;
+    }
+    .mcap-btn-gray:hover {
+        background: #e5e7eb;
+    }
+    .mcap-btn-green {
+        background: #34a853;
+        color: #fff;
+    }
+    .mcap-btn-green:hover {
+        background: #2d9248;
+    }
+    .mcap-btn-red {
+        background: #dc3545;
+        color: #fff;
+    }
+    .mcap-btn-red:hover {
+        background: #b52a37;
+    }
+    .mcap-btn-blue {
+        background: #4285f4;
+        color: #fff;
+    }
+    .mcap-btn-blue:hover {
+        background: #1a73e8;
+    }
+`;
     document.head.appendChild(style);
 })();
 
@@ -563,40 +642,34 @@ function showModal(topics, fileInfo = {}) {
     });
     const durationStr = totalDuration > 0 ? `${totalDuration.toLocaleString(undefined, { maximumFractionDigits: 2 })} s` : '--';
     modalDetails.innerHTML = `
-        <style>
-            .fd-header { font-size: 2rem; font-weight: 700; color: #1a237e; margin-bottom: 0.5rem; letter-spacing: -1px; }
-            .fd-subheader { font-size: 1.1rem; color: #374151; margin-bottom: 1.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90vw; }
-            .fd-summary-card { background: #e9f1fb; border-radius: 1rem; padding: 1.5rem 2rem; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 2.5rem 2.5rem; align-items: center; justify-content: flex-start; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-            .fd-summary-item { display: flex; align-items: center; gap: 0.5rem; min-width: 160px; }
-            .fd-summary-icon { font-size: 1.3rem; color: #1976d2; }
-            .fd-summary-label { color: #3b3b3b; font-weight: 500; margin-right: 0.25rem; }
-            .fd-summary-value { color: #1a237e; font-weight: 600; font-size: 1.08rem; }
-            .fd-summary-copy { background: none; border: none; color: #1976d2; cursor: pointer; font-size: 1.1rem; margin-left: 0.25rem; }
-            .fd-summary-copy:hover { color: #0d47a1; }
-            .fd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
-            .fd-topic-card { background: #f7fafc; border-radius: 0.75rem; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); transition: box-shadow 0.2s, transform 0.2s; position: relative; color: #222; }
-            .fd-topic-card:hover { box-shadow: 0 4px 16px rgba(25, 118, 210, 0.10); transform: translateY(-2px) scale(1.01); }
-            .fd-topic-title { font-weight: 600; color: #222; margin-bottom: 0.75rem; font-size: 1.08rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            .fd-topic-title[title] { cursor: help; }
-            .fd-topic-table { width: 100%; font-size: 1.05rem; color: #222; background: transparent; }
-            .fd-topic-table td { padding: 0.15rem 0.5rem 0.15rem 0; }
-            .fd-key { color: #555; font-weight: 500; }
-            .fd-value { color: #222; text-align: right; }
-            .fd-sticky-footer { position: sticky; bottom: 0; background: #fff; padding-top: 2rem; margin-top: 2rem; display: flex; justify-content: flex-end; z-index: 10; }
-            dialog#myModal, dialog#myModal * { background: #f8fafc !important; color: #222 !important; }
-            @media (max-width: 639px) {
-                .fd-summary-card { flex-direction: column; align-items: flex-start; gap: 1.2rem; padding: 1.2rem 1rem; }
-                .fd-header { font-size: 1.3rem; }
-            }
-        </style>
-        <div class="fd-header">File Details</div>
-        <div class="fd-summary-card">
-            <div class="fd-summary-item"><span class="fd-summary-icon">📄</span><span class="fd-summary-label">File Name:</span> <span class="fd-summary-value" title="${fileName}">${fileName.length > 24 ? fileName.slice(0, 21) + '...' : fileName}</span> <button class="fd-summary-copy" title="Copy file name" onclick="navigator.clipboard.writeText('${fileName.replace(/'/g, '\'')}')">⧉</button></div>
-            <div class="fd-summary-item"><span class="fd-summary-icon">📦</span><span class="fd-summary-label">File Size:</span> <span class="fd-summary-value">${fileSize}</span></div>
-            <div class="fd-summary-item"><span class="fd-summary-icon">⏱️</span><span class="fd-summary-label">Total Duration:</span> <span class="fd-summary-value">${durationStr}</span></div>
-        </div>
-        <div class="fd-grid">
-            ${Object.entries(topics).map(([topic, details]) => {
+    <style>
+        .fd-header { font-size: 2rem; font-weight: 700; color: #1a237e; margin-bottom: 0.5rem; letter-spacing: -1px; }
+        .fd-subheader { font-size: 1.1rem; color: #374151; margin-bottom: 1.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90vw; }
+        .fd-summary-card { background: #e9f1fb; border-radius: 1rem; padding: 1.5rem 2rem; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 2.5rem 2.5rem; align-items: center; justify-content: flex-start; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .fd-summary-item { display: flex; align-items: center; gap: 0.5rem; min-width: 160px; }
+        .fd-summary-icon { font-size: 1.3rem; color: #1976d2; }
+        .fd-summary-label { color: #3b3b3b; font-weight: 500; margin-right: 0.25rem; }
+        .fd-summary-value { color: #1a237e; font-weight: 600; font-size: 1.08rem; }
+        .fd-summary-copy { background: none; border: none; color: #1976d2; cursor: pointer; font-size: 1.1rem; margin-left: 0.25rem; }
+        .fd-summary-copy:hover { color: #0d47a1; }
+        .fd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+        .fd-topic-card { background: #f7fafc; border-radius: 0.75rem; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); transition: box-shadow 0.2s, transform 0.2s; position: relative; color: #222; }
+        .fd-topic-card:hover { box-shadow: 0 4px 16px rgba(25, 118, 210, 0.10); transform: translateY(-2px) scale(1.01); }
+        .fd-topic-title { font-weight: 600; color: #222; margin-bottom: 0.75rem; font-size: 1.08rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .fd-topic-title[title] { cursor: help; }
+        .fd-topic-table { width: 100%; font-size: 1.05rem; color: #222; background: transparent; }
+        .fd-topic-table td { padding: 0.15rem 0.5rem 0.15rem 0; }
+        .fd-key { color: #555; font-weight: 500; }
+        .fd-value { color: #222; text-align: right; }
+    </style>
+    <div class="fd-header">File Details</div>
+    <div class="fd-summary-card">
+        <div class="fd-summary-item"><span class="fd-summary-icon">📄</span><span class="fd-summary-label">File Name:</span> <span class="fd-summary-value" title="${fileName}">${fileName.length > 24 ? fileName.slice(0, 21) + '...' : fileName}</span> <button class="fd-summary-copy" title="Copy file name" onclick="navigator.clipboard.writeText('${fileName.replace(/'/g, '\'')}')">⧉</button></div>
+        <div class="fd-summary-item"><span class="fd-summary-icon">📦</span><span class="fd-summary-label">File Size:</span> <span class="fd-summary-value">${fileSize}</span></div>
+        <div class="fd-summary-item"><span class="fd-summary-icon">⏱️</span><span class="fd-summary-label">Total Duration:</span> <span class="fd-summary-value">${durationStr}</span></div>
+    </div>
+    <div class="fd-grid">
+        ${Object.entries(topics).map(([topic, details]) => {
         const filtered = Object.entries(details)
             .filter(([key]) => key.toLowerCase() !== 'video length' && key.toLowerCase() !== 'video_length')
             .map(([key, value]) => {
@@ -625,12 +698,12 @@ function showModal(topics, fileInfo = {}) {
                 </div>
                 `;
     }).join('')}
-        </div>
-        <div class="fd-sticky-footer">
-            <button id="closeModalBtn" class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600 text-base font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
-                CLOSE
-            </button>
-        </div>
+    </div>
+    <div class="fd-sticky-footer">
+        <button id="closeModalBtn" class="bg-[#4285f4] text-white px-4 py-2 rounded hover:bg-blue-600 text-base font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
+            CLOSE
+        </button>
+    </div>
     `;
     setTimeout(() => {
         const closeBtn = document.getElementById('closeModalBtn');

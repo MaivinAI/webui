@@ -418,6 +418,8 @@ function initNavbar(pageTitle) {
             }
         }
     }, 0);
+
+    updateRecordingButtonForStorage();
 }
 
 let navbarRecordingFile = null;
@@ -594,3 +596,30 @@ function updateModeTooltipCustom() {
         }
     }
 }
+
+// Function to check storage and update the recording button
+async function updateRecordingButtonForStorage() {
+    try {
+        const response = await fetch('/check-storage');
+        if (!response.ok) return;
+        const info = await response.json();
+        const availObj = info.available_space;
+        const availValue = availObj && typeof availObj === 'object' ? availObj.value : 0;
+        const recordingButton = document.getElementById('recordingButton');
+        if (recordingButton) {
+            if (availValue < 2) {
+                recordingButton.classList.add('opacity-50');
+                recordingButton.setAttribute('disabled', 'disabled');
+                recordingButton.title = 'Not enough space to record (less than 2GB free)';
+            } else {
+                recordingButton.classList.remove('opacity-50');
+                recordingButton.removeAttribute('disabled');
+                recordingButton.title = '';
+            }
+        }
+    } catch (e) { }
+}
+
+// Call on page load and periodically
+setTimeout(updateRecordingButtonForStorage, 0);
+setInterval(updateRecordingButtonForStorage, 30000);
