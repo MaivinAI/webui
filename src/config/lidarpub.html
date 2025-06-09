@@ -508,7 +508,7 @@
 
                 <div class="form-group">
                     <label for="target">Target Device:</label>
-                    <input type="text" id="target" name="target" value="os-122122000149.local">
+                    <input type="text" id="target" name="target" placeholder="os-xxxxxxxxxx.local">
                     <div class="comment">Hostname or IP address of the LiDAR target device</div>
                 </div>
 
@@ -919,9 +919,10 @@
                 .then(response => response.json())
                 .then(data => {
                     // Set values for all form fields
+                    console.log(data);
                     document.getElementById('log_level').value = data.RUST_LOG || 'info';
                     document.getElementById('zenoh_timeout').value = data.ZENOH_WAIT_BEFORE_DROP || '100000';
-                    document.getElementById('target').value = data.TARGET || 'os-122122000149.local';
+                    document.getElementById('target').value = (data.TARGET !== undefined && data.TARGET !== null) ? data.TARGET : '';
                     document.getElementById('lidar_mode').value = data.LIDAR_MODE || '1024x10';
                     document.getElementById('timestamp_mode').value = data.TIMESTAMP_MODE || 'ptp1588';
                     document.getElementById('tf_vec').value = Array.isArray(data.TF_VEC) ? data.TF_VEC.join(' ') : (data.TF_VEC || '0 0 -0.19');
