@@ -445,21 +445,21 @@ window.showMcapDialog = async function () {
         const warning = usedPercent > 80 ? `<span class='ml-1 text-red-600 font-semibold' title='Low disk space'>⚠️</span>` : '';
 
         el.innerHTML = `
-      <div class=\"flex items-center gap-2 bg-white/90 rounded-full px-3 py-1 border border-gray-200 shadow-sm\"
-           style=\"min-width:220px; max-width:320px; font-size:13px; flex-shrink:0;\"
-           title=\"${usedValue.toFixed(2)} ${availUnit} used of ${totalValue.toFixed(2)} ${totalUnit} total\">
-        <span class=\"inline-flex items-center justify-center bg-blue-100 text-blue-700 rounded-full\" style=\"width:1.1rem;height:1.1rem;\">
-          <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" style=\"width:0.95rem;height:0.95rem;\">
-            <path d=\"M3 3v18h18V7.83L16.17 3H3zm2 2h10v4H5V5zm0 6h14v8H5v-8zm2 2v4h2v-4H7zm4 0v4h2v-4h-2z\"/>
+      <div class="flex items-center gap-2 bg-white/90 rounded-full px-3 py-1 border border-gray-200 shadow-sm"
+           style="min-width:220px; max-width:320px; font-size:13px; flex-shrink:0;"
+           title="${usedValue.toFixed(2)} ${availUnit} used of ${totalValue.toFixed(2)} ${totalUnit} total">
+        <span class="inline-flex items-center justify-center bg-blue-100 text-blue-700 rounded-full" style="width:1.1rem;height:1.1rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:0.95rem;height:0.95rem;">
+            <path d="M3 3v18h18V7.83L16.17 3H3zm2 2h10v4H5V5zm0 6h14v8H5v-8zm2 2v4h2v-4H7zm4 0v4h2v-4h-2z"/>
           </svg>
         </span>
-        <span class=\"font-semibold text-gray-800\">Disk</span>
-        <span class=\"text-gray-500\" style=\"font-size:11px;\">(${usedPercent.toFixed(1)}% used)</span>
-        <div class=\"relative h-2 w-20 bg-gray-200 rounded-full overflow-hidden mx-1\">
-          <div style=\"width:${usedPercent}%;background:${barColor};transition:width 0.7s cubic-bezier(.4,2,.6,1);\" class=\"absolute left-0 top-0 h-2 rounded-full\"></div>
+        <span class="font-semibold text-gray-800">Disk</span>
+        <span class="text-gray-500" style="font-size:11px;">(${usedPercent.toFixed(1)}% used)</span>
+        <div class="relative h-2 w-20 bg-gray-200 rounded-full overflow-hidden mx-1">
+          <div style="width:${usedPercent}%;background:${barColor};transition:width 0.7s cubic-bezier(.4,2,.6,1);" class="absolute left-0 top-0 h-2 rounded-full"></div>
         </div>
-        <span class=\"text-[11px] font-medium text-gray-700\" style=\"white-space:nowrap;\">
-          <span style=\"color:${barColor};font-weight:600;\">${usedValue.toFixed(2)} ${availUnit}</span>
+        <span class="text-[11px] font-medium text-gray-700" style="white-space:nowrap;">
+          <span style="color:${barColor};font-weight:600;">${usedValue.toFixed(2)} ${availUnit}</span>
         </span>
       </div>
     `;
