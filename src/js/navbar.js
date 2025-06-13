@@ -336,12 +336,11 @@ function initNavbar(pageTitle) {
             }, 100);
         }
 
-        const updateUIFromCache = () => {
+        const updateUIFromCache = async () => {
             if (!window.serviceCache) return;
 
             const serviceStatuses = window.serviceCache.serviceStatuses;
             const replayStatus = window.serviceCache.replayStatus;
-
 
             if (serviceStatuses) {
                 updateQuickStatus();
@@ -450,7 +449,7 @@ function checkRecordingStatus() {
                 navbarRecordingFile = null;
                 fetch('/check-storage')
                     .then(resp => resp.ok ? resp.json() : null)
-                    .then(info => {
+                    .then(async info => {
                         let availValue = 0;
                         if (info && info.available_space && typeof info.available_space === 'object') {
                             const availObj = info.available_space;
@@ -522,21 +521,18 @@ function showRecCheckmark() {
 }
 
 function startRecording() {
-    console.log("startRecording called");
     fetch('/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
     })
         .then(response => {
-            console.log("/start response status:", response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error ${response.status}`);
             }
             return response.text();
         })
         .then(text => {
-            console.log('Recording started:', text);
             navbarRecordingFile = null;
             updateRecordingUI(true);
             showRecCheckmark();
@@ -549,19 +545,16 @@ function startRecording() {
 }
 
 function stopRecording() {
-    console.log("stopRecording called");
     fetch('/stop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
     })
         .then(response => {
-            console.log("/stop response status:", response.status);
             if (!response.ok) throw new Error(`HTTP error ${response.status}`);
             return response.text();
         })
         .then(text => {
-            console.log('Recording stopped:', text);
             navbarRecordingFile = null;
             updateRecordingUI(false);
             showRecCheckmark();
@@ -630,9 +623,10 @@ function updateModeTooltipCustom() {
 async function updateRecordingButtonForStorage() {
     try {
         const response = await fetch('/check-storage');
-        if (!response.ok) return;
-        const info = await response.json();
-        const availObj = info.available_space;
+        const data = await response.json();
+        const recordingButton = document.getElementById('recordingButton');
+
+        const availObj = data.available_space;
         let availValueGB = 0;
         if (availObj && typeof availObj === 'object') {
             const unit = (availObj.unit || '').toUpperCase();
@@ -641,16 +635,15 @@ async function updateRecordingButtonForStorage() {
             else if (unit === 'TB') availValueGB = availObj.value * 1024;
             else availValueGB = availObj.value; // fallback
         }
-        const recordingButton = document.getElementById('recordingButton');
         if (recordingButton) {
-            if (availValueGB < 0.5) {
-                recordingButton.classList.add('opacity-50');
-                recordingButton.setAttribute('disabled', 'disabled');
-                recordingButton.title = 'Not enough space to record (less than 500MB free)';
-            } else {
+            if (availObj === null || typeof availObj !== 'object' || availValueGB >= 0.5) {
                 recordingButton.classList.remove('opacity-50');
                 recordingButton.removeAttribute('disabled');
                 recordingButton.title = '';
+            } else {
+                recordingButton.classList.add('opacity-50');
+                recordingButton.setAttribute('disabled', 'disabled');
+                recordingButton.title = 'Not enough space to record (less than 500MB free)';
             }
         }
     } catch (e) { }
