@@ -115,36 +115,92 @@ window.showServiceStatus = async function () {
         const content = document.getElementById('serviceStatusContent');
         content.innerHTML = '';
 
-        serviceStatuses.forEach(({ service, status, enabled }) => {
+        // Fix header and button alignment without DOM hierarchy error
+        let headerRow = document.getElementById('fd-service-header-row');
+        if (!headerRow) {
+            const h3 = dialog.querySelector('h3');
+            headerRow = document.createElement('div');
+            headerRow.id = 'fd-service-header-row';
+            headerRow.style.display = 'flex';
+            headerRow.style.justifyContent = 'space-between';
+            headerRow.style.alignItems = 'center';
+            headerRow.style.marginBottom = '1.2rem';
+            headerRow.innerHTML = `
+                <span class="font-bold text-lg">Service Status</span>
+                <a href="/config/services" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-800 font-medium shadow-none hover:bg-gray-200 transition-all text-sm fd-hom-all-services-btn" style="margin-left:auto;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 6.75h15m-15 4.5h15m-15 4.5h15" /></svg>
+                    Go to All Services
+                </a>
+            `;
+            if (h3 && h3.parentNode) {
+                h3.parentNode.replaceChild(headerRow, h3);
+            }
+        }
+        // Remove the old button from content
+        content.innerHTML = '';
+        // SVGs for enabled/disabled
+        const enabledIcon = `<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`;
+        const disabledIcon = `<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
+        serviceStatuses.forEach(({ service, status, enabled }, idx) => {
             const isRunning = status === 'running';
             const isEnabled = enabled === 'enabled';
-
-            const statusColor = isRunning ? 'bg-green-500' : 'bg-red-500';
-            const enabledColor = isEnabled ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600';
-
+            const enabledBadge = isEnabled
+                ? `<span class="fd-enabled-badge inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold text-xs gap-1 self-start" style="width:auto;align-self:flex-start;">${enabledIcon} Enabled</span>`
+                : `<span class="fd-disabled-badge inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold text-xs gap-1 self-start" style="width:auto;align-self:flex-start;">${disabledIcon} Disabled</span>`;
             const serviceName = service
                 .replace('.service', '')
                 .split('-')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
-
+            let settingsUrl = null;
+            let hasSettings = false;
+            console.log(service)
+            if (service !== "navsat" && service !== "imu") {
+                settingsUrl = `/config/${service}`;
+                hasSettings = true;
+            }
+            const gearIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 fd-hom-settings-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.01c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.01 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.01 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.01c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.572-1.01c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.01-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.01-2.572c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.01z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
             content.innerHTML += `
-                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div class="flex flex-col gap-1">
-                        <span class="text-sm font-medium text-gray-900">${serviceName}</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full ${enabledColor} inline-flex items-center w-fit">
-                            ${isEnabled ? 'Enabled' : 'Disabled'}
-                        </span>
+                <div class="fd-hom-service-row flex items-center px-3 py-3 bg-white rounded-2xl shadow-sm mb-3 border border-gray-100 group" style="min-height:56px;">
+                    <div class="flex flex-col flex-grow min-w-0 justify-center">
+                        <span class="text-base font-semibold text-gray-900">${serviceName}</span>
+                        ${enabledBadge}
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm font-medium ${isRunning ? 'text-green-600' : 'text-red-600'}">
+                    <div class="flex items-center gap-3 ml-auto">
+                        <span class="fd-hom-status-badge ${isRunning ? 'fd-hom-status-running' : 'fd-hom-status-stopped'} inline-flex items-center px-3 py-1 rounded-full font-medium text-xs">
+                            <span class="fd-hom-status-dot ${isRunning ? 'bg-green-400' : 'bg-red-400'} w-2 h-2 rounded-full inline-block mr-1"></span>
                             ${isRunning ? 'Running' : 'Stopped'}
                         </span>
-                        <div class="w-2 h-2 rounded-full ${statusColor}"></div>
+                        ${hasSettings
+                    ? `<a href="${settingsUrl}" title="Go to ${serviceName} Settings" class="fd-hom-settings-btn ml-2 flex items-center justify-center" target="_blank" rel="noopener">${gearIcon}</a>`
+                    : `<span class="fd-hom-settings-btn ml-2 cursor-not-allowed opacity-50 flex items-center justify-center" title="No settings available">${gearIcon}</span>`}
                     </div>
                 </div>
             `;
         });
+        // Add CSS for enabled/disabled badges
+        if (!document.getElementById('fd-service-status-style-hom-enabled-badge')) {
+            const style = document.createElement('style');
+            style.id = 'fd-service-status-style-hom-enabled-badge';
+            style.innerHTML = `
+                .fd-enabled-badge, .fd-disabled-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    border-radius: 9999px;
+                    padding: 0.08em 0.5em 0.08em 0.4em;
+                    font-size: 0.85em;
+                    font-weight: 600;
+                    min-width: 0;
+                    box-sizing: border-box;
+                    margin-top: 0.18em;
+                    width: auto !important;
+                    align-self: flex-start !important;
+                }
+                .fd-enabled-badge { background: #d1fae5 !important; color: #047857 !important; }
+                .fd-disabled-badge { background: #fee2e2 !important; color: #b91c1c !important; }
+            `;
+            document.head.appendChild(style);
+        }
     } catch (error) {
         console.error('Error fetching service status:', error);
         const content = document.getElementById('serviceStatusContent');
