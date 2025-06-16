@@ -115,36 +115,92 @@ window.showServiceStatus = async function () {
         const content = document.getElementById('serviceStatusContent');
         content.innerHTML = '';
 
-        serviceStatuses.forEach(({ service, status, enabled }) => {
+        // Fix header and button alignment without DOM hierarchy error
+        let headerRow = document.getElementById('fd-service-header-row');
+        if (!headerRow) {
+            const h3 = dialog.querySelector('h3');
+            headerRow = document.createElement('div');
+            headerRow.id = 'fd-service-header-row';
+            headerRow.style.display = 'flex';
+            headerRow.style.justifyContent = 'space-between';
+            headerRow.style.alignItems = 'center';
+            headerRow.style.marginBottom = '1.2rem';
+            headerRow.innerHTML = `
+                <span class="font-bold text-lg">Service Status</span>
+                <a href="/config/services" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-800 font-medium shadow-none hover:bg-gray-200 transition-all text-sm fd-hom-all-services-btn" style="margin-left:auto;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 6.75h15m-15 4.5h15m-15 4.5h15" /></svg>
+                    Go to All Services
+                </a>
+            `;
+            if (h3 && h3.parentNode) {
+                h3.parentNode.replaceChild(headerRow, h3);
+            }
+        }
+        // Remove the old button from content
+        content.innerHTML = '';
+        // SVGs for enabled/disabled
+        const enabledIcon = `<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`;
+        const disabledIcon = `<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
+        serviceStatuses.forEach(({ service, status, enabled }, idx) => {
             const isRunning = status === 'running';
             const isEnabled = enabled === 'enabled';
-
-            const statusColor = isRunning ? 'bg-green-500' : 'bg-red-500';
-            const enabledColor = isEnabled ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600';
-
+            const enabledBadge = isEnabled
+                ? `<span class="fd-enabled-badge inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold text-xs gap-1 self-start" style="width:auto;align-self:flex-start;">${enabledIcon} Enabled</span>`
+                : `<span class="fd-disabled-badge inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold text-xs gap-1 self-start" style="width:auto;align-self:flex-start;">${disabledIcon} Disabled</span>`;
             const serviceName = service
                 .replace('.service', '')
                 .split('-')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
-
+            let settingsUrl = null;
+            let hasSettings = false;
+            console.log(service)
+            if (service !== "navsat" && service !== "imu") {
+                settingsUrl = `/config/${service}`;
+                hasSettings = true;
+            }
+            const gearIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 fd-hom-settings-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.01c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.01 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.01 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.01c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.572-1.01c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.01-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.01-2.572c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.01z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
             content.innerHTML += `
-                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div class="flex flex-col gap-1">
-                        <span class="text-sm font-medium text-gray-900">${serviceName}</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full ${enabledColor} inline-flex items-center w-fit">
-                            ${isEnabled ? 'Enabled' : 'Disabled'}
-                        </span>
+                <div class="fd-hom-service-row flex items-center px-3 py-3 bg-white rounded-2xl shadow-sm mb-3 border border-gray-100 group" style="min-height:56px;">
+                    <div class="flex flex-col flex-grow min-w-0 justify-center">
+                        <span class="text-base font-semibold text-gray-900">${serviceName}</span>
+                        ${enabledBadge}
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm font-medium ${isRunning ? 'text-green-600' : 'text-red-600'}">
+                    <div class="flex items-center gap-3 ml-auto">
+                        <span class="fd-hom-status-badge ${isRunning ? 'fd-hom-status-running' : 'fd-hom-status-stopped'} inline-flex items-center px-3 py-1 rounded-full font-medium text-xs">
+                            <span class="fd-hom-status-dot ${isRunning ? 'bg-green-400' : 'bg-red-400'} w-2 h-2 rounded-full inline-block mr-1"></span>
                             ${isRunning ? 'Running' : 'Stopped'}
                         </span>
-                        <div class="w-2 h-2 rounded-full ${statusColor}"></div>
+                        ${hasSettings
+                    ? `<a href="${settingsUrl}" title="Go to ${serviceName} Settings" class="fd-hom-settings-btn ml-2 flex items-center justify-center" target="_blank" rel="noopener">${gearIcon}</a>`
+                    : `<span class="fd-hom-settings-btn ml-2 cursor-not-allowed opacity-50 flex items-center justify-center" title="No settings available">${gearIcon}</span>`}
                     </div>
                 </div>
             `;
         });
+        // Add CSS for enabled/disabled badges
+        if (!document.getElementById('fd-service-status-style-hom-enabled-badge')) {
+            const style = document.createElement('style');
+            style.id = 'fd-service-status-style-hom-enabled-badge';
+            style.innerHTML = `
+                .fd-enabled-badge, .fd-disabled-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    border-radius: 9999px;
+                    padding: 0.08em 0.5em 0.08em 0.4em;
+                    font-size: 0.85em;
+                    font-weight: 600;
+                    min-width: 0;
+                    box-sizing: border-box;
+                    margin-top: 0.18em;
+                    width: auto !important;
+                    align-self: flex-start !important;
+                }
+                .fd-enabled-badge { background: #d1fae5 !important; color: #047857 !important; }
+                .fd-disabled-badge { background: #fee2e2 !important; color: #b91c1c !important; }
+            `;
+            document.head.appendChild(style);
+        }
     } catch (error) {
         console.error('Error fetching service status:', error);
         const content = document.getElementById('serviceStatusContent');
@@ -239,11 +295,19 @@ window.showMcapDialog = async function () {
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span class="font-bold text-lg">MCAP Files</span>
                     </div>
-                    <button onclick="hideMcapDialog()" style="background: none; border: none; cursor: pointer; padding: 0.25rem;">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: #888;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 1.5rem; flex-shrink: 0; padding-right: 1.5rem;">
+                        <div id="mcapStorageInfoBar" style="min-width:220px; max-width:320px; font-size:13px; flex-shrink: 0;"></div>
+                        <button onclick="switchToLive()" class="group flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-400 text-white px-6 py-2 rounded-full hover:from-blue-600 hover:to-blue-500 text-base font-bold shadow focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-150" title="Switch to Live Mode (restarts device)" style="flex-shrink:0; margin-top: -8px;">
+                            <svg class="w-5 h-5 text-white group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            <span>Live Mode</span>
+                        </button>
+                        <button onclick="hideMcapDialog()" style="background: none; border: none; cursor: pointer; padding: 0.25rem; flex-shrink:0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: #888;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
                 </div>
-                <div id="mcapStorageInfoBar" class="p-4"></div>
                 <div id="mcapDialogContent" class="space-y-2" style="padding: 1rem 1.5rem 1.5rem 1.5rem; max-height: 70vh; overflow-y: auto;"></div>
             </div>
         `;
@@ -438,7 +502,7 @@ window.showMcapDialog = async function () {
 
         el.innerHTML = `
       <div class="flex items-center gap-2 bg-white/90 rounded-full px-3 py-1 border border-gray-200 shadow-sm"
-           style="position:absolute; top:18px; right:60px; z-index:10; min-width:180px; max-width:320px; font-size:13px;"
+           style="min-width:220px; max-width:320px; font-size:13px; flex-shrink:0;"
            title="${usedValue.toFixed(2)} ${availUnit} used of ${totalValue.toFixed(2)} ${totalUnit} total">
         <span class="inline-flex items-center justify-center bg-blue-100 text-blue-700 rounded-full" style="width:1.1rem;height:1.1rem;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:0.95rem;height:0.95rem;">
@@ -1055,3 +1119,79 @@ function showModal(topics, fileInfo = {}) {
     }, 0);
     modal.showModal();
 }
+
+window.switchToLive = async function () {
+    // Show loading dialog
+    let loadingDialog = document.getElementById('loadingDialog');
+    if (!loadingDialog) {
+        loadingDialog = document.createElement('dialog');
+        loadingDialog.id = 'loadingDialog';
+        loadingDialog.className = 'modal';
+        loadingDialog.innerHTML = `
+            <div class="modal-box flex flex-col items-center p-6 bg-white rounded-lg shadow-xl">
+                <span class="loading loading-spinner loading-lg text-primary mb-4"></span>
+                <p class="text-lg font-semibold text-gray-700">Switching to Live Mode...</p>
+                <p class="text-sm text-gray-500">Please wait while the system transitions.</p>
+            </div>
+        `;
+        document.body.appendChild(loadingDialog);
+    }
+    loadingDialog.showModal();
+
+    let deviceName = null;
+    try {
+        // Fetch device name
+        const response = await fetch('/config/webui/details');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        deviceName = data.DEVICE;
+        if (!deviceName) {
+            throw new Error('Device name not available');
+        }
+
+        // Request live mode
+        const liveResp = await fetch('/live-run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target: deviceName.toLowerCase() })
+        });
+        if (!liveResp.ok) {
+            throw new Error(`HTTP error! status: ${liveResp.status}`);
+        }
+
+        // Wait a bit for services to start
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        // Poll for replay status
+        let elapsed = 0;
+        const maxWait = 45000;
+        const pollInterval = 1000;
+        let transitionCheck = setInterval(async () => {
+            try {
+                const statusResponse = await fetch('/replay-status');
+                const statusText = await statusResponse.text();
+                const isReplay = statusText.trim() === "Replay is running";
+                elapsed += pollInterval;
+                if (!isReplay) {
+                    clearInterval(transitionCheck);
+                    loadingDialog.close();
+                } else if (elapsed >= maxWait) {
+                    clearInterval(transitionCheck);
+                    loadingDialog.close();
+                }
+            } catch (error) {
+                clearInterval(transitionCheck);
+                loadingDialog.close();
+            }
+        }, pollInterval);
+        setTimeout(() => {
+            clearInterval(transitionCheck);
+            loadingDialog.close();
+        }, maxWait);
+    } catch (error) {
+        loadingDialog.close();
+        alert('Error turning on all or some services but device is switched to live mode.');
+    }
+};
