@@ -12,6 +12,13 @@ async function checkReplayStatus() {
 
         const isReplay = await window.serviceCache.getReplayStatus();
 
+        // Clear localStorage state if replay is not running
+        if (!isReplay) {
+            localStorage.removeItem('mcapReplayState');
+            window.isPlaying = false;
+            window.currentPlayingFile = null;
+        }
+
         const modeIndicator = document.getElementById('modeIndicator');
         const modeText = document.getElementById('modeText');
         const loadingSpinner = modeIndicator.querySelector('svg.animate-spin');
@@ -27,7 +34,7 @@ async function checkReplayStatus() {
         else if (isReplay) {
             if (!allSensorsInactive) {
                 modeText.textContent = "Replay Mode (Degraded)";
-                modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-2";
+                modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 flex items-center gap-2";
             } else {
                 modeText.textContent = "Replay Mode";
                 modeIndicator.className = "px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-2";
@@ -291,30 +298,77 @@ window.showMcapDialog = async function () {
         dialog.className = 'modal';
         dialog.innerHTML = `
             <div class="modal-box" style="padding: 0; min-width: 60vw; max-width: 90vw; width: 100%;">
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem 0.5rem 1.5rem; border-bottom: 1px solid #eee;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span class="font-bold text-lg">MCAP Files</span>
+                <div class="mcap-header">
+                    <div class="mcap-header-left">
+                        <h2 class="mcap-title">MCAP Files</h2>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 1.5rem; flex-shrink: 0; padding-right: 1.5rem;">
-                        <div id="mcapStorageInfoBar" style="min-width:220px; max-width:320px; font-size:13px; flex-shrink: 0;"></div>
-                        <button onclick="switchToLive()" class="group flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-400 text-white px-6 py-2 rounded-full hover:from-blue-600 hover:to-blue-500 text-base font-bold shadow focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-150" title="Switch to Live Mode (restarts device)" style="flex-shrink:0; margin-top: -8px;">
-                            <svg class="w-5 h-5 text-white group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    <div class="mcap-header-right">
+                        <div id="mcapStorageInfoBar" class="mcap-storage-info"></div>
+                        <button onclick="hideMcapDialog()" class="mcap-close-btn">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
-                            <span>Live Mode</span>
-                        </button>
-                        <button onclick="hideMcapDialog()" style="background: none; border: none; cursor: pointer; padding: 0.25rem; flex-shrink:0;">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: #888;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
                 </div>
-                <div id="mcapDialogContent" class="space-y-2" style="padding: 1rem 1.5rem 1.5rem 1.5rem; max-height: 70vh; overflow-y: auto;"></div>
+
+                <div id="mcapDialogContent" class="space-y-2" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;"></div>
             </div>
         `;
         document.body.appendChild(dialog);
     }
     dialog.showModal();
     const content = document.getElementById('mcapDialogContent');
+
+    // Reset MCAP button tooltip when modal is opened
+    const mcapButton = document.getElementById('mcapDialogBtn');
+    if (mcapButton) {
+        const mcapTooltip = mcapButton.querySelector('.mcap-tooltip');
+        if (mcapTooltip) {
+            mcapTooltip.classList.remove('show');
+        }
+    }
+
+    // Synchronize replay status with server and localStorage before showing content
+    try {
+        const replayResponse = await fetch('/replay-status');
+        const statusText = await replayResponse.text();
+        const isReplayRunning = statusText.trim() === "Replay is running";
+
+        // Load state from localStorage
+        const savedState = localStorage.getItem('mcapReplayState');
+        if (savedState) {
+            try {
+                const state = JSON.parse(savedState);
+                // If server says replay is running, use the saved file name
+                if (isReplayRunning && state.isPlaying && state.currentPlayingFile) {
+                    window.isPlaying = true;
+                    window.currentPlayingFile = state.currentPlayingFile;
+                } else if (!isReplayRunning) {
+                    // If server says replay is not running, clear the state
+                    window.isPlaying = false;
+                    window.currentPlayingFile = null;
+                    localStorage.removeItem('mcapReplayState');
+                }
+            } catch (error) {
+                console.error('Error parsing saved replay state:', error);
+                // Fallback to server state
+                window.isPlaying = isReplayRunning;
+                if (!isReplayRunning) {
+                    window.currentPlayingFile = null;
+                }
+            }
+        } else {
+            // No saved state, use server state
+            window.isPlaying = isReplayRunning;
+            if (!isReplayRunning) {
+                window.currentPlayingFile = null;
+            }
+        }
+    } catch (error) {
+        console.error('Error checking replay status:', error);
+        // Fallback to current global state
+    }
 
     // Close existing socket if any
     if (mcapSocket) {
@@ -358,9 +412,24 @@ window.showMcapDialog = async function () {
                 }
                 content.style.marginTop = '0';
                 content.style.paddingTop = '0';
-                let dirLabelHTML = '';
-                if (dirName) {
-                    dirLabelHTML = `<div class='mcap-dir-label text-xs text-gray-500' style='margin-left:2px;'>Directory: <span class='font-mono text-gray-700'>${dirName}</span><button class='mcap-dir-copy' title='Copy path' onclick='navigator.clipboard.writeText("${dirName}")'>⧉</button></div>`;
+                // Update directory path in header
+                const dirPathElement = document.querySelector('.mcap-dir-path');
+                if (dirPathElement && dirName) {
+                    dirPathElement.textContent = dirName;
+                }
+
+                // Setup directory copy button
+                const dirCopyBtn = document.querySelector('.mcap-dir-copy-btn');
+                if (dirCopyBtn && dirName) {
+                    dirCopyBtn.onclick = () => {
+                        navigator.clipboard.writeText(dirName);
+                        // Show brief feedback
+                        const originalText = dirCopyBtn.innerHTML;
+                        dirCopyBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+                        setTimeout(() => {
+                            dirCopyBtn.innerHTML = originalText;
+                        }, 1000);
+                    };
                 }
                 let tableHTML = '';
                 if (files.length === 0) {
@@ -369,77 +438,96 @@ window.showMcapDialog = async function () {
                     files.sort((a, b) => new Date(b.created) - new Date(a.created));
                     tableHTML = `
                         <div class="mcap-toolbar">
-                            <div class="mcap-toolbar-left">
-                                <input type="checkbox" id="mcap-select-all" style="width:1.2em;height:1.2em;">
-                                <button id="mcap-delete-selected" class="mcap-btn-delete-selected" disabled title="Delete all selected files">
-                                    <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='currentColor' style='width:1.1em;height:1.1em;'><path stroke-linecap='round' stroke-linejoin='round' d='M6 18L18 6M6 6l12 12'/></svg>
-                                    Delete Selected <span id="mcap-selected-count" style="font-size:0.98em;font-weight:500;margin-left:0.5em;color:#4285f4;display:none;"></span>
+                            <div class="mcap-toolbar-group">
+                                <label class="mcap-checkbox-label">
+                                    <input type="checkbox" id="mcap-select-all" class="mcap-checkbox">
+                                    <span>Select All</span>
+                                </label>
+                                <button id="mcap-delete-selected" class="mcap-btn-secondary" disabled title="Delete all selected files">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                    <span>Delete Selected</span>
+                                    <span id="mcap-selected-count" class="mcap-count-badge"></span>
                                 </button>
                             </div>
-                            <div class="mcap-toolbar-right">
+                            <div class="mcap-search-container">
                                 <div class="mcap-search-wrap">
+                                    <svg class="mcap-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
                                     <input type="text" id="mcap-search" class="mcap-search" placeholder="Search files...">
-                                    <button id="mcap-search-clear" class="mcap-search-clear" title="Clear search">&times;</button>
+                                    <button id="mcap-search-clear" class="mcap-search-clear" title="Clear search">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
+                            <div class="mcap-toolbar-group">
+                                <button onclick="switchToLive()" class="mcap-btn-primary" title="Switch to Live Mode (restarts device)">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                    <span>Live Mode</span>
+                                </button>
+                            </div>
                         </div>
-                    `;
-                    tableHTML += `
-                    <div class="mcap-table-container">
-                        <table class="mcap-table">
-                        <thead>
-                                <tr>
-                                    <th style="text-align:center; width:2.5rem;"></th>
-                                    <th>Play</th>
-                                    <th>File Name</th>
-                                    <th>Size</th>
-                                    <th>Date/Time</th>
-                                    <th style="text-align:center;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mcap-table-body">
-                            ${files.map(file => {
+                        <div class="mcap-table-container">
+                            <table class="mcap-table">
+                            <thead>
+                                    <tr>
+                                        <th style="text-align:center; width:2.5rem;"></th>
+                                        <th>Play</th>
+                                        <th>File Name</th>
+                                        <th>Size</th>
+                                        <th>Date/Time</th>
+                                        <th style="text-align:center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mcap-table-body">
+                                ${files.map(file => {
                         const date = file.created ? new Date(file.created) : null;
                         const dateStr = date ? date.toLocaleDateString() : '--';
                         const timeStr = date ? date.toLocaleTimeString() : '';
                         const isCurrentlyPlaying = window.currentPlayingFile === file.name && window.isPlaying;
                         return `
-                            <tr class="mcap-row-card" data-filename="${file.name}">
-                                <td style="text-align:center;"><input type="checkbox" class="mcap-select-checkbox" data-filename="${file.name}"></td>
-                                <td style="text-align:center;">
-                                    <button class="mcap-action-btn ${isCurrentlyPlaying ? 'mcap-btn-red' : 'mcap-btn-blue'}" title="${isCurrentlyPlaying ? 'Stop' : 'Play'}" onclick="togglePlayMcap('${file.name}', '${dirName}')">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;">
-                                            ${isCurrentlyPlaying
+                                <tr class="mcap-row-card" data-filename="${file.name}">
+                                    <td style="text-align:center;"><input type="checkbox" class="mcap-select-checkbox" data-filename="${file.name}"></td>
+                                    <td style="text-align:center;">
+                                        <button class="mcap-action-btn ${isCurrentlyPlaying ? 'mcap-btn-red' : 'mcap-btn-blue'}" title="${isCurrentlyPlaying ? 'Stop' : 'Play'}" onclick="togglePlayMcap('${file.name}', '${dirName}')">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;">
+                                                ${isCurrentlyPlaying
                                 ? '<rect x="7" y="7" width="10" height="10" rx="2"/>'
                                 : '<path d="M8 5v14l11-7z"/>'}
-                                        </svg>
-                                    </button>
-                                </td>
-                                <td style="max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#222; font-weight:600;">${file.name}</td>
-                                <td style="color:#555;">${file.size} MB</td>
-                                <td style="color:#555;">${dateStr} <span style='color:#888;'>${timeStr}</span></td>
-                                <td style="text-align:center;">
-                                    <div style="display:flex; gap:0.5rem; justify-content:center; align-items:center;">
-                                        <button class="mcap-action-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)}, ${JSON.stringify({ name: file.name, size: file.size })})'>
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                            </svg>
                                         </button>
-                                        <a class="mcap-action-btn mcap-btn-green" href="/download/${dirName}/${file.name}" title="Download">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                                        </a>
-                                        <button class="mcap-action-btn mcap-btn-red" title="Delete" onclick="deleteFile('${file.name}', '${dirName}')">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            `;
+                                    </td>
+                                    <td style="max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#222; font-weight:600;">${file.name}</td>
+                                    <td style="color:#555;">${file.size} MB</td>
+                                    <td style="color:#555;">${dateStr} <span style='color:#888;'>${timeStr}</span></td>
+                                    <td style="text-align:center;">
+                                        <div style="display:flex; gap:0.5rem; justify-content:center; align-items:center;">
+                                            <button class="mcap-action-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)}, ${JSON.stringify({ name: file.name, size: file.size })})'>
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                            </button>
+                                            <a class="mcap-action-btn mcap-btn-green" href="/download/${dirName}/${file.name}" title="Download">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                            </a>
+                                            <button class="mcap-action-btn mcap-btn-red" title="Delete" onclick="deleteFile('${file.name}', '${dirName}')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                `;
                     }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                `;
+                            </tbody>
+                        </table>
+                    </div>
+                    `;
                 }
-                content.innerHTML = `${dirLabelHTML}${tableHTML}`;
+                content.innerHTML = tableHTML;
                 attachMcapTableListeners(dirName);
             } catch (error) {
                 content.innerHTML = `<div class=\"text-red-600\">Error parsing server response</div>`;
@@ -497,26 +585,39 @@ window.showMcapDialog = async function () {
         let usedPercent = totalValue > 0 ? (usedValue / totalValue) * 100 : 0;
         if (usedPercent < 0) usedPercent = 0;
         if (usedPercent > 100) usedPercent = 100;
-        let barColor = usedPercent < 60 ? '#22c55e' : usedPercent < 80 ? '#fab010' : '#dc2626';
         const warning = usedPercent > 80 ? `<span class='ml-1 text-red-600 font-semibold' title='Low disk space'>⚠️</span>` : '';
 
         el.innerHTML = `
-      <div class="flex items-center gap-2 bg-white/90 rounded-full px-3 py-1 border border-gray-200 shadow-sm"
-           style="min-width:220px; max-width:320px; font-size:13px; flex-shrink:0;"
-           title="${usedValue.toFixed(2)} ${availUnit} used of ${totalValue.toFixed(2)} ${totalUnit} total">
-        <span class="inline-flex items-center justify-center bg-blue-100 text-blue-700 rounded-full" style="width:1.1rem;height:1.1rem;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:0.95rem;height:0.95rem;">
+      <div class="mcap-storage-display" title="${usedValue.toFixed(2)} ${availUnit} used of ${totalValue.toFixed(2)} ${totalUnit} total">
+        <div class="mcap-storage-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
             <path d="M3 3v18h18V7.83L16.17 3H3zm2 2h10v4H5V5zm0 6h14v8H5v-8zm2 2v4h2v-4H7zm4 0v4h2v-4h-2z"/>
           </svg>
-        </span>
-        <span class="font-semibold text-gray-800">Disk</span>
-        <span class="text-gray-500" style="font-size:11px;">(${usedPercent.toFixed(1)}% used)</span>
-        <div class="relative h-2 w-20 bg-gray-200 rounded-full overflow-hidden mx-1">
-          <div style="width:${usedPercent}%;background:${barColor};transition:width 0.7s cubic-bezier(.4,2,.6,1);" class="absolute left-0 top-0 h-2 rounded-full"></div>
         </div>
-        <span class="text-[11px] font-medium text-gray-700" style="white-space:nowrap;">
-          <span style="color:${barColor};font-weight:600;">${usedValue.toFixed(2)} ${availUnit}</span>
-        </span>
+        <div class="mcap-storage-content">
+          <div class="mcap-storage-header">
+            <span class="mcap-storage-label">Disk</span>
+            <span class="mcap-storage-percent">(${usedPercent.toFixed(1)}% used)</span>
+          </div>
+          <div class="mcap-storage-bar">
+            <div class="mcap-storage-progress" style="width:${usedPercent}%;"></div>
+          </div>
+          <div class="mcap-storage-amount">
+            <span>${usedValue.toFixed(2)} ${availUnit}</span>
+          </div>
+          <div class="mcap-storage-directory">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"/>
+            </svg>
+            <span class="mcap-dir-text">Directory: <span class="mcap-dir-path"></span></span>
+            <button class="mcap-dir-copy-btn" title="Copy directory path">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     `;
     }
@@ -661,42 +762,617 @@ window.hideMcapDialog = function () {
         mcapSocket = null;
         window.mcapSocket = null;
     }
+
+    // Reset MCAP button tooltip
+    const mcapButton = document.getElementById('mcapDialogBtn');
+    if (mcapButton) {
+        const mcapTooltip = mcapButton.querySelector('.mcap-tooltip');
+        if (mcapTooltip) {
+            mcapTooltip.classList.remove('show');
+        }
+    }
+};
+
+// Play options modal functions
+window.showPlayOptionsModal = function (fileName, directory) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('playOptionsModal');
+    if (!modal) {
+        modal = document.createElement('dialog');
+        modal.id = 'playOptionsModal';
+        modal.className = 'rounded-lg shadow-lg';
+        document.body.appendChild(modal);
+    }
+
+    // Get device name to determine if it's Maivin
+    fetch('/config/webui/details')
+        .then(response => response.json())
+        .then(deviceData => {
+            const isMaivin = deviceData.DEVICE?.toLowerCase().includes('maivin');
+
+            modal.innerHTML = `
+                <div class="bg-white p-8 rounded-xl max-w-md w-full">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800">Play Options</h2>
+                        <button onclick="closePlayOptionsModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">File Name:</span>
+                                <span class="text-sm font-medium text-gray-900 truncate ml-4 max-w-[200px]">${fileName}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            ${!isMaivin ? `
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-gray-700">Fusion</label>
+                                    <div class="inline-flex w-full rounded-lg shadow-sm" role="group">
+                                        <button type="button" 
+                                            class="fusion-btn flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#4285f4] rounded-l-lg active hover:bg-blue-600" 
+                                            data-value="live">
+                                            Live
+                                        </button>
+                                        <button type="button" 
+                                            class="fusion-btn flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-r-lg hover:bg-gray-200 transition-colors" 
+                                            data-value="mcap">
+                                            MCAP
+                                        </button>
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-700">Model</label>
+                                <div class="inline-flex w-full rounded-lg shadow-sm" role="group">
+                                    <button type="button" 
+                                        class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#4285f4] rounded-l-lg active hover:bg-blue-600" 
+                                        data-value="live">
+                                        Live
+                                    </button>
+                                    <button type="button" 
+                                        class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-r-lg hover:bg-gray-200 transition-colors" 
+                                        data-value="mcap">
+                                        MCAP
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex justify-end space-x-3">
+                            <button onclick="closePlayOptionsModal()" 
+                                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                Cancel
+                            </button>
+                            <button onclick="startPlaybackFromModal()" 
+                                class="px-4 py-2 text-sm font-medium text-white bg-[#4285f4] rounded-lg hover:bg-blue-600 transition-colors">
+                                Start
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Setup button groups
+            const fusionBtns = modal.querySelectorAll('.fusion-btn');
+            const modelBtns = modal.querySelectorAll('.model-btn');
+
+            function setupButtonGroup(buttons) {
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        buttons.forEach(b => {
+                            b.classList.remove('active', 'bg-[#4285f4]', 'text-white');
+                            b.classList.add('bg-gray-100', 'text-gray-600');
+                        });
+                        this.classList.remove('bg-gray-100', 'text-gray-600');
+                        this.classList.add('active', 'bg-[#4285f4]', 'text-white');
+                    });
+                });
+            }
+
+            setupButtonGroup(fusionBtns);
+            setupButtonGroup(modelBtns);
+
+            // Store file info for later use
+            modal.dataset.fileName = fileName;
+            modal.dataset.directory = directory;
+
+            modal.showModal();
+        })
+        .catch(error => {
+            console.error('Error fetching device info:', error);
+            // Fallback to showing modal without device-specific options
+            modal.innerHTML = `
+                <div class="bg-white p-8 rounded-xl max-w-md w-full">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-800">Play Options</h2>
+                        <button onclick="closePlayOptionsModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">File Name:</span>
+                                <span class="text-sm font-medium text-gray-900 truncate ml-4 max-w-[200px]">${fileName}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-700">Model</label>
+                                <div class="inline-flex w-full rounded-lg shadow-sm" role="group">
+                                    <button type="button" 
+                                        class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#4285f4] rounded-l-lg active hover:bg-blue-600" 
+                                        data-value="live">
+                                        Live
+                                    </button>
+                                    <button type="button" 
+                                        class="model-btn flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-r-lg hover:bg-gray-200 transition-colors" 
+                                        data-value="mcap">
+                                        MCAP
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex justify-end space-x-3">
+                            <button onclick="closePlayOptionsModal()" 
+                                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                Cancel
+                            </button>
+                            <button onclick="startPlaybackFromModal()" 
+                                class="px-4 py-2 text-sm font-medium text-white bg-[#4285f4] rounded-lg hover:bg-blue-600 transition-colors">
+                                Start
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const modelBtns = modal.querySelectorAll('.model-btn');
+            function setupButtonGroup(buttons) {
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        buttons.forEach(b => {
+                            b.classList.remove('active', 'bg-[#4285f4]', 'text-white');
+                            b.classList.add('bg-gray-100', 'text-gray-600');
+                        });
+                        this.classList.remove('bg-gray-100', 'text-gray-600');
+                        this.classList.add('active', 'bg-[#4285f4]', 'text-white');
+                    });
+                });
+            }
+            setupButtonGroup(modelBtns);
+
+            modal.dataset.fileName = fileName;
+            modal.dataset.directory = directory;
+
+            modal.showModal();
+        });
+};
+
+window.closePlayOptionsModal = function () {
+    const modal = document.getElementById('playOptionsModal');
+    if (modal) {
+        modal.close();
+    }
+};
+
+window.startPlaybackFromModal = function () {
+    const modal = document.getElementById('playOptionsModal');
+    const fileName = modal.dataset.fileName;
+    const directory = modal.dataset.directory;
+
+    // Get device name to determine if it's Maivin
+    fetch('/config/webui/details')
+        .then(response => response.json())
+        .then(deviceData => {
+            const isMaivin = deviceData.DEVICE?.toLowerCase().includes('maivin');
+
+            // Get selected options
+            const fusionIsLive = isMaivin ? true : modal.querySelector('.fusion-btn[data-value="live"]')?.classList.contains('active') || false;
+            const modelIsLive = modal.querySelector('.model-btn[data-value="live"]')?.classList.contains('active') || false;
+
+            const config = {
+                fileName: "replay",
+                MCAP: `${directory}/${fileName}`,
+                IGNORE_TOPICS: ""
+            };
+
+            let ignoreTopics = [];
+            if (fusionIsLive) ignoreTopics.push("/fusion/*");
+            if (modelIsLive) ignoreTopics.push("/model/*");
+            config.IGNORE_TOPICS = ignoreTopics.join(" ");
+
+            fetch('/config/replay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                    return response.text();
+                })
+                .then(() => {
+                    return fetch('/replay', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            file: fileName,
+                            directory: directory,
+                            dataSource: fusionIsLive ? 'live' : 'mcap',
+                            model: modelIsLive ? 'live' : 'mcap'
+                        })
+                    });
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                    return response.text();
+                })
+                .then(() => {
+                    window.isPlaying = true;
+                    window.currentPlayingFile = fileName;
+                    // Save state to localStorage
+                    localStorage.setItem('mcapReplayState', JSON.stringify({
+                        isPlaying: true,
+                        currentPlayingFile: fileName
+                    }));
+                    modal.close();
+                    // Refresh the table
+                    if (typeof showMcapDialog === 'function') showMcapDialog();
+                    else if (typeof listMcapFiles === 'function') listMcapFiles();
+                })
+                .catch(error => {
+                    console.error('Error starting playback:', error);
+                    alert(`Error starting playback: ${error.message}`);
+                });
+        })
+        .catch(error => {
+            console.error('Error fetching device info:', error);
+            alert('Error starting playback: Could not determine device type');
+        });
 };
 
 // Add styles for the MCAP dialog buttons
 (function () {
+    // Remove existing style if it exists
+    const existingStyle = document.getElementById('mcap-dialog-styles');
+    if (existingStyle) {
+        existingStyle.remove();
+    }
+
     const style = document.createElement('style');
+    style.id = 'mcap-dialog-styles';
     style.innerHTML = `
+.mcap-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.5rem 2rem 1rem 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+.mcap-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.mcap-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+.mcap-directory {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.mcap-dir-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+.mcap-dir-path {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    color: #374151;
+    font-weight: 600;
+}
+.mcap-dir-copy-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 4px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.mcap-dir-copy-btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+.mcap-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mcap-storage-info {
+    min-width: 220px;
+    max-width: 320px;
+}
+.mcap-storage-display {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    font-size: 0.8rem;
+}
+.mcap-storage-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: #dbeafe;
+    border-radius: 4px;
+    color: #2563eb;
+}
+.mcap-storage-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex: 1;
+    min-width: 0;
+}
+.mcap-storage-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.3rem;
+}
+.mcap-storage-label {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.8rem;
+}
+.mcap-storage-percent {
+    font-size: 0.7rem;
+    color: #6b7280;
+}
+.mcap-storage-bar {
+    position: relative;
+    width: 100%;
+    height: 0.4rem;
+    background: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+.mcap-storage-progress {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #22c55e;
+}
+.mcap-storage-amount {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #22c55e;
+    white-space: nowrap;
+}
+.mcap-storage-directory {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.2rem;
+    padding-top: 0.2rem;
+    border-top: 1px solid #f3f4f6;
+    font-size: 0.7rem;
+    color: #6b7280;
+}
+.mcap-storage-directory .mcap-dir-text {
+    font-size: 0.7rem;
+    color: #6b7280;
+}
+.mcap-storage-directory .mcap-dir-copy-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 2px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.mcap-storage-directory .mcap-dir-copy-btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+.mcap-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 8px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.mcap-close-btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
 .mcap-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin: 0 0 1.5rem 0;
+    padding: 1rem 1.5rem;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    width: 100%;
 }
-.mcap-toolbar-left {
+.mcap-toolbar-group {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
 }
-.mcap-toolbar-right {
+.mcap-checkbox-label {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    user-select: none;
+}
+.mcap-checkbox {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #3b82f6;
+}
+.mcap-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.mcap-btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+.mcap-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.mcap-btn-secondary:hover:not(:disabled) {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+}
+.mcap-btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f9fafb;
+    color: #9ca3af;
+}
+.mcap-count-badge {
+    display: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #3b82f6;
+    margin-left: 0.25rem;
+}
+.mcap-count-badge:not(:empty) {
+    display: inline;
+}
+.mcap-search-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+.mcap-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 300px;
+}
+.mcap-search-icon {
+    position: absolute;
+    left: 0.75rem;
+    width: 1rem;
+    height: 1rem;
+    color: #9ca3af;
+    pointer-events: none;
 }
 .mcap-search {
+    width: 100%;
     border: 1px solid #e5e7eb;
-    border-radius: 9999px;
-    padding: 0.4rem 1.2rem;
-    font-size: 1rem;
+    border-radius: 6px;
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    font-size: 0.875rem;
     outline: none;
-    background: #f9fafb;
-    transition: border 0.2s;
+    background: #fff;
+    transition: all 0.2s ease;
 }
 .mcap-search:focus {
-    border: 1.5px solid #4285f4;
-    background: #fff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+}
+.mcap-search-clear {
+    position: absolute;
+    right: 0.5rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 4px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.mcap-search-clear:hover {
+    background: #e5e7eb;
+    color: #374151;
 }
 .mcap-table-container {
     overflow-x: auto;
@@ -771,31 +1447,7 @@ window.hideMcapDialog = function () {
     opacity: 0.95;
     pointer-events: none;
 }
-.mcap-btn-delete-selected {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.05rem;
-    font-weight: 600;
-    border-radius: 9999px;
-    padding: 0.5rem 1.5rem;
-    background: #dc3545;
-    color: #fff;
-    border: none;
-    box-shadow: 0 2px 8px rgba(220,53,69,0.08);
-    transition: background 0.2s, box-shadow 0.2s;
-    cursor: pointer;
-    outline: none;
-    vertical-align: middle;
-    opacity: 1;
-}
-.mcap-btn-delete-selected:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-.mcap-btn-delete-selected:hover:not(:disabled) {
-    background: #b52a37;
-}
+
 .mcap-dir-label {
     margin-top: 0 !important;
     padding-top: 0 !important;
@@ -896,6 +1548,19 @@ window.hideMcapDialog = function () {
 window.togglePlayMcap = function (fileName, directory, options = null) {
     if (!window.isPlaying) window.isPlaying = false;
     if (!window.currentPlayingFile) window.currentPlayingFile = null;
+
+    // Load state from localStorage
+    const savedState = localStorage.getItem('mcapReplayState');
+    if (savedState) {
+        try {
+            const state = JSON.parse(savedState);
+            window.isPlaying = state.isPlaying || false;
+            window.currentPlayingFile = state.currentPlayingFile || null;
+        } catch (error) {
+            console.error('Error parsing saved replay state:', error);
+        }
+    }
+
     const refreshTable = () => {
         if (typeof showMcapDialog === 'function') showMcapDialog();
         else if (typeof listMcapFiles === 'function') listMcapFiles();
@@ -924,6 +1589,11 @@ window.togglePlayMcap = function (fileName, directory, options = null) {
             .then(() => {
                 window.isPlaying = false;
                 window.currentPlayingFile = null;
+                // Save state to localStorage
+                localStorage.setItem('mcapReplayState', JSON.stringify({
+                    isPlaying: false,
+                    currentPlayingFile: null
+                }));
                 refreshTable();
             })
             .catch(error => {
@@ -932,45 +1602,8 @@ window.togglePlayMcap = function (fileName, directory, options = null) {
                 refreshTable();
             });
     } else if (!window.isPlaying) {
-        fetch('/config/replay', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fileName: "replay",
-                MCAP: `${directory}/${fileName}`,
-                IGNORE_TOPICS: ""
-            })
-        })
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-                return response.text();
-            })
-            .then(() => {
-                return fetch('/replay', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        file: fileName,
-                        directory: directory,
-                        dataSource: 'mcap',
-                        model: 'mcap'
-                    })
-                });
-            })
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-                return response.text();
-            })
-            .then(() => {
-                window.isPlaying = true;
-                window.currentPlayingFile = fileName;
-                refreshTable();
-            })
-            .catch(error => {
-                console.error('Error starting replay:', error);
-                alert(`Error starting replay: ${error.message}`);
-                refreshTable();
-            });
+        // Show play options modal instead of directly starting replay
+        showPlayOptionsModal(fileName, directory);
     }
 };
 

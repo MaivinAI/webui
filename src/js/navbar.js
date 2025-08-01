@@ -257,15 +257,18 @@ function createNavbar(pageTitle) {
             padding: 0.25rem 0.75rem;
             border-radius: 0.375rem;
             font-size: 0.75rem;
-            opacity: 0;
+            opacity: 0 !important;
             pointer-events: none;
             white-space: nowrap;
             z-index: 20;
             transition: opacity 0.2s;
         }
-        .group:hover .mcap-tooltip,
-        .group:focus .mcap-tooltip {
-            opacity: 1;
+        .mcap-tooltip.show {
+            opacity: 1 !important;
+        }
+        .group:hover .mcap-tooltip.show,
+        .group:focus .mcap-tooltip.show {
+            opacity: 1 !important;
         }
     `;
     document.head.appendChild(style);
@@ -302,6 +305,36 @@ function initNavbar(pageTitle) {
                     startRecording();
                 }
             });
+        }
+
+        // Add MCAP button tooltip logic
+        const mcapButton = document.getElementById('mcapDialogBtn');
+        if (mcapButton) {
+            const mcapTooltip = mcapButton.querySelector('.mcap-tooltip');
+            if (mcapTooltip) {
+                mcapButton.addEventListener('mouseenter', function () {
+                    mcapTooltip.classList.add('show');
+                });
+                mcapButton.addEventListener('mouseleave', function () {
+                    mcapTooltip.classList.remove('show');
+                });
+                // Also hide tooltip when modal is opened
+                mcapButton.addEventListener('click', function () {
+                    mcapTooltip.classList.remove('show');
+                });
+
+                // Hide tooltip when clicking outside or losing focus
+                document.addEventListener('click', function (event) {
+                    if (!mcapButton.contains(event.target)) {
+                        mcapTooltip.classList.remove('show');
+                    }
+                });
+
+                // Hide tooltip when window loses focus
+                window.addEventListener('blur', function () {
+                    mcapTooltip.classList.remove('show');
+                });
+            }
         }
 
         // --- NEW: Set UI from localStorage cache immediately ---
