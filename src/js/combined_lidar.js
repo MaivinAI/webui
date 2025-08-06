@@ -613,26 +613,43 @@ function createBox(box) {
     // Create box geometry - height is the vertical dimension, width and depth are the same
     const geometry = new THREE.BoxGeometry(box.width, box.height, box.width);
 
-    // Create semi-transparent material with wireframe - now white and thicker
+    // Create semi-transparent material with wireframe
     const material = new THREE.MeshBasicMaterial({
-        color: 0xFFFFFF,  // White color
+        color: 0x00FF00,  // Green color
         opacity: 0.7,     // Increased opacity
         transparent: true,
-        wireframe: true,
-        wireframeLinewidth: 4  // Thicker lines
+        wireframe: true
     });
 
-    // Create two meshes - one for LiDAR view and one for radar view
-    const lidarMesh = new THREE.Mesh(geometry, material.clone());
-    const radarMesh = new THREE.Mesh(geometry, material.clone());
+    // Create thicker wireframe effect using multiple overlapping boxes
+    const lidarMeshes = [];
+    const radarMeshes = [];
+
+    // Create multiple boxes with slightly different sizes for thickness effect
+    const thicknessLevels = 3;
+    for (let i = 0; i < thicknessLevels; i++) {
+        const scale = 1 + (i * 0.02); // Slightly larger each time
+        const scaledGeometry = new THREE.BoxGeometry(
+            box.width * scale,
+            box.height * scale,
+            box.width * scale
+        );
+
+        const lidarMesh = new THREE.Mesh(scaledGeometry, material.clone());
+        const radarMesh = new THREE.Mesh(scaledGeometry, material.clone());
+
+        lidarMeshes.push(lidarMesh);
+        radarMeshes.push(radarMesh);
+    }
 
     // Position boxes according to the current frame
     const x = -box.center_x;
-    const y = box.center_y;
+    const y = box.center_y * 1.1;
     const z = box.distance;
 
-    lidarMesh.position.set(x, y, z);
-    radarMesh.position.set(x, y, z);
+    // Position all meshes
+    lidarMeshes.forEach(mesh => mesh.position.set(x, y, z));
+    radarMeshes.forEach(mesh => mesh.position.set(x, y, z));
 
     // Create text labels
     const canvas = document.createElement('canvas');
@@ -667,10 +684,11 @@ function createBox(box) {
     const lidarGroup = new THREE.Group();
     const radarGroup = new THREE.Group();
 
-    lidarGroup.add(lidarMesh);
-    lidarGroup.add(lidarSprite);
+    // Add all meshes to groups
+    lidarMeshes.forEach(mesh => lidarGroup.add(mesh));
+    radarMeshes.forEach(mesh => radarGroup.add(mesh));
 
-    radarGroup.add(radarMesh);
+    lidarGroup.add(lidarSprite);
     radarGroup.add(radarSprite);
 
     return { lidarGroup, radarGroup };

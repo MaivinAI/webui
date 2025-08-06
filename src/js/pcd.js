@@ -57,6 +57,36 @@ function pcd_to_points(radar_data) {
                 let val = 0
 
                 switch (f.datatype) {
+                    case 1: // INT8
+                        {
+                            val = view.getInt8(point_start + f.offset, !radar_data.is_bigendian)
+                            break
+                        }
+                    case 2: // UINT8
+                        {
+                            val = view.getUint8(point_start + f.offset, !radar_data.is_bigendian)
+                            break
+                        }
+                    case 3: // INT16
+                        {
+                            val = view.getInt16(point_start + f.offset, !radar_data.is_bigendian)
+                            break
+                        }
+                    case 4: // UINT16
+                        {
+                            val = view.getUint16(point_start + f.offset, !radar_data.is_bigendian)
+                            break
+                        }
+                    case 5: // INT32
+                        {
+                            val = view.getInt32(point_start + f.offset, !radar_data.is_bigendian)
+                            break
+                        }
+                    case 6: // UINT32
+                        {
+                            val = view.getUint32(point_start + f.offset, !radar_data.is_bigendian)
+                            break
+                        }
                     case 7: // float32 
                         {
                             val = view.getFloat32(point_start + f.offset, !radar_data.is_bigendian);
@@ -69,7 +99,7 @@ function pcd_to_points(radar_data) {
                         }
                     default:
                         {
-                            console.warn("NotImplemented: PCD has integer data.")
+                            console.warn("NotImplemented: Unknown PointCloud2 Datatype.")
                         }
                 }
                 radar_point[f.name] = val
