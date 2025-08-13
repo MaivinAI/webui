@@ -354,7 +354,15 @@
                     return response.json();
                 })
                 .then(data => {
-                    setInputValue('model', data.MODEL);
+                    let modelValue = data.MODEL;
+                    if (Array.isArray(data.MODEL)) {
+                        modelValue = data.MODEL.join(' ');
+                    } else if (typeof data.MODEL === 'string') {
+                        modelValue = data.MODEL.replace(/,/g, ' ');
+                    } else {
+                        console.log('MODEL has unexpected type:', typeof data.MODEL, data.MODEL);
+                    }
+                    setInputValue('model', modelValue);
                     setInputValue('decoder_model', data.DECODER_MODEL);
                     setInputValue('visualization', data.VISUALIZATION, 'false');
                     setInputValue('labels', data.LABELS, 'label');
@@ -377,10 +385,11 @@
         document.getElementById('saveConfig').onclick = function () {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'block';
+            const modelValue = document.getElementById('model')?.value;
 
             const configData = {
                 fileName: "model",
-                MODEL: document.getElementById('model')?.value,
+                MODEL: modelValue,
                 VISUALIZATION: document.getElementById('visualization')?.value,
                 LABELS: document.getElementById('labels')?.value,
                 THRESHOLD: document.getElementById('threshold')?.value,
@@ -397,7 +406,6 @@
                 VIV_VX_ENABLE_CACHE_GRAPH_BINARY: document.getElementById('viv_vx_enable_cache')?.value,
                 VIV_VX_CACHE_BINARY_GRAPH_DIR: document.getElementById('viv_vx_cache_dir')?.value
             };
-
             Object.keys(configData).forEach(key => {
                 if (configData[key] === undefined) {
                     delete configData[key];
