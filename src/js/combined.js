@@ -3,6 +3,7 @@ import ProjectedMaterial from './ProjectedMaterial.js'
 import ProjectedMask from './ProjectedMask.js'
 import segstream, { get_shape } from './mask.js'
 import h264Stream from './stream.js'
+import SmartVideoManager from './SmartVideoManager.js'
 import pcdStream, { preprocessPoints } from './pcd.js'
 import { project_points_onto_box } from './classify.js'
 import boxesstream from './boxes.js'
@@ -159,16 +160,26 @@ loader.load(
         init_config(config)
         if (show_stats) {
             stats.showPanel([3, 4, 5])
-        } 
+        }
         config.GRID_DRAW_PCD = config.COMBINED_GRID_DRAW_PCD
         config.GRID_FLATTEN_PCD = config.COMBINED_GRID_FLATTEN_PCD
         init_grid(grid_scene, renderer_grid, camera_grid, config)
 
         const quad = new THREE.PlaneGeometry(width / height * 500, 500);
         const cameraUpdate = fpsUpdate(cameraPanel)
-        h264Stream(socketUrlH264, 1920, 1080, 30, () => {
-            cameraUpdate(); resetTimeout();
-        }).then((tex) => {
+        console.log('Initializing Smart Video Manager...');
+        const videoManager = new SmartVideoManager();
+
+        videoManager.init((timing) => {
+            cameraUpdate();
+            resetTimeout();
+
+            // Log mode once
+            if (timing.mode && !videoManager.loggedMode) {
+                console.log(`✅ Video Mode: ${timing.mode === 'tiles' ? '4K Tiles' : 'H.264 Fallback'}`);
+                videoManager.loggedMode = true;
+            }
+        }, h264Stream).then((tex) => {
             texture_camera = tex;
             material_proj = new ProjectedMaterial({
                 camera: camera, // the camera that acts as a projector
@@ -182,6 +193,8 @@ loader.load(
             mesh_cam.position.z = 50;
             mesh_cam.rotation.x = PI;
             scene.add(mesh_cam);
+
+            console.log('✅ Smart Video System initialized successfully');
         })
 
 
@@ -284,7 +297,7 @@ function init_config(config) {
     if (typeof config.SHOW_STATS == "boolean") {
         show_stats = config.SHOW_STATS
     }
-    
+
 }
 
 
@@ -321,10 +334,16 @@ function animate() {
 let timeoutId;
 function resetTimeout() {
     clearTimeout(timeoutId);
-    document.getElementById('timeout').innerText = '';
-    timeoutId = setTimeout(() => {
-        document.getElementById('timeout').innerText = 'Timeout: Verify if camera service is running';
-    }, 15000);
+    const timeoutElement = document.getElementById('timeout');
+    if (timeoutElement) {
+        timeoutElement.innerText = '';
+        timeoutId = setTimeout(() => {
+            const timeoutElementDelayed = document.getElementById('timeout');
+            if (timeoutElementDelayed) {
+                timeoutElementDelayed.innerText = 'Timeout: Verify if camera service is running';
+            }
+        }, 15000);
+    }
 }
 
 
