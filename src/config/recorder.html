@@ -609,7 +609,9 @@
                         <span>/fusion</span>
                     </div>
                     <!-- Hidden Fusion Children -->
-                    <input type="checkbox" id="topic_fusion_targets" name="topics" value="/fusion/targets"
+                    <input type="checkbox" id="topic_fusion_radar" name="topics" value="/fusion/radar"
+                        style="display: none;">
+                    <input type="checkbox" id="topic_fusion_lidar" name="topics" value="/fusion/lidar"
                         style="display: none;">
                     <input type="checkbox" id="topic_fusion_occupancy" name="topics" value="/fusion/occupancy"
                         style="display: none;">
@@ -646,7 +648,8 @@
             '/model/info',
             '/model/boxes2d',
             '/model/mask_compressed',
-            '/fusion/targets',
+            '/fusion/radar',
+            '/fusion/lidar',
             '/fusion/occupancy'
         ];
 
@@ -1041,7 +1044,7 @@
         // Update the initialization function to handle model and fusion topics
         function initializeModelState() {
             const modelTopics = ['/model/info', '/model/boxes2d', '/model/mask_compressed'];
-            const fusionTopics = ['/fusion/targets', '/fusion/occupancy'];
+            const fusionTopics = ['/fusion/radar', '/fusion/lidar', '/fusion/occupancy'];
 
             const hasModelTopics = modelTopics.some(topic => existingTopics.includes(topic));
             const hasFusionTopics = fusionTopics.some(topic => existingTopics.includes(topic));
