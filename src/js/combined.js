@@ -192,6 +192,7 @@ loader.load(
             mesh_cam.needsUpdate = true;
             mesh_cam.position.z = 50;
             mesh_cam.rotation.x = PI;
+            mesh_cam.renderOrder = 0; // Render video first
             scene.add(mesh_cam);
 
             console.log('✅ Smart Video System initialized successfully');
@@ -218,6 +219,7 @@ loader.load(
                 mesh_mask.needsUpdate = true;
                 mesh_mask.position.z = 50;
                 mesh_mask.rotation.x = PI;
+                mesh_mask.renderOrder = 1; // Render mask on top of video
                 mask_tex = texture_mask
                 scene.add(mesh_mask);
             })

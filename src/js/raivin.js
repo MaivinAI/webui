@@ -45,6 +45,7 @@ get_shape(socketUrlMask, (height, width, length, mask) => {
         mesh_mask.needsUpdate = true;
         mesh_mask.position.z = 0.001; //slightly above the camera
         mesh_mask.position.y = 0;
+        mesh_mask.renderOrder = 1; // Render mask on top of video
         scene.add(mesh_mask);
     })
 })
@@ -138,6 +139,7 @@ if (STREAM) {
         mesh_cam.needsUpdate = true;
         mesh_cam.position.z = 0;
         mesh_cam.position.y = 0;
+        mesh_cam.renderOrder = 0; // Render video first
         scene.add(mesh_cam);
     })
 
@@ -157,6 +159,7 @@ if (STREAM) {
     mesh_cam.needsUpdate = true;
     mesh_cam.position.z = 0;
     mesh_cam.position.y = 0;
+    mesh_cam.renderOrder = 0; // Render video first
     scene.add(mesh_cam);
 }
 

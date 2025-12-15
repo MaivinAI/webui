@@ -537,6 +537,7 @@ loader.load(
             const mesh = new THREE.Mesh(quad, material_proj);
             mesh.position.set(0, 0, 0);
             mesh.needsUpdate = true;
+            mesh.renderOrder = 0; // Render video first
             fixedCameraGroup.add(mesh);
         });
 
@@ -555,6 +556,7 @@ loader.load(
                 })
                 const mesh_mask = new THREE.Mesh(quad, material_mask);
                 mesh_mask.needsUpdate = true;
+                mesh_mask.renderOrder = 1; // Render mask on top of video
                 mask_tex = texture_mask;
                 fixedCameraGroup.add(mesh_mask);
             })
