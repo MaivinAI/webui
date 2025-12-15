@@ -43,7 +43,7 @@ get_shape(socketUrlMask, (height, width, length, mask) => {
         })
         const mesh_mask = new THREE.Mesh(quad, material_mask);
         mesh_mask.needsUpdate = true;
-        mesh_mask.position.z = 0.001; //slightly above the camera
+        mesh_mask.position.z = 0;
         mesh_mask.position.y = 0;
         mesh_mask.renderOrder = 1; // Render mask on top of video
         scene.add(mesh_mask);

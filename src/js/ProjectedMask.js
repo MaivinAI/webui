@@ -60,6 +60,7 @@ export default class ProjectedMask extends THREE.ShaderMaterial {
         const flip_shader = flip ? `uv.x = 1.0 - uv.x;` : ``
         super({
             ...options,
+            depthWrite: false,
             uniforms: {
                 tex: { type: 'sampler2DArray', value: texture },
                 viewMatrixCamera: { type: 'm4', value: viewMatrixCamera },
