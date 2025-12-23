@@ -514,6 +514,9 @@ window.showMcapDialog = async function () {
                                             <a class="mcap-action-btn mcap-btn-green" href="/download/${dirName}/${file.name}" title="Download">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                                             </a>
+                                            <button class="mcap-action-btn mcap-btn-purple" title="Upload to Studio" onclick="showUploadOptionsDialog('${file.name}', '${dirName}')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                                            </button>
                                             <button class="mcap-action-btn mcap-btn-red" title="Delete" onclick="deleteFile('${file.name}', '${dirName}')">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                                             </button>
@@ -1489,6 +1492,22 @@ window.startPlaybackFromModal = function () {
     background: #b52a37 !important;
     color: #fff !important;
 }
+.mcap-btn-blue {
+    background: #4285f4 !important;
+    color: #fff !important;
+}
+.mcap-btn-blue:hover {
+    background: #3367d6 !important;
+    color: #fff !important;
+}
+.mcap-btn-purple {
+    background: #7c3aed !important;
+    color: #fff !important;
+}
+.mcap-btn-purple:hover {
+    background: #6d28d9 !important;
+    color: #fff !important;
+}
 .mcap-toast {
     position: fixed;
     left: 50%;
@@ -1828,3 +1847,506 @@ window.switchToLive = async function () {
         alert('Error turning on all or some services but device is switched to live mode.');
     }
 };
+
+// =====================================================
+// EdgeFirst Studio Upload Functions
+// =====================================================
+
+// Studio auth state
+window.studioAuth = {
+    isLoggedIn: false,
+    username: null
+};
+
+// Active uploads tracking
+window.activeUploads = new Map();
+
+// WebSocket for upload progress
+window.uploadProgressWs = null;
+
+/**
+ * Check Studio authentication status
+ */
+window.checkStudioAuthStatus = async function() {
+    try {
+        const response = await fetch('/api/auth/status');
+        if (response.ok) {
+            const data = await response.json();
+            window.studioAuth.isLoggedIn = data.authenticated;
+            window.studioAuth.username = data.username;
+            return data;
+        }
+    } catch (error) {
+        console.error('Error checking auth status:', error);
+    }
+    window.studioAuth.isLoggedIn = false;
+    window.studioAuth.username = null;
+    return { authenticated: false };
+};
+
+/**
+ * Show login dialog for EdgeFirst Studio
+ */
+window.showStudioLoginDialog = async function(onSuccess) {
+    let dialog = document.getElementById('studioLoginDialog');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'studioLoginDialog';
+        dialog.className = 'modal';
+        dialog.innerHTML = `
+            <div class="modal-box" style="max-width: 400px;">
+                <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Login to EdgeFirst Studio</h2>
+                <form id="studioLoginForm">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Username</label>
+                        <input type="text" id="studioUsername" required
+                            style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
+                            placeholder="Enter your username">
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Password</label>
+                        <input type="password" id="studioPassword" required
+                            style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
+                            placeholder="Enter your password">
+                    </div>
+                    <div id="studioLoginError" style="color: #dc3545; margin-bottom: 1rem; display: none;"></div>
+                    <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                        <button type="button" onclick="document.getElementById('studioLoginDialog').close()"
+                            class="mcap-btn-secondary" style="padding: 0.5rem 1rem;">Cancel</button>
+                        <button type="submit" class="mcap-btn-primary" style="padding: 0.5rem 1rem;">Login</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        dialog.querySelector('#studioLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = dialog.querySelector('#studioUsername').value;
+            const password = dialog.querySelector('#studioPassword').value;
+            const errorDiv = dialog.querySelector('#studioLoginError');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    window.studioAuth.isLoggedIn = true;
+                    window.studioAuth.username = data.username;
+                    dialog.close();
+                    if (typeof onSuccess === 'function') {
+                        onSuccess();
+                    }
+                } else {
+                    const error = await response.json();
+                    errorDiv.textContent = error.error || 'Login failed';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        });
+    }
+
+    // Store callback for after login
+    dialog._onSuccess = onSuccess;
+
+    // Clear previous inputs
+    dialog.querySelector('#studioUsername').value = '';
+    dialog.querySelector('#studioPassword').value = '';
+    dialog.querySelector('#studioLoginError').style.display = 'none';
+
+    dialog.showModal();
+};
+
+/**
+ * Show upload options dialog
+ */
+window.showUploadOptionsDialog = async function(fileName, dirName) {
+    // Check auth status first
+    const authStatus = await window.checkStudioAuthStatus();
+    if (!authStatus.authenticated) {
+        window.showStudioLoginDialog(() => {
+            // Retry showing upload dialog after login
+            window.showUploadOptionsDialog(fileName, dirName);
+        });
+        return;
+    }
+
+    let dialog = document.getElementById('uploadOptionsDialog');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'uploadOptionsDialog';
+        dialog.className = 'modal';
+        dialog.innerHTML = `
+            <div class="modal-box" style="max-width: 500px;">
+                <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Upload to EdgeFirst Studio</h2>
+                <p id="uploadFileName" style="margin-bottom: 1rem; color: #555;"></p>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Upload Mode</label>
+                    <div style="display: flex; gap: 1rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="radio" name="uploadMode" value="basic" checked>
+                            <span>Basic (Snapshot only)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="radio" name="uploadMode" value="extended">
+                            <span>Extended (with AGTG)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="extendedOptions" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Project</label>
+                        <select id="uploadProject" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                            <option value="">Loading projects...</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Dataset Name (optional)</label>
+                        <input type="text" id="uploadDatasetName"
+                            style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
+                            placeholder="Auto-generated if empty">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 500; margin-bottom: 0.25rem;">Labels</label>
+                        <div id="uploadLabels" style="max-height: 150px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem;">
+                            <em>Select a project to load labels</em>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="uploadError" style="color: #dc3545; margin-bottom: 1rem; display: none;"></div>
+
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" onclick="document.getElementById('uploadOptionsDialog').close()"
+                        class="mcap-btn-secondary" style="padding: 0.5rem 1rem;">Cancel</button>
+                    <button type="button" id="startUploadBtn" class="mcap-btn-primary" style="padding: 0.5rem 1rem; background: #7c3aed !important;">
+                        Upload
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        // Mode toggle handler
+        dialog.querySelectorAll('input[name="uploadMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const extendedOpts = dialog.querySelector('#extendedOptions');
+                if (e.target.value === 'extended') {
+                    extendedOpts.style.display = 'block';
+                    loadProjects();
+                } else {
+                    extendedOpts.style.display = 'none';
+                }
+            });
+        });
+
+        // Project change handler
+        dialog.querySelector('#uploadProject').addEventListener('change', async (e) => {
+            const projectId = e.target.value;
+            if (projectId) {
+                await loadProjectLabels(projectId);
+            }
+        });
+    }
+
+    // Set file name
+    dialog.querySelector('#uploadFileName').textContent = `File: ${fileName}`;
+    dialog._fileName = fileName;
+    dialog._dirName = dirName;
+
+    // Reset form
+    dialog.querySelector('input[name="uploadMode"][value="basic"]').checked = true;
+    dialog.querySelector('#extendedOptions').style.display = 'none';
+    dialog.querySelector('#uploadError').style.display = 'none';
+
+    // Set up upload button handler
+    const uploadBtn = dialog.querySelector('#startUploadBtn');
+    uploadBtn.onclick = async () => {
+        await startUpload(dialog);
+    };
+
+    dialog.showModal();
+};
+
+/**
+ * Load projects from Studio
+ */
+async function loadProjects() {
+    const select = document.getElementById('uploadProject');
+    select.innerHTML = '<option value="">Loading...</option>';
+
+    try {
+        const response = await fetch('/api/studio/projects');
+        if (response.ok) {
+            const projects = await response.json();
+            select.innerHTML = '<option value="">Select a project</option>';
+            projects.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = p.name;
+                select.appendChild(option);
+            });
+        } else {
+            select.innerHTML = '<option value="">Error loading projects</option>';
+        }
+    } catch (error) {
+        console.error('Error loading projects:', error);
+        select.innerHTML = '<option value="">Error loading projects</option>';
+    }
+}
+
+/**
+ * Load labels for a project
+ */
+async function loadProjectLabels(projectId) {
+    const container = document.getElementById('uploadLabels');
+    container.innerHTML = '<em>Loading labels...</em>';
+
+    try {
+        const response = await fetch(`/api/studio/projects/${projectId}/labels`);
+        if (response.ok) {
+            const labels = await response.json();
+            if (labels.length === 0) {
+                container.innerHTML = '<em>No labels available</em>';
+            } else {
+                container.innerHTML = labels.map(label => `
+                    <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; cursor: pointer;">
+                        <input type="checkbox" name="uploadLabel" value="${label.id}">
+                        <span>${label.name}</span>
+                    </label>
+                `).join('');
+            }
+        } else {
+            container.innerHTML = '<em>Error loading labels</em>';
+        }
+    } catch (error) {
+        console.error('Error loading labels:', error);
+        container.innerHTML = '<em>Error loading labels</em>';
+    }
+}
+
+/**
+ * Start the upload
+ */
+async function startUpload(dialog) {
+    const fileName = dialog._fileName;
+    const dirName = dialog._dirName;
+    const errorDiv = dialog.querySelector('#uploadError');
+    const uploadBtn = dialog.querySelector('#startUploadBtn');
+
+    const mode = dialog.querySelector('input[name="uploadMode"]:checked').value;
+
+    let requestBody = {
+        mcap_path: `${dirName}/${fileName}`,
+        mode: mode === 'basic' ? 'Basic' : null
+    };
+
+    if (mode === 'extended') {
+        const projectId = dialog.querySelector('#uploadProject').value;
+        if (!projectId) {
+            errorDiv.textContent = 'Please select a project for extended mode';
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        const selectedLabels = Array.from(dialog.querySelectorAll('input[name="uploadLabel"]:checked'))
+            .map(cb => cb.value);
+
+        requestBody.mode = {
+            Extended: {
+                project_id: projectId,
+                labels: selectedLabels,
+                dataset_name: dialog.querySelector('#uploadDatasetName').value || null,
+                dataset_description: null
+            }
+        };
+    }
+
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Starting...';
+
+    try {
+        const response = await fetch('/api/uploads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            dialog.close();
+            showUploadProgressDialog(data.upload_id, fileName);
+        } else {
+            const error = await response.json();
+            errorDiv.textContent = error.error || 'Failed to start upload';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+    } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload';
+    }
+}
+
+/**
+ * Show upload progress dialog
+ */
+window.showUploadProgressDialog = function(uploadId, fileName) {
+    let dialog = document.getElementById('uploadProgressDialog');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'uploadProgressDialog';
+        dialog.className = 'modal';
+        dialog.innerHTML = `
+            <div class="modal-box" style="max-width: 450px;">
+                <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Uploading to Studio</h2>
+                <p id="progressFileName" style="margin-bottom: 0.5rem; color: #555;"></p>
+                <div id="progressStatus" style="margin-bottom: 1rem; font-weight: 500;"></div>
+
+                <div style="background: #e5e7eb; border-radius: 9999px; height: 0.75rem; overflow: hidden; margin-bottom: 0.5rem;">
+                    <div id="progressBar" style="background: #7c3aed; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                </div>
+                <div id="progressPercent" style="text-align: center; font-size: 0.875rem; color: #555; margin-bottom: 1rem;">0%</div>
+
+                <div id="progressMessage" style="color: #555; font-size: 0.875rem; margin-bottom: 1.5rem;"></div>
+
+                <div id="progressResult" style="display: none; margin-bottom: 1rem; padding: 0.75rem; border-radius: 0.375rem;"></div>
+
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" id="cancelUploadBtn" class="mcap-btn-secondary" style="padding: 0.5rem 1rem;">Cancel</button>
+                    <button type="button" id="closeProgressBtn" class="mcap-btn-primary" style="padding: 0.5rem 1rem; display: none;">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+    }
+
+    dialog._uploadId = uploadId;
+    dialog.querySelector('#progressFileName').textContent = `File: ${fileName}`;
+    dialog.querySelector('#progressBar').style.width = '0%';
+    dialog.querySelector('#progressPercent').textContent = '0%';
+    dialog.querySelector('#progressStatus').textContent = 'Starting...';
+    dialog.querySelector('#progressMessage').textContent = '';
+    dialog.querySelector('#progressResult').style.display = 'none';
+    dialog.querySelector('#cancelUploadBtn').style.display = 'inline-block';
+    dialog.querySelector('#closeProgressBtn').style.display = 'none';
+
+    // Cancel button handler
+    dialog.querySelector('#cancelUploadBtn').onclick = async () => {
+        try {
+            await fetch(`/api/uploads/${uploadId}`, { method: 'DELETE' });
+        } catch (e) {
+            console.error('Error cancelling upload:', e);
+        }
+    };
+
+    // Close button handler
+    dialog.querySelector('#closeProgressBtn').onclick = () => {
+        dialog.close();
+    };
+
+    // Connect WebSocket for progress
+    connectUploadProgressWs(uploadId, dialog);
+
+    dialog.showModal();
+};
+
+/**
+ * Connect WebSocket for upload progress
+ */
+function connectUploadProgressWs(uploadId, dialog) {
+    // Close existing connection
+    if (window.uploadProgressWs) {
+        window.uploadProgressWs.close();
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/uploads`;
+    window.uploadProgressWs = new WebSocket(wsUrl);
+
+    window.uploadProgressWs.onmessage = (event) => {
+        try {
+            const status = JSON.parse(event.data);
+            if (status.upload_id === uploadId || status.upload_id?.value === uploadId) {
+                updateProgressUI(dialog, status);
+            }
+        } catch (e) {
+            console.error('Error parsing progress message:', e);
+        }
+    };
+
+    window.uploadProgressWs.onerror = (error) => {
+        console.error('WebSocket error:', error);
+    };
+
+    window.uploadProgressWs.onclose = () => {
+        console.log('Upload progress WebSocket closed');
+    };
+}
+
+/**
+ * Update progress UI from status
+ */
+function updateProgressUI(dialog, status) {
+    const progressBar = dialog.querySelector('#progressBar');
+    const progressPercent = dialog.querySelector('#progressPercent');
+    const progressStatus = dialog.querySelector('#progressStatus');
+    const progressMessage = dialog.querySelector('#progressMessage');
+    const progressResult = dialog.querySelector('#progressResult');
+    const cancelBtn = dialog.querySelector('#cancelUploadBtn');
+    const closeBtn = dialog.querySelector('#closeProgressBtn');
+
+    // Update progress
+    const percent = Math.min(100, Math.max(0, status.progress || 0));
+    progressBar.style.width = `${percent}%`;
+    progressPercent.textContent = `${percent.toFixed(1)}%`;
+
+    // Update status text
+    const stateText = typeof status.state === 'string' ? status.state : Object.keys(status.state)[0];
+    progressStatus.textContent = stateText;
+    progressMessage.textContent = status.message || '';
+
+    // Handle completed or failed states
+    if (stateText === 'Completed') {
+        progressBar.style.background = '#34a853';
+        progressResult.style.display = 'block';
+        progressResult.style.background = '#d4edda';
+        progressResult.style.color = '#155724';
+        progressResult.innerHTML = `
+            <strong>Upload Complete!</strong><br>
+            ${status.snapshot_id ? `Snapshot ID: ${status.snapshot_id}` : ''}
+            ${status.dataset_id ? `<br>Dataset ID: ${status.dataset_id}` : ''}
+        `;
+        cancelBtn.style.display = 'none';
+        closeBtn.style.display = 'inline-block';
+
+        // Close WebSocket
+        if (window.uploadProgressWs) {
+            window.uploadProgressWs.close();
+        }
+    } else if (stateText === 'Failed' || stateText === 'Cancelled') {
+        progressBar.style.background = '#dc3545';
+        progressResult.style.display = 'block';
+        progressResult.style.background = '#f8d7da';
+        progressResult.style.color = '#721c24';
+        progressResult.innerHTML = `<strong>${stateText}</strong>: ${status.error || status.message || 'Unknown error'}`;
+        cancelBtn.style.display = 'none';
+        closeBtn.style.display = 'inline-block';
+
+        // Close WebSocket
+        if (window.uploadProgressWs) {
+            window.uploadProgressWs.close();
+        }
+    }
+}
