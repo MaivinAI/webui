@@ -495,7 +495,7 @@ window.showMcapDialog = async function () {
                                 <tr class="mcap-row-card" data-filename="${file.name}">
                                     <td style="text-align:center;"><input type="checkbox" class="mcap-select-checkbox" data-filename="${file.name}"></td>
                                     <td style="text-align:center;">
-                                        <button class="mcap-action-btn ${isCurrentlyPlaying ? 'mcap-btn-red' : 'mcap-btn-blue'}" title="${isCurrentlyPlaying ? 'Stop' : 'Play'}" onclick="togglePlayMcap('${file.name}', '${dirName}')">
+                                        <button class="mcap-action-btn mcap-play-btn ${isCurrentlyPlaying ? 'mcap-btn-red' : 'mcap-btn-blue'}" title="${isCurrentlyPlaying ? 'Stop' : 'Play'}" data-filename="${file.name}" data-dirname="${dirName}">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;">
                                                 ${isCurrentlyPlaying
                                 ? '<rect x="7" y="7" width="10" height="10" rx="2"/>'
@@ -508,16 +508,16 @@ window.showMcapDialog = async function () {
                                     <td style="color:#555;">${dateStr} <span style='color:#888;'>${timeStr}</span></td>
                                     <td style="text-align:center;">
                                         <div style="display:flex; gap:0.5rem; justify-content:center; align-items:center;">
-                                            <button class="mcap-action-btn mcap-btn-blue" title="Info" onclick='showModal(${JSON.stringify(file.topics)}, ${JSON.stringify({ name: file.name, size: file.size })})'>
+                                            <button class="mcap-action-btn mcap-info-btn mcap-btn-blue" title="Info" data-topics='${JSON.stringify(file.topics)}' data-fileinfo='${JSON.stringify({ name: file.name, size: file.size })}'>
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                                             </button>
                                             <a class="mcap-action-btn mcap-btn-green" href="/download/${dirName}/${file.name}" title="Download">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                                             </a>
-                                            <button class="mcap-action-btn mcap-btn-purple" title="Upload to Studio" onclick="showUploadOptionsDialog('${file.name}', '${dirName}')">
+                                            <button class="mcap-action-btn mcap-upload-btn mcap-btn-purple" title="Upload to Studio" data-filename="${file.name}" data-dirname="${dirName}">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
                                             </button>
-                                            <button class="mcap-action-btn mcap-btn-red" title="Delete" onclick="deleteFile('${file.name}', '${dirName}')">
+                                            <button class="mcap-action-btn mcap-delete-btn mcap-btn-red" title="Delete" data-filename="${file.name}" data-dirname="${dirName}">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                                             </button>
                                         </div>
@@ -750,6 +750,52 @@ window.showMcapDialog = async function () {
                 searchClear.style.display = 'none';
             };
         }
+        
+        // Event delegation for action buttons (XSS protection)
+        if (tableBody) {
+            tableBody.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                
+                // Play/Stop button
+                if (btn.classList.contains('mcap-play-btn')) {
+                    const filename = btn.getAttribute('data-filename');
+                    const dirname = btn.getAttribute('data-dirname');
+                    if (filename && dirname) {
+                        togglePlayMcap(filename, dirname);
+                    }
+                }
+                // Info button
+                else if (btn.classList.contains('mcap-info-btn')) {
+                    const topics = btn.getAttribute('data-topics');
+                    const fileinfo = btn.getAttribute('data-fileinfo');
+                    if (topics && fileinfo) {
+                        try {
+                            showModal(JSON.parse(topics), JSON.parse(fileinfo));
+                        } catch (e) {
+                            console.error('Error parsing button data:', e);
+                        }
+                    }
+                }
+                // Upload button
+                else if (btn.classList.contains('mcap-upload-btn')) {
+                    const filename = btn.getAttribute('data-filename');
+                    const dirname = btn.getAttribute('data-dirname');
+                    if (filename && dirname) {
+                        showUploadOptionsDialog(filename, dirname);
+                    }
+                }
+                // Delete button
+                else if (btn.classList.contains('mcap-delete-btn')) {
+                    const filename = btn.getAttribute('data-filename');
+                    const dirname = btn.getAttribute('data-dirname');
+                    if (filename && dirname) {
+                        deleteFile(filename, dirname);
+                    }
+                }
+            });
+        }
+        
         updateDeleteBtnState();
         updateRowHighlight();
     }
@@ -1872,13 +1918,21 @@ window.checkStudioAuthStatus = async function() {
             window.studioAuth.isLoggedIn = data.authenticated;
             window.studioAuth.username = data.username;
             return data;
+        } else {
+            // Non-OK response: treat as not authenticated
+            window.studioAuth.isLoggedIn = false;
+            window.studioAuth.username = null;
+            return { authenticated: false };
         }
     } catch (error) {
         console.error('Error checking auth status:', error);
+        // Don't clear auth state on network error - preserve current state
+        return {
+            authenticated: window.studioAuth.isLoggedIn,
+            username: window.studioAuth.username,
+            error: 'Failed to verify authentication status'
+        };
     }
-    window.studioAuth.isLoggedIn = false;
-    window.studioAuth.username = null;
-    return { authenticated: false };
 };
 
 /**
@@ -1919,9 +1973,16 @@ window.showStudioLoginDialog = async function(onSuccess) {
 
         dialog.querySelector('#studioLoginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = dialog.querySelector('#studioUsername').value;
-            const password = dialog.querySelector('#studioPassword').value;
+            const username = dialog.querySelector('#studioUsername').value.trim();
+            const password = dialog.querySelector('#studioPassword').value.trim();
             const errorDiv = dialog.querySelector('#studioLoginError');
+
+            // Validate non-empty after trimming
+            if (!username || !password) {
+                errorDiv.textContent = 'Username and password are required';
+                errorDiv.style.display = 'block';
+                return;
+            }
 
             try {
                 const response = await fetch('/api/auth/login', {
@@ -1954,6 +2015,23 @@ window.showStudioLoginDialog = async function(onSuccess) {
     dialog.querySelector('#studioUsername').value = '';
     dialog.querySelector('#studioPassword').value = '';
     dialog.querySelector('#studioLoginError').style.display = 'none';
+
+    // Track whether we're expecting a callback to detect cancellation
+    const hadCallback = typeof onSuccess === 'function';
+    
+    // Add close handler for cancelled authentication feedback
+    const closeHandler = () => {
+        // Check if user cancelled (dialog closed without successful login and callback was expected)
+        if (!window.studioAuth.isLoggedIn && hadCallback) {
+            const msg = 'Authentication cancelled. Upload cannot proceed without signing in.';
+            if (typeof window.showToast === 'function') {
+                window.showToast(msg);
+            } else {
+                console.log(msg);
+            }
+        }
+    };
+    dialog.addEventListener('close', closeHandler, { once: true });
 
     dialog.showModal();
 };
@@ -2246,8 +2324,42 @@ window.showUploadProgressDialog = function(uploadId, fileName) {
             </div>
         `;
         document.body.appendChild(dialog);
+        
+        // Attach event handlers only once during dialog creation
+        const cancelBtn = dialog.querySelector('#cancelUploadBtn');
+        cancelBtn.addEventListener('click', async () => {
+            const currentUploadId = dialog._uploadId;
+            if (!currentUploadId) return;
+            
+            // Provide immediate UI feedback
+            cancelBtn.disabled = true;
+            cancelBtn.textContent = 'Cancelling...';
+            dialog.querySelector('#progressStatus').textContent = 'Cancelling...';
+            dialog.querySelector('#progressMessage').textContent = '';
+
+            try {
+                await fetch(`/api/uploads/${currentUploadId}`, { method: 'DELETE' });
+            } catch (e) {
+                console.error('Error cancelling upload:', e);
+            }
+            // Dialog will be updated via WebSocket when cancellation is confirmed
+        });
+
+        // Close button handler
+        dialog.querySelector('#closeProgressBtn').addEventListener('click', () => {
+            dialog.close();
+        });
+
+        // Clean up WebSocket when dialog is closed (ESC key, click outside, etc.)
+        dialog.addEventListener('close', () => {
+            if (window.uploadProgressWs) {
+                window.uploadProgressWs.close();
+                window.uploadProgressWs = null;
+            }
+        });
     }
 
+    // Reset dialog state for new upload
     dialog._uploadId = uploadId;
     dialog.querySelector('#progressFileName').textContent = `File: ${fileName}`;
     dialog.querySelector('#progressBar').style.width = '0%';
@@ -2255,38 +2367,13 @@ window.showUploadProgressDialog = function(uploadId, fileName) {
     dialog.querySelector('#progressStatus').textContent = 'Starting...';
     dialog.querySelector('#progressMessage').textContent = '';
     dialog.querySelector('#progressResult').style.display = 'none';
-    dialog.querySelector('#cancelUploadBtn').style.display = 'inline-block';
-    dialog.querySelector('#closeProgressBtn').style.display = 'none';
-
-    // Cancel button handler with improved UX
+    
     const cancelBtn = dialog.querySelector('#cancelUploadBtn');
-    cancelBtn.onclick = async () => {
-        // Provide immediate UI feedback
-        cancelBtn.disabled = true;
-        cancelBtn.textContent = 'Cancelling...';
-        dialog.querySelector('#progressStatus').textContent = 'Cancelling...';
-        dialog.querySelector('#progressMessage').textContent = '';
-
-        try {
-            await fetch(`/api/uploads/${uploadId}`, { method: 'DELETE' });
-        } catch (e) {
-            console.error('Error cancelling upload:', e);
-        }
-        // Dialog will be updated via WebSocket when cancellation is confirmed
-    };
-
-    // Close button handler
-    dialog.querySelector('#closeProgressBtn').onclick = () => {
-        dialog.close();
-    };
-
-    // Clean up WebSocket when dialog is closed (ESC key, click outside, etc.)
-    dialog.addEventListener('close', () => {
-        if (window.uploadProgressWs) {
-            window.uploadProgressWs.close();
-            window.uploadProgressWs = null;
-        }
-    }, { once: true });
+    cancelBtn.style.display = 'inline-block';
+    cancelBtn.disabled = false;
+    cancelBtn.textContent = 'Cancel';
+    
+    dialog.querySelector('#closeProgressBtn').style.display = 'none';
 
     // Connect WebSocket for progress
     connectUploadProgressWs(uploadId, dialog);
@@ -2304,7 +2391,11 @@ function connectUploadProgressWs(uploadId, dialog) {
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/uploads`;
+    // Allow overriding WebSocket host/port if needed for custom deployments
+    const wsHost = window.UPLOAD_WS_HOST || window.location.hostname;
+    const wsPort = window.UPLOAD_WS_PORT ? String(window.UPLOAD_WS_PORT) : window.location.port;
+    const portSegment = wsPort ? `:${wsPort}` : '';
+    const wsUrl = `${protocol}//${wsHost}${portSegment}/ws/uploads`;
     window.uploadProgressWs = new WebSocket(wsUrl);
 
     window.uploadProgressWs.onmessage = (event) => {
@@ -2368,7 +2459,7 @@ function updateProgressUI(dialog, status) {
         progressResult.style.background = '#d4edda';
         progressResult.style.color = '#155724';
         // XSS protection: use DOM methods instead of innerHTML
-        progressResult.innerHTML = '';
+        progressResult.replaceChildren();
         const strong = document.createElement('strong');
         strong.textContent = 'Upload Complete!';
         progressResult.appendChild(strong);
@@ -2393,7 +2484,7 @@ function updateProgressUI(dialog, status) {
         progressResult.style.background = '#f8d7da';
         progressResult.style.color = '#721c24';
         // XSS protection: use DOM methods instead of innerHTML
-        progressResult.innerHTML = '';
+        progressResult.replaceChildren();
         const strong = document.createElement('strong');
         strong.textContent = stateText;
         progressResult.appendChild(strong);
