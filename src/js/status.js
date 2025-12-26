@@ -2025,7 +2025,7 @@ window.showStudioLoginDialog = async function(onSuccess) {
         if (!window.studioAuth.isLoggedIn && hadCallback) {
             const msg = 'Authentication cancelled. Upload cannot proceed without signing in.';
             if (typeof window.showToast === 'function') {
-                window.showToast(msg, 'warning');
+                window.showToast(msg);
             } else {
                 console.log(msg);
             }
@@ -2393,9 +2393,7 @@ function connectUploadProgressWs(uploadId, dialog) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     // Allow overriding WebSocket host/port if needed for custom deployments
     const wsHost = window.UPLOAD_WS_HOST || window.location.hostname;
-    const wsPort = (window.UPLOAD_WS_PORT !== undefined && window.UPLOAD_WS_PORT !== null) 
-        ? String(window.UPLOAD_WS_PORT) 
-        : window.location.port;
+    const wsPort = window.UPLOAD_WS_PORT ? String(window.UPLOAD_WS_PORT) : window.location.port;
     const portSegment = wsPort ? `:${wsPort}` : '';
     const wsUrl = `${protocol}//${wsHost}${portSegment}/ws/uploads`;
     window.uploadProgressWs = new WebSocket(wsUrl);
@@ -2461,7 +2459,7 @@ function updateProgressUI(dialog, status) {
         progressResult.style.background = '#d4edda';
         progressResult.style.color = '#155724';
         // XSS protection: use DOM methods instead of innerHTML
-        progressResult.innerHTML = '';
+        progressResult.replaceChildren();
         const strong = document.createElement('strong');
         strong.textContent = 'Upload Complete!';
         progressResult.appendChild(strong);
@@ -2486,7 +2484,7 @@ function updateProgressUI(dialog, status) {
         progressResult.style.background = '#f8d7da';
         progressResult.style.color = '#721c24';
         // XSS protection: use DOM methods instead of innerHTML
-        progressResult.innerHTML = '';
+        progressResult.replaceChildren();
         const strong = document.createElement('strong');
         strong.textContent = stateText;
         progressResult.appendChild(strong);
