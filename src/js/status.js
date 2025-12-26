@@ -1858,9 +1858,6 @@ window.studioAuth = {
     username: null
 };
 
-// Active uploads tracking
-window.activeUploads = new Map();
-
 // WebSocket for upload progress
 window.uploadProgressWs = null;
 
@@ -1952,9 +1949,6 @@ window.showStudioLoginDialog = async function(onSuccess) {
             }
         });
     }
-
-    // Store callback for after login
-    dialog._onSuccess = onSuccess;
 
     // Clear previous inputs
     dialog.querySelector('#studioUsername').value = '';
@@ -2049,11 +2043,17 @@ window.showUploadOptionsDialog = async function(fileName, dirName) {
             });
         });
 
-        // Project change handler
+        // Project change handler - disable during label loading to prevent race conditions
         dialog.querySelector('#uploadProject').addEventListener('change', async (e) => {
-            const projectId = e.target.value;
+            const projectSelect = e.target;
+            const projectId = projectSelect.value;
             if (projectId) {
-                await loadProjectLabels(projectId);
+                projectSelect.disabled = true;
+                try {
+                    await loadProjectLabels(projectId);
+                } finally {
+                    projectSelect.disabled = false;
+                }
             }
         });
     }
@@ -2118,12 +2118,28 @@ async function loadProjectLabels(projectId) {
             if (labels.length === 0) {
                 container.innerHTML = '<em>No labels available</em>';
             } else {
-                container.innerHTML = labels.map(label => `
-                    <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; cursor: pointer;">
-                        <input type="checkbox" name="uploadLabel" value="${label.id}">
-                        <span>${label.name}</span>
-                    </label>
-                `).join('');
+                // Clear and safely create label elements (XSS protection)
+                container.innerHTML = '';
+                labels.forEach(label => {
+                    const labelEl = document.createElement('label');
+                    labelEl.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; cursor: pointer;';
+
+                    const inputEl = document.createElement('input');
+                    inputEl.type = 'checkbox';
+                    inputEl.name = 'uploadLabel';
+                    inputEl.value = label.id;
+                    // Check labels marked as default (e.g., "person")
+                    if (label.default) {
+                        inputEl.checked = true;
+                    }
+
+                    const spanEl = document.createElement('span');
+                    spanEl.textContent = label.name;
+
+                    labelEl.appendChild(inputEl);
+                    labelEl.appendChild(spanEl);
+                    container.appendChild(labelEl);
+                });
             }
         } else {
             container.innerHTML = '<em>Error loading labels</em>';
@@ -2242,19 +2258,35 @@ window.showUploadProgressDialog = function(uploadId, fileName) {
     dialog.querySelector('#cancelUploadBtn').style.display = 'inline-block';
     dialog.querySelector('#closeProgressBtn').style.display = 'none';
 
-    // Cancel button handler
-    dialog.querySelector('#cancelUploadBtn').onclick = async () => {
+    // Cancel button handler with improved UX
+    const cancelBtn = dialog.querySelector('#cancelUploadBtn');
+    cancelBtn.onclick = async () => {
+        // Provide immediate UI feedback
+        cancelBtn.disabled = true;
+        cancelBtn.textContent = 'Cancelling...';
+        dialog.querySelector('#progressStatus').textContent = 'Cancelling...';
+        dialog.querySelector('#progressMessage').textContent = '';
+
         try {
             await fetch(`/api/uploads/${uploadId}`, { method: 'DELETE' });
         } catch (e) {
             console.error('Error cancelling upload:', e);
         }
+        // Dialog will be updated via WebSocket when cancellation is confirmed
     };
 
     // Close button handler
     dialog.querySelector('#closeProgressBtn').onclick = () => {
         dialog.close();
     };
+
+    // Clean up WebSocket when dialog is closed (ESC key, click outside, etc.)
+    dialog.addEventListener('close', () => {
+        if (window.uploadProgressWs) {
+            window.uploadProgressWs.close();
+            window.uploadProgressWs = null;
+        }
+    }, { once: true });
 
     // Connect WebSocket for progress
     connectUploadProgressWs(uploadId, dialog);
@@ -2278,7 +2310,11 @@ function connectUploadProgressWs(uploadId, dialog) {
     window.uploadProgressWs.onmessage = (event) => {
         try {
             const status = JSON.parse(event.data);
-            if (status.upload_id === uploadId || status.upload_id?.value === uploadId) {
+            // Normalize upload_id to handle both string and object formats
+            const statusUploadId = status.upload_id && typeof status.upload_id === 'object'
+                ? status.upload_id.value
+                : status.upload_id;
+            if (statusUploadId === uploadId) {
                 updateProgressUI(dialog, status);
             }
         } catch (e) {
@@ -2312,9 +2348,17 @@ function updateProgressUI(dialog, status) {
     progressBar.style.width = `${percent}%`;
     progressPercent.textContent = `${percent.toFixed(1)}%`;
 
-    // Update status text
-    const stateText = typeof status.state === 'string' ? status.state : Object.keys(status.state)[0];
-    progressStatus.textContent = stateText;
+    // Extract state text safely (handle string, object, null, undefined, array)
+    let stateText = '';
+    if (typeof status.state === 'string') {
+        stateText = status.state;
+    } else if (status.state && typeof status.state === 'object' && !Array.isArray(status.state)) {
+        const stateKeys = Object.keys(status.state);
+        if (stateKeys.length > 0) {
+            stateText = stateKeys[0];
+        }
+    }
+    progressStatus.textContent = stateText || 'Unknown';
     progressMessage.textContent = status.message || '';
 
     // Handle completed or failed states
@@ -2323,11 +2367,19 @@ function updateProgressUI(dialog, status) {
         progressResult.style.display = 'block';
         progressResult.style.background = '#d4edda';
         progressResult.style.color = '#155724';
-        progressResult.innerHTML = `
-            <strong>Upload Complete!</strong><br>
-            ${status.snapshot_id ? `Snapshot ID: ${status.snapshot_id}` : ''}
-            ${status.dataset_id ? `<br>Dataset ID: ${status.dataset_id}` : ''}
-        `;
+        // XSS protection: use DOM methods instead of innerHTML
+        progressResult.innerHTML = '';
+        const strong = document.createElement('strong');
+        strong.textContent = 'Upload Complete!';
+        progressResult.appendChild(strong);
+        if (status.snapshot_id) {
+            progressResult.appendChild(document.createElement('br'));
+            progressResult.appendChild(document.createTextNode(`Snapshot ID: ${status.snapshot_id}`));
+        }
+        if (status.dataset_id) {
+            progressResult.appendChild(document.createElement('br'));
+            progressResult.appendChild(document.createTextNode(`Dataset ID: ${status.dataset_id}`));
+        }
         cancelBtn.style.display = 'none';
         closeBtn.style.display = 'inline-block';
 
@@ -2340,7 +2392,12 @@ function updateProgressUI(dialog, status) {
         progressResult.style.display = 'block';
         progressResult.style.background = '#f8d7da';
         progressResult.style.color = '#721c24';
-        progressResult.innerHTML = `<strong>${stateText}</strong>: ${status.error || status.message || 'Unknown error'}`;
+        // XSS protection: use DOM methods instead of innerHTML
+        progressResult.innerHTML = '';
+        const strong = document.createElement('strong');
+        strong.textContent = stateText;
+        progressResult.appendChild(strong);
+        progressResult.appendChild(document.createTextNode(': ' + (status.error || status.message || 'Unknown error')));
         cancelBtn.style.display = 'none';
         closeBtn.style.display = 'inline-block';
 
