@@ -2016,10 +2016,13 @@ window.showStudioLoginDialog = async function(onSuccess) {
     dialog.querySelector('#studioPassword').value = '';
     dialog.querySelector('#studioLoginError').style.display = 'none';
 
+    // Track whether we're expecting a callback to detect cancellation
+    const hadCallback = typeof onSuccess === 'function';
+    
     // Add close handler for cancelled authentication feedback
     const closeHandler = () => {
-        // Check if user cancelled (dialog closed without successful login)
-        if (!window.studioAuth.isLoggedIn && typeof onSuccess === 'function') {
+        // Check if user cancelled (dialog closed without successful login and callback was expected)
+        if (!window.studioAuth.isLoggedIn && hadCallback) {
             const msg = 'Authentication cancelled. Upload cannot proceed without signing in.';
             if (typeof window.showToast === 'function') {
                 window.showToast(msg, 'warning');
@@ -2390,7 +2393,9 @@ function connectUploadProgressWs(uploadId, dialog) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     // Allow overriding WebSocket host/port if needed for custom deployments
     const wsHost = window.UPLOAD_WS_HOST || window.location.hostname;
-    const wsPort = window.UPLOAD_WS_PORT !== undefined ? String(window.UPLOAD_WS_PORT) : window.location.port;
+    const wsPort = (window.UPLOAD_WS_PORT !== undefined && window.UPLOAD_WS_PORT !== null) 
+        ? String(window.UPLOAD_WS_PORT) 
+        : window.location.port;
     const portSegment = wsPort ? `:${wsPort}` : '';
     const wsUrl = `${protocol}//${wsHost}${portSegment}/ws/uploads`;
     window.uploadProgressWs = new WebSocket(wsUrl);
